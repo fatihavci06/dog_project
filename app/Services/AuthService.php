@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmailMail;
 use App\Models\RefreshToken;
 use App\Models\User;
@@ -167,5 +168,50 @@ class AuthService
 
 
         RefreshToken::where('user_id', $record->user_id)->update(['revoked' => true]);
+    }
+
+    public function forgotPassword(string $email)
+    {
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            throw new \Exception('Bu e-posta ile kayıtlı kullanıcı bulunamadı.');
+        }
+
+        $token = Str::random(60);
+
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $email],
+            ['token' => $token, 'created_at' => now()]
+        );
+
+        Mail::to($email)->send(new ResetPasswordMail($token, $email));
+
+        return ['message' => 'Şifre sıfırlama linki e-posta adresinize gönderildi.'];
+    }
+
+    public function resetPassword(string $email, string $token, string $password)
+    {
+        $record = DB::table('password_resets')->where([
+            'email' => $email,
+            'token' => $token,
+        ])->first();
+
+        if (!$record) {
+            throw new \Exception('Geçersiz veya süresi dolmuş token.');
+        }
+
+        // Token 60 dakikadan eskiyse geçersiz
+        if (now()->diffInMinutes($record->created_at) > 60) {
+            throw new \Exception('Token süresi dolmuş.');
+        }
+
+        $user = User::where('email', $email)->firstOrFail();
+        $user->password = Hash::make($password);
+        $user->save();
+
+        // Tokeni sil
+        DB::table('password_resets')->where('email', $email)->delete();
+
+        return ['message' => 'Şifre başarıyla güncellendi.'];
     }
 }

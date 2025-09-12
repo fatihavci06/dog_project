@@ -53,29 +53,29 @@ class AuthController extends Controller
         Auth::logout();
         return view('auth.login');
     }
-   public function logoutApi(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'refresh_token' => 'required|string',
-    ]);
+    public function logoutApi(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'refresh_token' => 'required|string',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation error',
-            'errors'  => $validator->errors(),
-        ], 422);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $data = $validator->validated();
+
+            $this->authService->logout($data['refresh_token']);
+
+            return response()->json(['message' => 'Logged out successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
-
-    try {
-        $data = $validator->validated();
-
-        $this->authService->logout($data['refresh_token']);
-
-        return response()->json(['message' => 'Logged out successfully']);
-    } catch (\Exception $e) {
-        return response()->json(['message' => $e->getMessage()], 400);
-    }
-}
 
     public function register(RegisterRequest $request)
     {
@@ -133,27 +133,106 @@ class AuthController extends Controller
         }
     }
     public function refresh(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'refresh_token' => 'required|string',
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'refresh_token' => 'required|string',
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation error',
-            'errors'  => $validator->errors(),
-        ], 422);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $data   = $validator->validated();
+            $tokens = $this->authService->refresh($data['refresh_token']);
+
+            return response()->json($tokens);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 401);
+        }
+    }
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $result = $this->authService->forgotPassword($request->input('email'));
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 
-    try {
-        $data   = $validator->validated();
-        $tokens = $this->authService->refresh($data['refresh_token']);
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
 
-        return response()->json($tokens);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => $e->getMessage(),
-        ], 401);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $data = $validator->validated();
+
+            $result = $this->authService->resetPassword(
+                $data['email'],
+                $data['token'],
+                $data['password']
+            );
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
-}
+    public function showResetPasswordForm(Request $request)
+    {
+        // ?token=...&email=... query paramlarıyla gelir
+        $token = $request->query('token');
+        $email = $request->query('email');
+
+        return view('auth.reset-password', compact('token', 'email'));
+    }
+
+    public function resetPasswordSubmit(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        try {
+            $this->authService->resetPassword(
+                $request->input('email'),
+                $request->input('token'),
+                $request->input('password')
+            );
+
+            return redirect()->back()->with('success', 'Şifreniz başarıyla değiştirildi.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => $e->getMessage()]);
+        }
+    }
 }

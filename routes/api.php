@@ -17,3 +17,7 @@ Route::post('/logout', [AuthController::class, 'logoutApi']);
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('users', [AuthController::class, 'index']);
 });
+
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);

@@ -17,3 +17,5 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::get('/reset-password', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPasswordSubmit'])->name('password.update');
