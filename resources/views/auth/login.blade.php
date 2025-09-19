@@ -39,8 +39,8 @@
                             <div class="col-lg-6 d-flex align-items-center justify-content-center bg-light">
                                 <div class="d-flex align-items-center justify-content-center gap-4 px-3 w-100"
                                     style="max-width: 400px; flex-wrap: wrap;">
-                                    <img src="{{ asset('tema/kopek1.jpeg') }}" class="img-fluid"
-                                        style="max-width: 150px; height: auto;">
+                                    {{-- <img src="{{ asset('tema/kopek1.jpeg') }}" class="img-fluid"
+                                        style="max-width: 150px; height: auto;"> --}}
 
                                 </div>
                             </div>
