@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'KMZ Yönetimi')
+@section('title', '3d Tasarım')
 
 @section('content')
 
-<h1 class="h3 mb-4 text-gray-800">KMZ Yönetimi</h1>
+<h1 class="h3 mb-4 text-gray-800">3D</h1>
 
 <div class="row mb-4">
 

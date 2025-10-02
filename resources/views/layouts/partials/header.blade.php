@@ -9,7 +9,7 @@
     <link href="{{ asset('tema/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
-<link rel="icon" href="{{ asset('tema/tr_goc_logo_65.png')  }}" type="image/x-icon">
+
     <!-- Custom styles for this template-->
     <link href="{{ asset('tema/css/sb-admin-2.min.css') }}" rel="stylesheet">
     <script src="{{ asset('tema/js/bootstrap.bundle.min.js') }}"></script>
