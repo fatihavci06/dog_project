@@ -109,7 +109,7 @@ class AuthService
     protected function generateAccessToken(User $user)
     {
         $now = time();
-        $exp = $now + (15 * 60); // 15 dakika, ihtiyaca göre değiştirin
+        $exp = $now + (240 * 60); // 15 dakika, ihtiyaca göre değiştirin
         $payload = [
             'iss' => config('app.url'),
             'user_id' => $user->id,

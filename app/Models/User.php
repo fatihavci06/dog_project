@@ -70,4 +70,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(RefreshToken::class);
     }
+    public function userAnswers()
+    {
+        return $this->hasMany(UserAnswer::class);
+    }
+    public function userDogs()
+    {
+        return $this->hasMany(UserDog::class);
+    }
 }

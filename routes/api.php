@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DogController;
+use App\Http\Controllers\QuestionController;
 use App\Http\Middleware\JwtMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +18,14 @@ Route::post('/logout', [AuthController::class, 'logoutApi']);
 
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('users', [AuthController::class, 'index']);
+    Route::prefix('question')->group(function () {
+        Route::get('list', [QuestionController::class, 'index']);
+        Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
+    });
+       Route::prefix('dog')->group(function () {
+        Route::get('mylist', [DogController::class, 'myList']);
+
+    });
 });
 
 
