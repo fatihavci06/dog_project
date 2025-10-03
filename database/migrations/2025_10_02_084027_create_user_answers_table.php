@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
             $table->foreignId('option_id')->constrained('options')->cascadeOnDelete();
             $table->integer('rank'); // kullanıcı sıralaması (1–8)
-            $table->foreignId('role_id')->nullable()->constrained('roles')->cascadeOnDelete()->after('user_id');
+            $table->foreignId('test_id')->nullable()->constrained('test_user_roles')->cascadeOnDelete()->after('user_id');
 
             $table->softDeletes();
             $table->timestamps();

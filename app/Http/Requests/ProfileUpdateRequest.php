@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 
-class RegisterRequest extends BaseRequest
+class ProfileUpdateRequest extends BaseRequest
 {
 
     /**
@@ -16,8 +16,7 @@ class RegisterRequest extends BaseRequest
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:15',
+
             'location_city' => 'nullable|string|max:100',
             'location_district' => 'nullable|string|max:100',
             'biography' => 'nullable|string',

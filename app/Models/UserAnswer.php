@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class UserAnswer extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['user_id', 'question_id', 'option_id', 'rank', 'role_id'];
+    protected $fillable = ['user_id', 'question_id', 'option_id', 'rank', 'role_id','test_id'];
+      protected $hidden = ['created_at', 'updated_at', 'deleted_at'];
     /** * Cevap bir kullanıcıya aittir */
     public function user()
     {

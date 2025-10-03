@@ -24,7 +24,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role_id',
-        'status'
+        'status',
+        'one_signal_player_id',
+        'location_city',
+        'location_district',
+        'biography',
+        'photo'
     ];
 
     /**
@@ -35,6 +40,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'photo', 'created_at', 'updated_at', 'deleted_at'
     ];
 
     /**
@@ -77,5 +83,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function userDogs()
     {
         return $this->hasMany(UserDog::class);
+    }
+
+    protected $appends = ['photo_url']; // response'a otomatik eklensin
+
+    public function getPhotoUrlAttribute()
+    {
+        return $this->photo ? url('storage/' . $this->photo) : null;
+    }
+    public function testUserRoles()
+    {
+        return $this->hasMany(TestUserRole::class);
     }
 }

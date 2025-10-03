@@ -4,12 +4,25 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Option;
+use App\Models\TestUserRole;
+use Illuminate\Validation\Validator;
 
 class UserAnswerRequest extends BaseRequest
 {
+    protected function prepareForValidation()
+    {
+        // Route parametresindeki dog_id'yi request'e ekle
+        if ($this->routeIs('test.update')) {
+            if ($this->route('test_id')) {
+                $this->merge([
+                    'test_id' => $this->route('test_id'),
+                ]);
+            }
+        }
+    }
     public function rules(): array
     {
-        return [
+        $rules = [
             'role_id' => 'required|in:3,4',
             'user_dogs' => 'required_if:role_id,3|array|min:1',
             'user_dogs.*.name' => 'required_if:role_id,3|string|max:255',
@@ -84,6 +97,11 @@ class UserAnswerRequest extends BaseRequest
                 },
             ],
         ];
+
+        if ($this->routeIs('test.update')) {
+            $rules['test_id'] = 'required|integer|exists:test_user_roles,id';
+        }
+        return $rules;
     }
 
     public function messages(): array
@@ -102,5 +120,22 @@ class UserAnswerRequest extends BaseRequest
             'user_dogs.*.gender.required_if' => 'Dog gender is required when role_id is 3.',
             'user_dogs.*.age.required_if' => 'Dog age is required when role_id is 3.',
         ];
+    }
+    public function withValidator(Validator $validator)
+    {
+        $validator->after(function ($validator) {
+
+            $userId = $this->input('user_id');
+            if ($this->routeIs('test.update')) {
+                $testId = $this->input('test_id');
+                $test = TestUserRole::where('id', $testId)
+                    ->where('user_id', $userId)
+                    ->first();
+
+                if (!$test) {
+                    $validator->errors()->add('test_id', 'Test not found for this user.');
+                }
+            }
+        });
     }
 }

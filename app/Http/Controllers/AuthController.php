@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\loginRequest;
+use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthService;
@@ -234,5 +235,15 @@ class AuthController extends ApiController
         } catch (\Exception $e) {
             return back()->withErrors(['message' => $e->getMessage()]);
         }
+    }
+    public function myProfile(Request $request)
+    {
+       return $this->authService->myProfile($request->user_id);
+
+    }
+    public function myProfileUpdate(ProfileUpdateRequest $request)
+    {
+       return $this->authService->myProfileUpdate($request->user_id, $request->all());
+
     }
 }

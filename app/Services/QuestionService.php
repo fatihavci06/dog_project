@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\TestUserRole;
+use App\Models\User;
 use App\Models\UserAnswer;
 use App\Models\UserDog;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,7 @@ class QuestionService
     }
     public function userQuestionAnswerUpdateOrCreate(array $data)
     {
+
         $answers = $data['answers'];
         $userId = $data['user_id'];
         $roleId = $data['role_id'];
@@ -26,22 +29,39 @@ class QuestionService
         // Question IDs array formatında
 
 
-        DB::transaction(function () use ($userId, $answers, $roleId, $dogData) {
+        DB::transaction(function () use ($userId, $answers, $roleId, $dogData,$data) {
+            User::where('id', $userId)
+                ->update(['role_id' => $roleId]);
+            // Önce mevcut cevapları sil
+            if(isset($data['test_id'])){
+                UserAnswer::where('test_id', $data['test_id'])->delete();
+                TestUserRole::where('id', $data['test_id'])->update(['user_id'=>$userId,'role_id'=>$roleId]);
+                  $testId = $data['test_id'];
+            }
+            else{
+                 $testId = TestUserRole::create(
+                [
+                    'user_id' => $userId,
+                    'role_id' => $roleId,
+                ]
+            )->id;
+            }
 
+            if ($roleId == 4) { // role Köpek sahiplenmek isteyen ise
+                UserAnswer::where('user_id', $userId)
+                    ->delete();
+            }
             foreach ($answers as $answer) {
                 $questionId = $answer['question_id'];
                 $options = $answer['options'];
 
-                // Önce eski cevapları sil (question bazlı)
-                UserAnswer::where('user_id', $userId)
-                    ->where('role_id', $roleId)
-                    ->where('question_id', $questionId)
-                    ->delete();
+
 
                 // Yeni cevapları insert et
                 foreach ($options as $option) {
                     UserAnswer::create([
-                        'role_id' => $roleId,
+                        'test_id' => $testId,
+
                         'user_id' => $userId,
                         'question_id' => $questionId,
                         'option_id' => $option['option_id'],
@@ -49,8 +69,9 @@ class QuestionService
                     ]);
                 }
             }
-            if ($dogData) {
+            if ($dogData && $roleId == 3) {
                 $updateData = [
+                    'user_id' => $userId,
                     'name' => $dogData['name'] ?? null,
                     'gender' => $dogData['gender'] ?? null,
                     'age' => $dogData['age'] ?? null,
@@ -65,16 +86,19 @@ class QuestionService
                     $updateData['photo'] = $dogData['photo']->store('dogs', 'public');
                 }
 
-                UserDog::updateOrCreate(
-                    [
-                        'user_id' => $userId,
+                $dogId = UserDog::create($updateData)->id;
 
-                    ],
-                    $updateData
-                );
+                TestUserRole::where('id', $testId)->update(['dog_id' => $dogId]);
             }
         });
 
         return ['message' => 'Answers saved successfully.'];
     }
+    public function testGet(array $data)
+    {
+
+        return UserAnswer::where('user_id', $data['user_id'])->where('test_id',$data['test_id'])->get();
+    }
+
+
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TestShowDeleteRequest;
 use App\Http\Requests\UserAnswerRequest;
 use App\Models\Question;
 use App\Models\User;
@@ -25,5 +26,10 @@ class QuestionController extends ApiController
 
         return $this->questionService->userQuestionAnswerUpdateOrCreate($request->all());
     }
+    public function testGet(TestShowDeleteRequest $request)
+    {
+        return $this->questionService->testGet($request->all());
+    }
+
 
 }

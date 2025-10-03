@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Resources\UserProfileResource;
 use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmailMail;
 use App\Models\RefreshToken;
@@ -32,6 +33,19 @@ class AuthService
             $user->email = $data['email'];
             $user->password = bcrypt($data['password']);
             $user->status = 'active';
+            if (isset($data['location_city'])) {
+                $user->location_city = $data['location_city'];
+            }
+            if (isset($data['location_district'])) {
+                $user->location_district = $data['location_district'];
+            }
+            if (isset($data['biography'])) {
+                $user->biography = $data['biography'];
+            }
+            if (isset($data['photo'])) {
+                $path = $data['photo']->store('user_photos', 'public');
+                $user->photo = $path;
+            }
             $user->save(); // burada ID oluşur
 
             // Pivot tablosuna role ekle
@@ -213,5 +227,41 @@ class AuthService
         DB::table('password_resets')->where('email', $email)->delete();
 
         return ['message' => 'Şifre başarıyla güncellendi.'];
+    }
+    public function myProfile($userId)
+    {
+        $user = User::with('testUserRoles.dog')->select()->find($userId);
+        if (!$user) {
+            throw new \Exception('Not Found.');
+        }
+        return new UserProfileResource($user);
+    }
+    public function myProfileUpdate($userId, array $data)
+    {
+        $user = User::find($userId);
+        if (!$user) {
+            throw new \Exception('Not Found.');
+        }
+        if (isset($data['name'])) {
+            $user->name = $data['name'];
+        }
+        if (isset($data['phone'])) {
+            $user->phone = $data['phone'];
+        }
+        if (isset($data['location_city'])) {
+            $user->location_city = $data['location_city'];
+        }
+        if (isset($data['location_district'])) {
+            $user->location_district = $data['location_district'];
+        }
+        if (isset($data['biography'])) {
+            $user->biography = $data['biography'];
+        }
+        if (isset($data['photo'])) {
+            $path = $data['photo']->store('user_photos', 'public');
+            $user->photo = $path;
+        }
+        $user->save();
+        return new UserProfileResource($user);
     }
 }
