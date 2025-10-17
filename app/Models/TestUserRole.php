@@ -22,4 +22,6 @@ class TestUserRole extends Model
     {
         return $this->hasMany(UserDog::class, 'id', 'dog_id');
     }
+     
 }
+

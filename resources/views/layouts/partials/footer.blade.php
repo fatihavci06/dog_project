@@ -5,6 +5,7 @@
          </div>
      </div>
  </footer>
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         if (window.innerWidth <= 768) {

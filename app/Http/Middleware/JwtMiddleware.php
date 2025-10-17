@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Exception;
 use Firebase\JWT\JWT;
@@ -31,6 +32,9 @@ class JwtMiddleware
             $request->merge([
                 'user_id' => $decoded->user_id ?? null
             ]);
+
+            $roleId = User::find($decoded->user_id)->role_id;
+            $request->merge(['role_id' => $roleId]);
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Invalid or expired token.',

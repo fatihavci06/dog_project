@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Events;
+
+use App\Models\Message;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class MessageSent implements ShouldBroadcast
+{
+    use Dispatchable,InteractsWithSockets, SerializesModels;
+
+    public $message;
+
+    public function __construct(Message $message)
+    {
+
+            $this->message = $message; // artık sender ilişkisi yüklenmiyor
+
+    }
+
+    public function broadcastOn()
+    {
+        return new PrivateChannel('conversation.'.$this->message->conversation_id);
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'id' => $this->message->id,
+            'conversation_id' => $this->message->conversation_id,
+            'sender_id' => $this->message->sender_id,
+            'receiver_id' => $this->message->receiver_id,
+            'body' => $this->message->body,
+            'created_at' => $this->message->created_at->toDateTimeString(),
+        ];
+    }
+}
+

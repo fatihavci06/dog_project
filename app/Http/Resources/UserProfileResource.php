@@ -17,7 +17,7 @@ class UserProfileResource extends JsonResource
         return [
             'id' => $this->id,
             'role_id' => $this->role_id,
-            'one_signal_player_id' => $this->one_signal_player_id,
+            'onesignal_player_id' => $this->onesignal_player_id,
             'location_city' => $this->location_city,
             'location_district' => $this->location_district,
             'biography' => $this->biography,

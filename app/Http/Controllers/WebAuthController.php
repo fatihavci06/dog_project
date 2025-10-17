@@ -6,6 +6,7 @@ use App\Http\Requests\loginRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use App\Models\UserDog;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,19 +35,28 @@ class WebAuthController extends Controller
                 ->exists();
 
             if ($isAdmin) {
-                return view('welcome');
+                $activeUsersCount = User::where('status', 'active')->count();
+
+                // Aktif köpek sayısı (status = 'active')
+                $activeDogsCount = UserDog::count();
+                $dogOwnersCount = User::where('role_id', 3)->where('status', 'active')->count();
+
+                // Dog Adoption Seekers (role_id = 4)
+                $adoptionSeekersCount = User::where('role_id', 4)->where('status', 'active')->count();
+
+                return view('dashboard', compact('activeUsersCount', 'activeDogsCount', 'dogOwnersCount', 'adoptionSeekersCount'));
             }
 
             // admin değilse çıkış yap
             Auth::logout();
 
             return redirect()->back()->withErrors([
-                'email' => 'Bu hesaba giriş yetkiniz yok.'
+                'email' => 'You do not have access to this account.'
             ]);
         }
 
         return redirect()->back()->withErrors([
-            'email' => 'Email veya şifre hatalı.'
+            'email' => 'Email or password is incorrect.'
         ]);
     }
     public function logout()
@@ -84,5 +94,4 @@ class WebAuthController extends Controller
             return back()->withErrors(['message' => $e->getMessage()]);
         }
     }
-
 }

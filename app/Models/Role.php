@@ -12,4 +12,9 @@ class Role extends Model
     {
         return $this->belongsToMany(User::class, 'role_user');
     }
+     public function notifications()
+    {
+        return $this->belongsToMany(Notification::class, 'notification_role')
+                    ->withTimestamps();
+    }
 }

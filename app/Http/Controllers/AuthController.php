@@ -6,6 +6,7 @@ use App\Http\Requests\loginRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use App\Models\UserDog;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +35,16 @@ class AuthController extends ApiController
                 ->exists();
 
             if ($isAdmin) {
-                return view('welcome');
+                $activeUsersCount = User::where('status', 'active')->count();
+
+                // Aktif köpek sayısı (status = 'active')
+                $activeDogsCount = UserDog::count();
+                $dogOwnersCount = User::where('role_id', 3)->where('status', 'active')->count();
+
+                // Dog Adoption Seekers (role_id = 4)
+                $adoptionSeekersCount = User::where('role_id', 4)->where('status', 'active')->count();
+
+                return view('dashboard', compact('activeUsersCount', 'activeDogsCount', 'dogOwnersCount', 'adoptionSeekersCount'));
             }
 
             // admin değilse çıkış yap
@@ -46,7 +56,7 @@ class AuthController extends ApiController
         }
 
         return redirect()->back()->withErrors([
-            'email' => 'Email veya şifre hatalı.'
+            'email' => 'Email or password is incorrect.'
         ]);
     }
     public function logout()
@@ -123,7 +133,7 @@ class AuthController extends ApiController
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Giriş başarılı',
+                'message' => 'Successfull',
                 'data' => $data
             ], 200);
         } catch (\Exception $e) {
@@ -238,12 +248,10 @@ class AuthController extends ApiController
     }
     public function myProfile(Request $request)
     {
-       return $this->authService->myProfile($request->user_id);
-
+        return $this->authService->myProfile($request->user_id);
     }
     public function myProfileUpdate(ProfileUpdateRequest $request)
     {
-       return $this->authService->myProfileUpdate($request->user_id, $request->all());
-
+        return $this->authService->myProfileUpdate($request->user_id, $request->all());
     }
 }

@@ -25,7 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'role_id',
         'status',
-        'one_signal_player_id',
+        'onesignal_player_id',
         'location_city',
         'location_district',
         'biography',
@@ -95,4 +95,15 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(TestUserRole::class);
     }
+    public function  role()
+    {
+        return $this->hasOne(Role::class, 'id', 'role_id');
+    }
+     public function notifications()
+    {
+        return $this->belongsToMany(Notification::class, 'notification_user')
+                    ->withPivot(['is_read', 'sent_at'])
+                    ->withTimestamps();
+    }
+
 }
