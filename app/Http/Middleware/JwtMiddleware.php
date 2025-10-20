@@ -8,11 +8,14 @@ use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class JwtMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
+         Log::info('=== JWT MIDDLEWARE TETİKLENDİ ===');
+
         $authHeader = $request->header('Authorization');
 
         if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
@@ -35,6 +38,7 @@ class JwtMiddleware
 
             $roleId = User::find($decoded->user_id)->role_id;
             $request->merge(['role_id' => $roleId]);
+            Log::info($roleId);
         } catch (Exception $e) {
             return response()->json([
                 'message' => 'Invalid or expired token.',

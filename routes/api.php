@@ -62,12 +62,12 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
         Route::get('conversations/{id}/messages', [ApiChatController::class, 'messages']);
         Route::post('messages/send', [ApiChatController::class, 'send']);
-        Route::post('conversations/{id}/mark-read', [ApiChatController::class, 'markRead']);
+        Route::post('conversations/{id}/mark-read', [ApiChatController::class, 'markRead'])->name('chat.markRead');
         Route::get('/inbox', [ApiChatController::class, 'inbox']);
 
     });
 
-Route::post('/test/broadcast-message', [TestBroadcastController::class, 'sendTestMessage']);
+
 
 
     Route::post('onesignal-playerid/set', [ApiNotificationController::class, 'setOneSignalPlayerId']);

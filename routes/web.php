@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DogController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebAnnouncmentController;
@@ -39,6 +41,20 @@ Route::middleware([AdminMiddleware::class])->group(function () {
         Route::get('/create', [NotificationController::class, 'create'])->name('notifications.create');
         Route::post('/store', [NotificationController::class, 'store'])->name('notifications.store');
     });
+Route::prefix('messages')->group(function () {
+    Route::post('messages/start', [ChatController::class, 'start'])->name('messages.start');
+
+    Route::get('/', [ChatController::class, 'index'])->name('messages.index');
+    Route::get('/{conversation}', [ChatController::class, 'show'])->name('messages.show');
+    Route::post('/{conversation}', [ChatController::class, 'store'])->name('messages.store');
+    Route::post('conversations/{id}/mark-read', [ChatController::class, 'markRead'])->name('message.markRead');
+    Route::get('/{conversation}/load-more', [ChatController::class, 'loadMore'])->name('messages.loadMore');
+    Route::get('/users/get-others', [ChatController::class, 'getOtherUsers'])->name('users.getOtherUsers');
+});
+
+
+
+
 });
 
 Route::get('/login', function () {

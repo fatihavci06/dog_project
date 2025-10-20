@@ -62,8 +62,8 @@ class ChatService
         event(new MessageSent($message));
 
         // OneSignal push
-        $player = $to->onesignal_player_id ? [$to->onesignal_player_id] : [];
-        if ($player) {
+        $player = !empty($to->onesignal_player_id) ? [$to->onesignal_player_id] : [];
+        if (!empty($player)) {
             dispatch(new SendOneSignalNotification(
                 $player,
                 "Yeni mesaj",
@@ -75,6 +75,7 @@ class ChatService
                 ]
             ));
         }
+
 
         return $message;
     }
