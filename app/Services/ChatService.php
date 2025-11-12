@@ -7,6 +7,7 @@ use App\Jobs\SendOneSignalNotification;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ChatService
@@ -157,5 +158,129 @@ class ChatService
             ->where('conversation_id', $conversationId)
             ->orderBy('created_at', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
+    }
+    public function getLatestMessages()
+    {
+        $userId = Auth::id();
+
+        if (!$userId) {
+            return [
+                'error' => 'Unauthorized',
+                'status' => 401,
+            ];
+        }
+
+        $messages = Message::with('sender')
+            ->where('receiver_id', $userId)
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($msg) {
+                return [
+                    'id' => $msg->id,
+                    'body' => $msg->body,
+                    'conversation_id' => $msg->conversation_id,
+                    'sender' => [
+                        'name' => $msg->sender->name ?? 'Unknown',
+                        'profile_photo_url' => $msg->sender->profile_photo_url ?? asset('storage/profile.jpg'),
+                    ],
+                    'created_at' => $msg->created_at->toDateTimeString(),
+                ];
+            });
+
+        $unreadCount = Message::where('receiver_id', $userId)
+            ->whereNull('read_at')
+            ->count();
+
+        return [
+            'messages' => $messages,
+            'unreadCount' => $unreadCount,
+            'status' => 200,
+        ];
+    }
+    public function show(int $conversationId)
+    {
+        return Message::where('conversation_id', $conversationId)
+            ->with('sender:id,name')
+            ->orderBy('created_at', 'asc')
+            ->take(50)
+            ->get();
+    }
+    public function startConversation(array $data)
+    {
+        $senderId = Auth::id();
+        $receiverId = $data['recipient_id'];
+        $body = $data['body'];
+
+        // 1️⃣ Mevcut sohbeti kontrol et
+        $conversation = Conversation::where(function ($q) use ($senderId, $receiverId) {
+            $q->where('user_one_id', $senderId)
+                ->where('user_two_id', $receiverId);
+        })->orWhere(function ($q) use ($senderId, $receiverId) {
+            $q->where('user_one_id', $receiverId)
+                ->where('user_two_id', $senderId);
+        })->first();
+
+        // 2️⃣ Sohbet yoksa, yeni oluştur
+        if (!$conversation) {
+            $conversation = Conversation::create([
+                'user_one_id' => $senderId,
+                'user_two_id' => $receiverId,
+            ]);
+        }
+
+        // 3️⃣ Mesajı oluştur
+        $message = Message::create([
+            'conversation_id' => $conversation->id,
+            'sender_id'       => $senderId,
+            'receiver_id'     => $receiverId,
+            'body'            => $body,
+        ]);
+
+        // 4️⃣ JSON formatında döndür
+        return [
+            'success' => true,
+            'message' => $message,
+            'conversation_id' => $conversation->id,
+        ];
+    }
+    public function getChatIndexData(?int $selectedConversationId = null, int $perPage = 15)
+    {
+        $userId = Auth::id();
+
+        // 1️⃣ Kullanıcının mevcut sohbetleri
+        $conversations = Conversation::where('user_one_id', $userId)
+            ->orWhere('user_two_id', $userId)
+            ->with(['messages' => fn($q) => $q->latest()])
+            ->get();
+
+        // 2️⃣ Diğer kullanıcılar (sayfalı)
+        $allOtherUsers = User::where('id', '!=', $userId)
+            ->orderBy('name', 'asc')
+            ->paginate($perPage);
+
+        // 3️⃣ Seçili sohbet varsa mesajları al
+        $selectedConversation = null;
+        $messages = collect();
+
+        if ($selectedConversationId) {
+            $selectedConversation = $selectedConversationId;
+            $messages = Message::where('conversation_id', $selectedConversation)
+                ->orderBy('created_at', 'asc')
+                ->get();
+        }
+
+        return compact('conversations', 'selectedConversation', 'messages', 'allOtherUsers');
+    }
+    public function loadMoreMessages(int $conversationId, int $lastMessageId, int $take = 20)
+    {
+        return Message::where('conversation_id', $conversationId)
+            ->where('id', '<', $lastMessageId)
+            ->with('sender:id,name')
+            ->orderByDesc('created_at')
+            ->take($take)
+            ->get()
+            ->reverse() // eski mesajları başa ekle
+            ->values();
     }
 }

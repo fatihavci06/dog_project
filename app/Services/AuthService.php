@@ -116,8 +116,7 @@ class AuthService
         return [
             'access_token'  => $accessToken,
             'refresh_token' => $rawRefresh,
-            'token_type'    => 'bearer',
-            'expires_in'    => 15 * 60,
+
         ];
     }
     protected function generateAccessToken(User $user)

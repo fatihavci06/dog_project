@@ -41,6 +41,7 @@
             </div>
         </div>
     </li>
+
      <hr class="sidebar-divider border-neon-glow">
 
     <li class="nav-item">
@@ -57,6 +58,27 @@
 
     <hr class="sidebar-divider d-none d-md-block border-neon-glow">
 
+     <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseff"
+            aria-expanded="true" aria-controls="collapseTwo">
+           <i class="fas fa-solid fa-mobile-alt"></i><span>Mobile App Settings</span>
+        </a>
+        <div id="collapseff" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="bg-dark-light py-2 collapse-inner rounded">
+                <a class="collapse-item text-white" href="{{route('mobileAppInformation.index')}}">Step By Step Information</a>
+                 <a class="collapse-item text-white" href="{{route('mobileAppInformation.pageInfo')}}">Page Information</a>
+                  <a class="collapse-item text-white" href="{{route('breads.index')}}">Breed</a>
+                  <a class="collapse-item text-white" href="{{route('ageRange.index')}}">Age Range</a>
+                  <a class="collapse-item text-white" href="{{route('lookingFor.index')}}">Looking For</a>
+                  <a class="collapse-item text-white" href="{{route('vibe.index')}}">Vibe</a>
+                  <a class="collapse-item text-white" href="{{route('healthInfo.index')}}">Health Info</a>
+                  <a class="collapse-item text-white" href="{{route('travelRadius.index')}}">Travel Radius</a>
+                  <a class="collapse-item text-white" href="{{route('availabilityForMeetups.index')}}">Availability for Meetup</a>
+            </div>
+        </div>
+
+    </li>
+ <hr class="sidebar-divider d-none d-md-block border-neon-glow">
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0 bg-neon-blue" id="sidebarToggle"></button>
     </div>

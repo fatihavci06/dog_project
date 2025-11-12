@@ -8,6 +8,7 @@ use App\Http\Controllers\ApiCalendarController;
 use App\Http\Controllers\ApiChatController;
 use App\Http\Controllers\ApiLocationController;
 use App\Http\Controllers\ApiMessageController;
+use App\Http\Controllers\ApiMobilAppRegisterInformationController;
 use App\Http\Controllers\DogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\QuestionController;
@@ -23,15 +24,15 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 Route::post('/refresh', [AuthController::class, 'refresh']);
 
 Route::post('/logout', [AuthController::class, 'logoutApi']);
-
+Route::prefix('question')->group(function () {
+    Route::get('list', [QuestionController::class, 'index']);
+    Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
+});
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('users', [AuthController::class, 'index']);
     Route::get('my-profile', [AuthController::class, 'myProfile']);
     Route::post('my-profile/update', [AuthController::class, 'myProfileUpdate']);
-    Route::prefix('question')->group(function () {
-        Route::get('list', [QuestionController::class, 'index']);
-        Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
-    });
+
     Route::prefix('dog')->group(function () {
         Route::get('mylist', [DogController::class, 'myList']);
         Route::delete('delete/{dog_id}', [DogController::class, 'delete']);
@@ -64,13 +65,24 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::post('messages/send', [ApiChatController::class, 'send']);
         Route::post('conversations/{id}/mark-read', [ApiChatController::class, 'markRead'])->name('chat.markRead');
         Route::get('/inbox', [ApiChatController::class, 'inbox']);
-
     });
 
 
 
 
     Route::post('onesignal-playerid/set', [ApiNotificationController::class, 'setOneSignalPlayerId']);
+});
+
+
+
+Route::prefix('mobile-app-informations')->group(function () {
+
+    Route::get('/step-by-step-info', [ApiMobilAppRegisterInformationController::class, 'stepByStepInfo'])
+        ->name('mobile_app_informations.index');
+    Route::get('/page-info', [ApiMobilAppRegisterInformationController::class, 'pageInfo'])
+        ->name('mobile_app_informations.pageInfo');
+    Route::get('/basic-info', [ApiMobilAppRegisterInformationController::class, 'basicInfo'])
+        ->name('mobile_app_informations.basicInfo');
 });
 
 

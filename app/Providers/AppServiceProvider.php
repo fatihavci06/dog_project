@@ -29,33 +29,33 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive(); // Bootstrap 5 için
         View::composer('layouts.partials.navbar', function ($view) {
-        if (Auth::check()) {
-            $userId = Auth::id();
+            if (Auth::check()) {
+                $userId = Auth::id();
 
 
-            // Son 5 gelen mesaj
-            $messages = Message::with('sender')
-                ->where('receiver_id', $userId)
-                ->latest()
-                ->take(5)
-                ->get();
+                // Son 5 gelen mesaj
+                $messages = Message::with('sender')
+                    ->where('receiver_id', $userId)
+                    ->latest()
+                    ->take(5)
+                    ->get();
 
-            // Okunmamış mesaj sayısı
-            $unreadCount = Message::where('receiver_id', $userId)
-                ->whereNull('read_at')
-                ->count();
+                // Okunmamış mesaj sayısı
+                $unreadCount = Message::where('receiver_id', $userId)
+                    ->whereNull('read_at')
+                    ->count();
 
-            $view->with([
-                'messages' => $messages,
-                'unreadCount' => $unreadCount,
-            ]);
-        } else {
-            $view->with([
-                'messages' => collect(),
-                'unreadCount' => 0,
-            ]);
-        }
-    });
+                $view->with([
+                    'messages' => $messages,
+                    'unreadCount' => $unreadCount,
+                ]);
+            } else {
+                $view->with([
+                    'messages' => collect(),
+                    'unreadCount' => 0,
+                ]);
+            }
+        });
 
         //
     }

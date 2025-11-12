@@ -17,6 +17,19 @@ class ChatController extends Controller
     {
         $this->chatService = $chatService;
     }
+    public function latest()
+    {
+        $result = $this->chatService->getLatestMessages();
+
+        if (isset($result['error'])) {
+            return response()->json(['error' => $result['error']], $result['status']);
+        }
+
+        return response()->json([
+            'messages' => $result['messages'],
+            'unreadCount' => $result['unreadCount'],
+        ], $result['status']);
+    }
     public function start(Request $request)
     {
         $request->validate([
@@ -24,74 +37,19 @@ class ChatController extends Controller
             'body' => 'required|string',
         ]);
 
-        $senderId = Auth::id();
-        $receiverId = $request->recipient_id;
+        $result = $this->chatService->startConversation($request->only(['recipient_id', 'body']));
 
-        // 1. Mevcut sohbeti kontrol et
-        $conversation = Conversation::where(function ($q) use ($senderId, $receiverId) {
-            $q->where('user_one_id', $senderId)->where('user_two_id', $receiverId);
-        })->orWhere(function ($q) use ($senderId, $receiverId) {
-            $q->where('user_one_id', $receiverId)->where('user_two_id', $senderId);
-        })->first();
-
-        if (!$conversation) {
-            // 2. Sohbet yoksa, yeni oluştur
-            $conversation = Conversation::create([
-                'user_one_id' => $senderId,
-                'user_two_id' => $receiverId,
-            ]);
-        }
-
-        // 3. Mesajı kaydet
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $senderId,
-            'receiver_id' => $receiverId,
-            'body' => $request->body,
-        ]);
-
-        // Son mesajı güncelle (Conversation modelinde last_message_id varsa)
-        // $conversation->update(['last_message_id' => $message->id]);
-
-        // 4. JavaScript'in beklediği JSON yanıtını döndür
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'conversation_id' => $conversation->id,
-        ]);
+        return response()->json($result);
     }
     /**
      * Conversation listesi + ilk mesajlar (index sayfası)
      */
     public function index(Request $request)
     {
-        $userId = Auth::id();
-        $perPage = 15; // Sayfada gösterilecek kullanıcı sayısı
+        $selectedConversationId = $request->input('selected');
+        $data = $this->chatService->getChatIndexData($selectedConversationId);
 
-        // 1. Mevcut Sohbetler (Değişmedi)
-        $conversations = Conversation::where('user_one_id', $userId)
-            ->orWhere('user_two_id', $userId)
-            ->with(['messages' => fn($q) => $q->latest()])
-            ->get();
-
-        // 2. Tüm Diğer Kullanıcılar (Artık SAYFALANDIRILIYOR)
-        $allOtherUsers = User::where('id', '!=', $userId)
-            ->orderBy('name', 'asc')
-            ->paginate($perPage); // Sayfalandırılmış veriyi alır
-
-        $selectedConversation = null;
-        $messages = collect();
-
-        if ($request->has('selected')) {
-            // ... (Seçili konuşma mantığı değişmedi)
-            $selectedConversation = $request->input('selected');
-            $messages = Message::where('conversation_id', $selectedConversation)
-                ->orderBy('created_at', 'asc')
-                ->get();
-        }
-
-        // view() metoduna artık sayfalandırılmış koleksiyon gönderiyoruz
-        return view('messages.index', compact('conversations', 'selectedConversation', 'messages', 'allOtherUsers'));
+        return view('messages.index', $data);
     }
 
     // YENİ METOT: New Chat Listesini AJAX ile almak için.
@@ -119,11 +77,7 @@ class ChatController extends Controller
      */
     public function show($conversationId)
     {
-        $messages = Message::where('conversation_id', $conversationId)
-            ->with('sender:id,name')
-            ->orderBy('created_at', 'asc')
-            ->take(50)
-            ->get();
+        $messages = $this->chatService->show($conversationId);
 
         // Ajax isteği ise sadece partial dön
         if (request()->ajax()) {
@@ -131,7 +85,7 @@ class ChatController extends Controller
         }
     }
 
-   public function store(Request $request, $conversationId)
+    public function store(Request $request, $conversationId)
     {
         $request->validate([
             'body' => 'required|string|max:5000'
@@ -140,45 +94,31 @@ class ChatController extends Controller
         $conversation = Conversation::findOrFail($conversationId);
         $senderId = Auth::id();
 
-        // Alıcı ID'sini burada hesaplamaya gerek yok, Service zaten Conversation'a bakarak yapabilir.
-        // Ancak Servis metodu (sendMessage) senderId ve receiverId istiyor, bu yüzden receiverId'yi bulmalıyız.
         $receiverId = $conversation->user_one_id === $senderId ? $conversation->user_two_id : $conversation->user_one_id;
 
         try {
-            // !!! Mesaj gönderme işlemini ChatService'e delege et !!!
-            // Not: ChatService::sendMessage, Conversation'ı bulmak/oluşturmak yerine
-            // sadece mesajı gönderme işini yapmalıydı. Ancak mevcut Service yapınız
-            // Conversation'ı da bulduğu için bu şekilde kullanacağız.
-            // Biz Conversation ID'sini bildiğimiz için bu kısım biraz zorlama oluyor.
 
-            // Eğer Service'i kullanacaksak, Service'i sadece senderId ve receiverId ile tetiklemek daha mantıklı.
-            // Bu, Service'in Conversation bulma/oluşturma mantığını kullanmasını sağlar.
-
-            // Mevcut Conversation ID'sini kullanarak Service'i çağırmak için,
-            // ChatService'e Conversation ID'si alan yeni bir metot ekleyebiliriz.
-            // VEYA daha basit bir yol: Yeni sohbet başlatma rotasına gitmek yerine,
-            // varolan Service metodunu çağırmak için sender ve receiver kullanırız.
 
             $message = $this->chatService->sendMessage(
                 $senderId,
-                $receiverId, // conversation'dan bulduğumuz receiverId
+                $receiverId,
                 $request->body
             );
 
-            // NOT: $message'ın conversation_id'si $conversationId ile aynı olacaktır.
+
 
         } catch (\Exception $e) {
-            // Hata durumunda uygun bir yanıt dönün
+
             return response()->json([
                 'success' => false,
                 'message' => 'Message could not be sent: ' . $e->getMessage()
             ], 500);
         }
 
-        // Başarılı Ajax JSON yanıtı
+
         return response()->json([
             'success' => true,
-            'message' => $message // Service'den dönen Message objesi
+            'message' => $message
         ]);
     }
 
@@ -190,17 +130,18 @@ class ChatController extends Controller
     {
         $lastMessageId = $request->query('last_message_id');
 
-        $messages = Message::where('conversation_id', $conversationId)
-            ->where('id', '<', $lastMessageId)
-            ->with('sender:id,name')
-            ->orderByDesc('created_at')
-            ->take(20)
-            ->get()
-            ->reverse() // eski mesajları başa ekle
-            ->values();
+        if (!$lastMessageId) {
+            return response()->json(['html' => '', 'error' => 'last_message_id is required'], 400);
+        }
 
-        return view('layouts.partials.message_list', compact('messages'))->render();
+        $messages = $this->chatService->loadMoreMessages($conversationId, $lastMessageId);
+
+        // View render
+        $html = view('layouts.partials.message_list', compact('messages'))->render();
+
+        return response()->json(['html' => $html]);
     }
+
     public function markRead($conversationId)
     {
         return $this->chatService->markRead($conversationId, Auth::id());

@@ -43,9 +43,11 @@
                 <i class="fas fa-envelope fa-fw"></i>
                 <!-- Counter - Messages -->
                 @if ($unreadCount > 0)
-                    <span class="badge badge-danger badge-counter">
-                        {{ $unreadCount > 99 ? '99+' : $unreadCount }}
-                    </span>
+                    <span class="badge badge-danger badge-counter"
+      @if ($unreadCount <= 0) style="display:none;" @endif>
+    {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+</span>
+
                 @endif
 
             </a>
@@ -126,3 +128,72 @@
     </ul>
 
 </nav>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const badge = document.querySelector("#messagesDropdown .badge-counter");
+    const dropdown = document.querySelector('[aria-labelledby="messagesDropdown"]');
+
+    async function fetchMessages() {
+        try {
+            const response = await fetch("{{ route('messages.latest') }}");
+            const data = await response.json();
+
+            if (!data) return;
+
+            // Badge varsa güncelle
+            if (badge) {
+                if (data.unreadCount > 0) {
+                    badge.textContent = data.unreadCount > 99 ? '99+' : data.unreadCount;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // Dropdown varsa güncelle
+            if (dropdown) {
+                let html = `<h6 class="dropdown-header">Message Center</h6>`;
+
+                if (data.messages.length > 0) {
+                    data.messages.forEach(message => {
+                        const body = message.body.length > 60 ? message.body.substring(0, 60) + '...' : message.body;
+                        const photo = message.sender?.profile_photo_url ?? "{{ asset('storage/profile.jpg') }}";
+                        const name = message.sender?.name ?? 'Unknown';
+                        const time = new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                        html += `
+                            <a class="dropdown-item d-flex align-items-center"
+                                href="/messages?selected=${message.conversation_id}">
+                                <div class="dropdown-list-image mr-3">
+                                    <img class="rounded-circle" src="${photo}" alt="${name}">
+                                    <div class="status-indicator bg-success"></div>
+                                </div>
+                                <div class="font-weight-bold">
+                                    <div class="text-truncate">${body}</div>
+                                    <div class="small text-gray-500">${name} · ${time}</div>
+                                </div>
+                            </a>`;
+                    });
+                } else {
+                    html += `<span class="dropdown-item text-center small text-gray-500">No new messages</span>`;
+                }
+
+                html += `<a class="dropdown-item text-center small text-gray-500" href="{{ route('messages.index') }}">
+                            Read More Messages
+                         </a>`;
+
+                dropdown.innerHTML = html;
+            }
+        } catch (error) {
+            console.error('Mesajlar alınamadı:', error);
+        }
+    }
+
+    // İlk yüklemede çağır
+    fetchMessages();
+
+    // Her 10 saniyede bir yenile
+    setInterval(fetchMessages, 600000);
+});
+</script>
+

@@ -341,6 +341,15 @@
                     });
                 }
             });
+            $userSearchInput.on('keyup', function() {
+    const query = $(this).val();
+
+    loadUsers(1, query);
+});
+
+
+
+
 
 
             // 6. Mesaj gönderme (Message sending)
