@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
+use App\Traits\HasPageInfoTranslations;
 
-class pageInfo extends Model
+class PageInfo extends Model
 {
-    //
-    protected $fillable = ['page_name', 'title', 'description', 'image_path'];
+    use HasPageInfoTranslations;
+
+    protected $fillable = ['page_name', 'image_path'];
+
     protected $hidden = ['created_at', 'updated_at'];
+
     public function getImagePathAttribute($value)
     {
         return $value ? url('storage/' . $value) : null;

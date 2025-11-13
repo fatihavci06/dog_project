@@ -25,7 +25,7 @@ Route::post('/refresh', [AuthController::class, 'refresh']);
 
 Route::post('/logout', [AuthController::class, 'logoutApi']);
 Route::prefix('question')->group(function () {
-    Route::get('list', [QuestionController::class, 'index']);
+    Route::get('list/{language?}', [QuestionController::class, 'index']);
     Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
 });
 Route::middleware([JwtMiddleware::class])->group(function () {
@@ -77,11 +77,11 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
 Route::prefix('mobile-app-informations')->group(function () {
 
-    Route::get('/step-by-step-info', [ApiMobilAppRegisterInformationController::class, 'stepByStepInfo'])
+    Route::get('/step-by-step-info/{language?}', [ApiMobilAppRegisterInformationController::class, 'stepByStepInfo'])
         ->name('mobile_app_informations.index');
-    Route::get('/page-info', [ApiMobilAppRegisterInformationController::class, 'pageInfo'])
+    Route::get('/page-info/{language?}', [ApiMobilAppRegisterInformationController::class, 'pageInfo'])
         ->name('mobile_app_informations.pageInfo');
-    Route::get('/basic-info', [ApiMobilAppRegisterInformationController::class, 'basicInfo'])
+    Route::get('/basic-info/{language?}', [ApiMobilAppRegisterInformationController::class, 'basicInfo'])
         ->name('mobile_app_informations.basicInfo');
 });
 

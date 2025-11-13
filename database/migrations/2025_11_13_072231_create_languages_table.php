@@ -5,21 +5,19 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up(): void
+    public function up()
     {
-        Schema::create('questions', function (Blueprint $table) {
+        Schema::create('languages', function (Blueprint $table) {
             $table->id();
-
+            $table->string('code', 5)->unique(); // tr, en, de
+            $table->string('name'); // Türkçe, English, Deutsch
             $table->boolean('is_active')->default(true);
-            $table->integer('order_index')->default(0);
-
-            $table->softDeletes();
             $table->timestamps();
         });
     }
 
-    public function down(): void
+    public function down()
     {
-        Schema::dropIfExists('questions');
+        Schema::dropIfExists('languages');
     }
 };

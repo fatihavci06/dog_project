@@ -2,29 +2,33 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\HealthInfo;
 
 class HealthInfoSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        $data = [
-            'Spayed/Neutered',
-            'Microchipped',
-            'Regular Vet Checkups',
-
-
+        $items = [
+            [
+                'en' => 'Spayed/Neutered',
+                'tr' => 'Kısırlaştırılmış',
+            ],
+            [
+                'en' => 'Microchipped',
+                'tr' => 'Mikroçipli',
+            ],
+            [
+                'en' => 'Regular Vet Checkups',
+                'tr' => 'Düzenli Veteriner Kontrolleri',
+            ],
         ];
 
-        foreach ($data as $d) {
-            DB::table('health_infos')->insert([
-                'name' => $d,
-            ]);
+        foreach ($items as $data) {
+            $item = HealthInfo::create();
+
+            $item->setTranslation('name', 'en', $data['en']);
+            $item->setTranslation('name', 'tr', $data['tr']);
         }
     }
 }

@@ -1,211 +1,165 @@
 @extends('layouts.app')
 
-@section('title', 'Mobile App Page Information List')
+@section('title', 'Page Info')
 
 @section('content')
 
-    <h2 class="mb-4">Mobile App Page Information List</h2>
-
-    {{-- Session ile gelen başarı mesajı (Sayfa yenilemede kullanılır) --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>Success!</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    {{-- ✨ AJAX ile gelen başarı mesajını göstermek için div --}}
-    <div id="ajax-success-alert" class="alert alert-success alert-dismissible fade show" role="alert" style="display: none;">
-        <strong>Success!</strong> <span id="alert-message-text"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="card">
+    <div class="card-header">
+        <h4>Page Info</h4>
     </div>
-    {{-- --------------------------------------------------------- --}}
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Page Info List</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle text-center">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Page Name</th>
-                            <th>Title</th>
-                            <th>Description Preview</th>
-                            <th>Image</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{-- pageInfo, Controller'dan compact ile gelen değişken adıdır --}}
-                        @foreach ($pageInfo as $page)
-                            <tr data-id="{{ $page->id }}"
-                                data-title="{{ $page->title }}"
-                                data-description="{{ $page->description }}"
-                                data-image-path="{{ $page->image_path }}">
+    <div class="card-body">
 
-                                <td>{{ $page->page_name }}</td>
-                                <td>{{ $page->title }}</td>
-                                <td>{{ Str::limit($page->description, 50) }}</td>
-                                <td>
-                                    @if ($page->image_path)
-                                        <img src="{{ asset('storage/' . $page->image_path) }}" alt="{{ $page->page_name }}" style="max-width: 50px; max-height: 50px;">
-                                    @else
-                                        No Image
-                                    @endif
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary edit-btn">Edit</button>
-                                </td>
-                            </tr>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Page Name</th>
+
+                    @foreach($languages as $lang)
+                        <th>Title ({{ strtoupper($lang->code) }})</th>
+                    @endforeach
+
+                    <th>Image</th>
+                    <th width="120">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach($items as $item)
+                    <tr>
+                        <td>{{ $item->page_name }}</td>
+
+                        @foreach($languages as $lang)
+                            <td>{{ $item->translate('title', $lang->code) }}</td>
                         @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
+                        <td>
+                            @if($item->image_path)
+                                <img src="{{ $item->image_path }}" width="80">
+                            @endif
+                        </td>
+
+                        <td>
+                            <button class="btn btn-warning btn-sm editBtn"
+                                data-id="{{ $item->id }}"
+                                data-page_name="{{ $item->page_name }}"
+                                @foreach($languages as $lang)
+                                    data-title{{ $lang->code }}="{{ $item->translate('title', $lang->code) }}"
+                                    data-description{{ $lang->code }}="{{ $item->translate('description', $lang->code) }}"
+                                @endforeach
+                                data-bs-toggle="modal"
+                                data-bs-target="#editModal">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
     </div>
+</div>
 
-    {{-- ✨ DÜZENLEME MODALI (Modal Edit) ✨ --}}
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Page Information</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                {{-- Düzenlenen sayfa adını gösterecek alan --}}
-                <h6 class="modal-title px-3 pt-2 pb-0 text-secondary" id="modalPageName"></h6>
-                <div class="modal-body">
-                    {{-- Form, dosya yükleme için FormData gerektirecek --}}
-                    <form id="editForm">
-                        @csrf
-                        <input type="hidden" name="id" id="record_id">
 
-                        {{-- Başlık --}}
-                        <div class="mb-3">
-                            <label for="modal_title" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="modal_title" name="title" required>
-                        </div>
+{{-- EDIT MODAL --}}
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" id="editForm" enctype="multipart/form-data" class="modal-content">
+            @csrf
 
-                        {{-- Açıklama --}}
-                        <div class="mb-3">
-                            <label for="modal_description" class="form-label">Description</label>
-                            <textarea class="form-control" id="modal_description" name="description" rows="4" required></textarea>
-                        </div>
-
-                        {{-- Mevcut Resim ve Yükleme --}}
-                        <div class="mb-3">
-                            <label class="form-label d-block">Image</label>
-                            <div id="current-image-container" class="mb-2">
-                                {{-- Resim buraya JavaScript ile yüklenecek --}}
-                            </div>
-                            <label for="image_file" class="form-label">New Image Upload</label>
-                            <input type="file" class="form-control" id="image_file" name="image_file" accept="image/*">
-                            <small class="form-text text-muted">Leave blank to keep the current image.</small>
-                        </div>
-
-                        <button type="submit" class="btn btn-success w-100">Save Changes</button>
-                    </form>
-                </div>
+            <div class="modal-header">
+                <h5>Edit Page</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-        </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" name="id" id="edit_id">
+
+                <label>Page Name</label>
+                <input type="text" name="page_name" id="edit_page_name"
+                       class="form-control mb-3" readonly>
+
+                @foreach($languages as $lang)
+                    <label>Title ({{ $lang->code }})</label>
+                    <input type="text" name="title[{{ $lang->code }}]"
+                           id="edit_title_{{ $lang->code }}"
+                           class="form-control mb-2" required>
+
+                    <label>Description ({{ $lang->code }})</label>
+                    <textarea name="description[{{ $lang->code }}]"
+                              id="edit_description_{{ $lang->code }}"
+                              rows="2"
+                              class="form-control mb-3" required></textarea>
+                @endforeach
+
+                <label>Image</label>
+                <input type="file" name="image_path" class="form-control">
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Close
+                </button>
+                <button class="btn btn-success" type="submit">Update</button>
+            </div>
+
+        </form>
     </div>
-    {{-- ------------------------------------------ --}}
+</div>
 
 @endsection
 
+
 @section('scripts')
+    {{-- Eğer layout'ta zaten ekli değilse bu satır kalsın --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
-        $(document).ready(function() {
+        document.addEventListener('DOMContentLoaded', function () {
 
-            // Global değişkeni ayarla
-            const STORAGE_PATH = '{{ asset('storage') }}';
+            // EDIT BUTTON
+            document.querySelectorAll('.editBtn').forEach(btn => {
+                btn.addEventListener('click', () => {
 
-            // Edit modalını aç
-            $('.edit-btn').on('click', function() {
-                let tr = $(this).closest('tr');
+                    let id = btn.dataset.id;
 
-                // data- attribute'lerinden verileri al
-                let id = tr.data('id');
-                let pageName = tr.find('td:eq(0)').text(); // Page Name
-                let title = tr.data('title');
-                let description = tr.data('description');
-                let imagePath = tr.data('image-path');
+                    document.getElementById('edit_id').value = id;
+                    document.getElementById('edit_page_name').value = btn.dataset.page_name;
 
-                // Modala verileri yerleştir
-                $('#record_id').val(id);
-                $('#modalPageName').text(`Editing: ${pageName}`);
-                $('#modal_title').val(title);
-                $('#modal_description').val(description);
+                    @foreach($languages as $lang)
+                        document.getElementById('edit_title_{{ $lang->code }}').value =
+                            btn.dataset["title{{ $lang->code }}"] ?? '';
 
-                // Mevcut resmi göster
-                let imageHtml = '';
-                if (imagePath) {
-                    imageHtml = `<img src="${STORAGE_PATH}/${imagePath}" alt="${pageName}" style="max-width: 150px; height: auto; border: 1px solid #ccc;">`;
-                } else {
-                    imageHtml = `<div class="text-muted small">No image currently set.</div>`;
-                }
-                $('#current-image-container').html(imageHtml);
+                        document.getElementById('edit_description_{{ $lang->code }}').value =
+                            btn.dataset["description{{ $lang->code }}"] ?? '';
+                    @endforeach
 
-                // Modalı göster
-                $('#editModal').modal('show');
-            });
-
-            // AJAX ile güncelle
-            $('#editForm').on('submit', function(e) {
-                e.preventDefault();
-
-                // Dosya ve metin verilerini FormData olarak al
-                let formData = new FormData(this);
-
-                // Alert'i gizle (önceki hatalar varsa)
-                $('#ajax-success-alert').hide();
-
-                // Güncelleme butonu disable edilirken kullanıcıya geri bildirim ver
-                let submitButton = $(this).find('button[type="submit"]');
-                submitButton.attr('disabled', true).text('Saving...');
-
-                $.ajax({
-                    url: "{{ route('mobileAppInformation.pageInfoUpdate') }}",
-                    type: "POST",
-                    data: formData,
-                    contentType: false,
-                    processData: false,
-                    success: function(res) {
-                        submitButton.attr('disabled', false).text('Save Changes'); // Butonu geri aç
-
-                        if (res.success) {
-
-                            // 1. Modalı kapat
-                            $('#editModal').modal('hide');
-
-                            // 2. ✨ BAŞARI MESAJINI GÖSTERME KISMI ✨
-                            $('#alert-message-text').text(res.message || 'Page information updated successfully.');
-                            $('#ajax-success-alert').fadeIn().delay(3000).fadeOut();
-
-                            // 3. Tabloyu güncelle (Resim değiştiyse yenileme en güvenli yoldur)
-                            setTimeout(function() {
-                                window.location.reload();
-                            }, 500);
-
-                        } else {
-                            alert(res.message || "Güncelleme sırasında bir hata oluştu!");
-                        }
-                    },
-                    error: function(xhr) {
-                        submitButton.attr('disabled', false).text('Save Changes'); // Butonu geri aç
-                        let errorMessage = "Sunucu hatası! Lütfen tekrar deneyin.";
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            errorMessage = xhr.responseJSON.message;
-                        } else if (xhr.status === 422) {
-                            // Basit bir validasyon hatası bildirimi
-                             errorMessage = "Validation Error! Check your inputs.";
-                        }
-                        alert(errorMessage);
-                    }
+                    document.getElementById('editForm').action = "/mobile-app-information/page-info/" + id;
                 });
             });
+
+            // SUCCESS MESSAGE
+            @if(session('success'))
+            Swal.fire({
+                icon: "success",
+                title: "{{ session('success') }}",
+                toast: true,
+                position: "top-end",
+                timer: 2500,
+                showConfirmButton: false
+            });
+            @endif
+
+            // VALIDATION ERRORS
+            @if ($errors->any())
+            Swal.fire({
+                icon: "error",
+                title: "Validation Error",
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+            });
+            @endif
 
         });
     </script>

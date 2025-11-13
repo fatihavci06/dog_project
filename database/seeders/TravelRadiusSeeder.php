@@ -2,30 +2,37 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\TravelRadius;
 
 class TravelRadiusSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        $data = [
-            '1 km',
-            '3 km',
-            '5 km',
-            '10 km'
-
-
+        $items = [
+            [
+                'en' => '1 km',
+                'tr' => '1 km',
+            ],
+            [
+                'en' => '3 km',
+                'tr' => '3 km',
+            ],
+            [
+                'en' => '5 km',
+                'tr' => '5 km',
+            ],
+            [
+                'en' => '10 km',
+                'tr' => '10 km',
+            ],
         ];
 
-        foreach ($data as $d) {
-            DB::table('travel_radius')->insert([
-                'name' => $d,
-            ]);
+        foreach ($items as $data) {
+            $item = TravelRadius::create();
+
+            $item->setTranslation('name', 'en', $data['en']);
+            $item->setTranslation('name', 'tr', $data['tr']);
         }
     }
 }

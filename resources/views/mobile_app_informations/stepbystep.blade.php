@@ -1,148 +1,203 @@
 @extends('layouts.app')
 
-@section('title', 'Mobile App Information Settings')
+@section('title', 'Mobile Steps Information')
 
 @section('content')
 
-    <h2 class="mb-4">Mobile App Information Settings</h2>
+{{-- SUCCESS MESSAGE --}}
+@if(session('success'))
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: "success",
+        title: "{{ session('success') }}",
+        toast: true,
+        position: "top-end",
+        timer: 2500,
+        showConfirmButton: false
+    });
+});
+</script>
+@endif
 
-    {{-- Session ile gelen başarı mesajı (Sayfa yenilemede kullanılır) --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>Success!</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+{{-- VALIDATION ERRORS --}}
+@if ($errors->any())
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: "error",
+        title: "Validation Error",
+        html: `{!! implode('<br>', $errors->all()) !!}`,
+    });
+});
+</script>
+@endif
 
-    {{-- ✨ EKLENDİ/GÜNCELLENDİ: AJAX ile gelen başarı mesajını göstermek için div --}}
-    <div id="ajax-success-alert" class="alert alert-success alert-dismissible fade show" role="alert" style="display: none;">
-        <strong>Success!</strong> <span id="alert-message-text"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4>Mobile App Step Information</h4>
+        <small class="text-muted">Only update allowed. No add/delete.</small>
     </div>
-    {{-- ----------------------------------------------------------------- --}}
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Step By Step Information</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle text-center">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Step Number</th>
-                            <th>Description</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($data as $item)
-                            <tr data-id="{{ $item->id }}">
-                                <td>{{ $item->step_number }}</td>
-                                <td>{{ $item->step_description }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary edit-btn">Edit</button>
-                                </td>
-                            </tr>
+    <div class="card-body">
+
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th>Step</th>
+
+                    @foreach($languages as $lang)
+                        <th>Title ({{ strtoupper($lang->code) }})</th>
+                    @endforeach
+
+                    <th>Image</th>
+                    <th width="120">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach($items as $item)
+                    <tr>
+                        <td><strong>{{ $item->step_number }}</strong></td>
+
+                        @foreach($languages as $lang)
+                            <td>{{ $item->translate('title', $lang->code) }}</td>
                         @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
+
+                        <td>
+                            @if($item->image_path)
+                                <img src="{{ $item->image_path }}" width="80" class="rounded border">
+                            @else
+                                <span class="text-muted">No image</span>
+                            @endif
+                        </td>
+
+                        <td>
+                            <button class="btn btn-warning btn-sm editBtn"
+                                data-id="{{ $item->id }}"
+                                data-step_number="{{ $item->step_number }}"
+                                data-image="{{ $item->image_path }}"
+
+                                @foreach($languages as $lang)
+                                    data-title{{ $lang->code }}="{{ $item->translate('title', $lang->code) }}"
+                                    data-description{{ $lang->code }}="{{ $item->translate('description', $lang->code) }}"
+                                @endforeach
+
+                                data-bs-toggle="modal"
+                                data-bs-target="#editModal">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+
     </div>
+</div>
 
-    {{-- ✨ GÜNCELLENMİŞ MODAL KISMI ✨ --}}
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Information</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                {{-- Adım numarasını gösterecek alan --}}
-                <h6 class="modal-title px-3 pt-2 pb-0 text-secondary" id="modalStepNumber"></h6>
-                <div class="modal-body">
-                    <form id="editForm">
-                        @csrf
-                        <input type="hidden" id="record_id">
 
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea id="description" class="form-control" rows="3" required></textarea>
-                        </div>
+{{-- EDIT MODAL --}}
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form method="POST" id="editForm" enctype="multipart/form-data" class="modal-content">
+            @csrf
 
-                        <button type="submit" class="btn btn-success w-100">Save Changes</button>
-                    </form>
-                </div>
+            <div class="modal-header">
+                <h5>Edit Step Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-        </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" name="id" id="edit_id">
+
+                <label>Step Number</label>
+                <input type="number" name="step_number" class="form-control mb-3" id="edit_step_number" readonly>
+
+                @foreach($languages as $lang)
+                    <div class="mb-3">
+                        <label>Title ({{ strtoupper($lang->code) }})</label>
+                        <input type="text"
+                               name="title[{{ $lang->code }}]"
+                               id="edit_title_{{ $lang->code }}"
+                               class="form-control"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Description ({{ strtoupper($lang->code) }})</label>
+                        <textarea name="description[{{ $lang->code }}]"
+                                  id="edit_description_{{ $lang->code }}"
+                                  rows="2"
+                                  class="form-control"
+                                  required></textarea>
+                    </div>
+                @endforeach
+
+                <label>Image</label>
+                <input type="file" name="image_path" class="form-control mb-2" accept="image/*">
+
+
+                <img id="preview_image" src="" width="120" class="rounded mt-2 d-none border">
+            </div>
+
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button class="btn btn-success">Update</button>
+            </div>
+
+        </form>
     </div>
-    {{-- --------------------------------- --}}
+</div>
 
 @endsection
 
+
 @section('scripts')
-    <script>
-        $(document).ready(function() {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            // Edit modalını aç
-            $('.edit-btn').on('click', function() {
-                let tr = $(this).closest('tr');
-                let id = tr.data('id');
-                let step_number = tr.find('td:eq(0)').text(); // Adım Numarasını al
-                let description = tr.find('td:eq(1)').text();
+<script>
+document.addEventListener('DOMContentLoaded', function () {
 
-                // Adım Numarasını modalın bilgi satırına yerleştir
-                $('#modalStepNumber').text(`Step Number: ${step_number}`);
+    document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
 
-                $('#record_id').val(id);
-                $('#description').val(description);
+            let id = btn.dataset.id;
 
-                $('#editModal').modal('show');
-            });
+            // Form action
+            document.getElementById('editForm').action = "/mobile-app-information/mobile-steps/" + id;
 
-            // AJAX ile güncelle
-            $('#editForm').on('submit', function(e) {
-                e.preventDefault();
+            // Hidden id
+            document.getElementById('edit_id').value = id;
 
-                let id = $('#record_id').val();
-                let description = $('#description').val();
+            // Step number (readonly)
+            document.getElementById('edit_step_number').value = btn.dataset.step_number;
 
-                $.ajax({
-                    url: "{{ route('mobileAppInformation.update') }}",
-                    type: "POST",
-                    data: {
-                        _token: "{{ csrf_token() }}",
-                        id: id,
-                        description: description
-                    },
-                    success: function(res) {
-                        if (res.success) {
-                            // 1. Tabloyu güncelle
-                            let tr = $('tr[data-id="' + id + '"]');
-                            tr.find('td:eq(1)').text(description);
+            // Çok dilli alanlar
+            @foreach($languages as $lang)
+                document.getElementById('edit_title_{{ $lang->code }}').value =
+                    btn.dataset["title{{ $lang->code }}"] ?? '';
 
-                            // 2. Modalı kapat
-                            $('#editModal').modal('hide');
-                            $('#modalStepNumber').text(''); // Adım numarasını temizle
+                document.getElementById('edit_description_{{ $lang->code }}').value =
+                    btn.dataset["description{{ $lang->code }}"] ?? '';
+            @endforeach
 
-                            // 3. ✨ BAŞARI MESAJINI GÖSTER ✨
-                            // Controller'dan gelen mesajı veya varsayılan mesajı ayarla
-                            $('#alert-message-text').text(res.message || 'The information has been updated successfully.');
+            // Image preview
+            let imagePath = btn.dataset.image;
+            let preview = document.getElementById('preview_image');
 
-                            // Alert kutusunu görünür yap ve 3 saniye sonra kaybolmasını sağla
-                            $('#ajax-success-alert').fadeIn().delay(3000).fadeOut();
-
-                        } else {
-                            alert(res.message || "Güncelleme sırasında bir hata oluştu!");
-                        }
-                    },
-                    error: function() {
-                        alert("Sunucu hatası! Lütfen tekrar deneyin.");
-                    }
-                });
-            });
-
+            if(imagePath){
+                preview.src = imagePath;
+                preview.classList.remove('d-none');
+            } else {
+                preview.classList.add('d-none');
+            }
         });
-    </script>
+    });
+
+});
+</script>
 @endsection

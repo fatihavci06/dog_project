@@ -2,32 +2,50 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Vibe;
 
 class VibeSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        $data = [
-            'Chill',
-            'Playful',
-            'Energetic',
-            'Independent',
-            'Loving',
-            'Social',
-            'Shy',
-
+        $items = [
+            [
+                'en' => 'Chill',
+                'tr' => 'Sakin',
+            ],
+            [
+                'en' => 'Playful',
+                'tr' => 'Oyuncu',
+            ],
+            [
+                'en' => 'Energetic',
+                'tr' => 'Enerjik',
+            ],
+            [
+                'en' => 'Independent',
+                'tr' => 'Bağımsız',
+            ],
+            [
+                'en' => 'Loving',
+                'tr' => 'Sevecen',
+            ],
+            [
+                'en' => 'Social',
+                'tr' => 'Sosyal',
+            ],
+            [
+                'en' => 'Shy',
+                'tr' => 'Utangaç',
+            ],
         ];
 
-        foreach ($data as $d) {
-            DB::table('vibes')->insert([
-                'name' => $d,
-            ]);
+        foreach ($items as $data) {
+            $item = Vibe::create();
+
+            $item->setTranslation('name', 'en', $data['en']);
+            $item->setTranslation('name', 'tr', $data['tr']);
         }
     }
 }
+

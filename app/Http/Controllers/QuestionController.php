@@ -17,9 +17,9 @@ class QuestionController extends ApiController
     {
         $this->questionService = $questionService;
     }
-    public function index()
+    public function index($locale='en')
     {
-        return $this->questionService->getAllQuestionsWithOptions();
+        return $this->questionService->getAllQuestionsWithOptions($locale);
     }
     public function userQuestionAnswerUpdateOrCreate(UserAnswerRequest $request)
     {

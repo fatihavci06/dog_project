@@ -2,53 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\MobileAppPageInfoUpdateRequest;
-use App\Models\pageInfo;
-use App\Services\MobileAppInfoService;
+
+use App\Models\Language;
+
+use App\Services\PageInfoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MobilAppPageInfoController extends Controller
 {
+    protected $service;
 
-    protected $mobileAppInfoService;
-
-    // Servis sınıfını constructor injection ile enjekte et
-    public function __construct(MobileAppInfoService $mobileAppInfoService)
+    public function __construct(PageInfoService $service)
     {
-        $this->mobileAppInfoService = $mobileAppInfoService;
+        $this->service = $service;
     }
+
     public function pageInfo()
     {
-        $pageInfo = pageInfo::select(['id', 'page_name', 'title', 'description', 'image_path'])->get();
-        return view('mobile_app_informations.pageinfo', compact('pageInfo'));
+        $items = $this->service->all();
+        $languages = Language::where('is_active', 1)->get();
+
+        return view('mobile_app_informations.pageinfo', compact('items', 'languages'));
     }
-    public function pageInfoUpdate(MobileAppPageInfoUpdateRequest $request)
+
+
+    public function update(Request $request, $id)
     {
-        // 1. Gelen Verileri Al
-        $id = $request->input('id');
-        $title = $request->input('title');
-        $description = $request->input('description');
-        $imageFile = $request->file('image_file');
+        Log::info(22312);
+        $this->validateData($request, update: true);
+         Log::info(22312);
+        $data = $request->all();
 
-        try {
-            // 2. İşlemi Servis Katmanına Devret
-            $result = $this->mobileAppInfoService->updatePageInfo($id, $title, $description, $imageFile);
-
-            $page = $result['page'];
-            $newImagePath = $result['new_image_path'];
-
-            // 3. Başarılı Yanıtı Döndür
-            return response()->json([
-                'success' => true,
-                'message' => "Successfully. ",
-                'new_image_path' => $newImagePath
-            ]);
-        } catch (\Exception $e) {
-            // Hata yakalanırsa (örneğin kayıt bulunamazsa)
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400); // 400 Bad Request veya uygun bir hata kodu
+        if ($request->hasFile('image_path')) {
+            $data['image_path'] = $request->file('image_path')->store('page-info', 'public');
         }
+
+        $this->service->update($id, $data);
+
+        return back()->with('success', 'Page successfully updated.');
+    }
+
+    private function validateData(Request $request, $update = false)
+    {
+        // Aktif dilleri alıyoruz (ör: ['en', 'tr'])
+        $languages = \App\Models\Language::where('is_active', 1)
+            ->pluck('code')
+            ->toArray();
+
+        $rules = [];
+
+        // page_name sadece CREATE sırasında zorunlu,
+        // UPDATE'de değişmemesi gerektiği için zorunlu değil
+        if ($update === false) {
+
+            $rules['page_name'] = 'required|string|max:255';
+        }
+
+        // Çok dilli title + description zorunlu
+        foreach ($languages as $locale) {
+            $rules["title.$locale"] = 'required|string';
+            $rules["description.$locale"] = 'required|string';
+        }
+
+        // image -> create'de required, update'de optional
+        if (!$update) {
+            $rules['image_path'] = 'required|image';
+        } else {
+            $rules['image_path'] = 'nullable|image';
+        }
+
+        $request->validate($rules);
     }
 }

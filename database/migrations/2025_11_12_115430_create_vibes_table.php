@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('vibes', function (Blueprint $table) {
-            $table->id();
-             $table->string('name');
+           $table->id();
             $table->timestamps();
         });
     }

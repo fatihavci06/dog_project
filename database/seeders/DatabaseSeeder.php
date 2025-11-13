@@ -16,8 +16,17 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         // $this->call(RolesAndUsersSeeder::class);
-        $this->call(QuestionSeeder::class);
-        $this->call(OptionSeeder::class);
-        $this->call(BreadSeed::class);
+        // $this->call(QuestionSeeder::class);
+        // $this->call(OptionSeeder::class);
+        $this->call([
+            LanguageSeeder::class,
+            BreadSeeder::class,
+            AgeRangeSeeder::class,
+            VibeSeeder::class,
+            HealthInfoSeeder::class,
+            TravelRadiusSeeder::class,
+            AvailabilityForMeetupSeeder::class,
+            LookingForSeeder::class, // ⭐ Burayı ekle
+        ]);
     }
 }

@@ -8,19 +8,25 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Question extends Model
 {
-    use HasFactory, SoftDeletes;
-    protected $fillable = ['question_text', 'is_active',];
-    /** * Bir sorunun birden fazla seçeneği vardır */ public function options()
+    use SoftDeletes;
+    use \App\Traits\HasTranslations;
+
+    protected $fillable = ['is_active'];
+
+    public function options()
     {
         return $this->hasMany(Option::class);
     }
-    /** * Bir sorunun kullanıcı cevapları */ public function userAnswers()
+
+    public function userAnswers()
     {
         return $this->hasMany(UserAnswer::class);
     }
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-        'deleted_at',
-    ];
+
+    // multilingual accessor
+    public function getQuestionTextAttribute()
+    {
+        return $this->translate('question_text');
+    }
 }
+

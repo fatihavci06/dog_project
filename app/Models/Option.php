@@ -8,21 +8,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Option extends Model
 {
-    use HasFactory, SoftDeletes;
-    protected $fillable = ['question_id', 'option_text', 'order_index', 'is_active',];
-    /** * Seçenek bir soruya aittir */
+    use \App\Traits\HasTranslations;
+
+    protected $fillable = ['order_index', 'is_active'];
+
     public function question()
     {
         return $this->belongsTo(Question::class);
     }
-    /** * Bir seçeneğin kullanıcı cevapları */
-    public function userAnswers()
+
+    public function getOptionTextAttribute()
     {
-        return $this->hasMany(UserAnswer::class);
+        return $this->translate('option_text');
     }
-    protected $hidden = [
-        'created_at',
-        'updated_at',
-        'deleted_at',
-    ];
 }
+

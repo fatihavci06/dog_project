@@ -11,14 +11,33 @@ use Illuminate\Support\Facades\DB;
 class QuestionService
 {
     // Soru ve seçenek yönetimi için gerekli metotlar buraya eklenecek
-    public function  getAllQuestionsWithOptions()
+    public function getAllQuestionsWithOptions($locale)
     {
 
-        // Tüm aktif soruları ve her sorunun aktif seçeneklerini getir
-        return \App\Models\Question::with(['options' => function ($query) {
-            $query->where('is_active', true)->orderBy('order_index');
-        }])->where('is_active', true)->get();
+        app()->setLocale($locale);
+
+
+        return \App\Models\Question::where('is_active', true)
+            ->with(['options' => function ($query) {
+                $query->where('is_active', true)->orderBy('order_index');
+            }])
+            ->get()
+            ->map(function ($question) use ($locale) {
+                return [
+                    'id' => $question->id,
+                    'question_text' => $question->translate('question_text', $locale),
+
+                    'options' => $question->options->map(function ($opt) use ($locale) {
+                        return [
+                            'id' => $opt->id,
+                            'option_text' => $opt->translate('option_text', $locale),
+                            'order_index' => $opt->order_index,
+                        ];
+                    })
+                ];
+            });
     }
+
     public function userQuestionAnswerUpdateOrCreate(array $data)
     {
 
@@ -29,22 +48,21 @@ class QuestionService
         // Question IDs array formatında
 
 
-        DB::transaction(function () use ($userId, $answers, $roleId, $dogData,$data) {
+        DB::transaction(function () use ($userId, $answers, $roleId, $dogData, $data) {
             User::where('id', $userId)
                 ->update(['role_id' => $roleId]);
             // Önce mevcut cevapları sil
-            if(isset($data['test_id'])){
+            if (isset($data['test_id'])) {
                 UserAnswer::where('test_id', $data['test_id'])->delete();
-                TestUserRole::where('id', $data['test_id'])->update(['user_id'=>$userId,'role_id'=>$roleId]);
-                  $testId = $data['test_id'];
-            }
-            else{
-                 $testId = TestUserRole::create(
-                [
-                    'user_id' => $userId,
-                    'role_id' => $roleId,
-                ]
-            )->id;
+                TestUserRole::where('id', $data['test_id'])->update(['user_id' => $userId, 'role_id' => $roleId]);
+                $testId = $data['test_id'];
+            } else {
+                $testId = TestUserRole::create(
+                    [
+                        'user_id' => $userId,
+                        'role_id' => $roleId,
+                    ]
+                )->id;
             }
 
             if ($roleId == 4) { // role Köpek sahiplenmek isteyen ise
@@ -97,8 +115,6 @@ class QuestionService
     public function testGet(array $data)
     {
 
-        return UserAnswer::where('user_id', $data['user_id'])->where('test_id',$data['test_id'])->get();
+        return UserAnswer::where('user_id', $data['user_id'])->where('test_id', $data['test_id'])->get();
     }
-
-
 }
