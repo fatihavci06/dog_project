@@ -37,9 +37,15 @@ class JwtMiddleware
             ]);
 
             $roleId = User::find($decoded->user_id)->role_id;
-            $request->merge(['role_id' => $roleId]);
+
+            if(empty($roleId) && $roleId)
+            {
+                 $request->merge(['role_id' => $roleId]);
             Log::info($roleId);
+            }
+
         } catch (Exception $e) {
+
             return response()->json([
                 'message' => 'Invalid or expired token.',
                 'error'   => $e->getMessage()

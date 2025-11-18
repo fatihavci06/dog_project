@@ -14,6 +14,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
@@ -25,46 +26,79 @@ class AuthService
     {
         $this->jwtSecret = env('JWT_SECRET', 'your-secret-key'); // .env dosyasında JWT_SECRET
     }
+    public function changePassword($user, array $data)
+{
+    return DB::transaction(function () use ($user, $data) {
+
+        /* ------------------------------------------------
+           1) CURRENT PASSWORD DOĞRU MU?
+        ------------------------------------------------ */
+        if (!Hash::check($data['current_password'], $user->password)) {
+            throw new \Exception('Current password is incorrect.', 422);
+        }
+
+        /* ------------------------------------------------
+           2) YENİ ŞİFRE ESKİ ŞİFRE İLE AYNI MI?
+        ------------------------------------------------ */
+        if (Hash::check($data['new_password'], $user->password)) {
+            throw new \Exception('New password cannot be the same as the old password.', 422);
+        }
+
+        /* ------------------------------------------------
+           3) ŞİFREYİ GÜNCELLE
+        ------------------------------------------------ */
+        $user->password = bcrypt($data['new_password']);
+        $user->save();
+
+        /* ------------------------------------------------
+           4) TÜM TOKENLARI SİL → YENİDEN GİRİŞ ZORUNLU
+        ------------------------------------------------ */
+       RefreshToken::where('user_id',$user->id)->delete();
+
+        return true;
+    });
+}
     public function register(array $data)
     {
         return DB::transaction(function () use ($data) {
-            $user = new User();
-            $user->name = $data['name'];
-            $user->email = $data['email'];
-            $user->password = bcrypt($data['password']);
-            $user->status = 'active';
-            if (isset($data['location_city'])) {
-                $user->location_city = $data['location_city'];
-            }
-            if (isset($data['location_district'])) {
-                $user->location_district = $data['location_district'];
-            }
-            if (isset($data['biography'])) {
-                $user->biography = $data['biography'];
-            }
-            if (isset($data['photo'])) {
-                $path = $data['photo']->store('user_photos', 'public');
-                $user->photo = $path;
-            }
-            $user->save(); // burada ID oluşur
 
-            // Pivot tablosuna role ekle
-            $user->roles()->attach(2);
+            /* ---------------- USER CREATE ---------------- */
+
+            $user = User::create([
+                'name'           => $data['fullname'],
+                'email'          => $data['email'],
+                'password'       => bcrypt($data['password']),
+                'role_id'        => $data['role'],
+                'status'         => 'active',
+                'privacy_policy' => $data['privacy_policy'],
+                'newlestter'     => $data['newlestter'] ?? 0,
+            ]);
+
+            // User'ın pivot rolu (RBAC için)
+            $user->roles()->attach($data['role']);
+
+            /* ---------------- VERIFY EMAIL ---------------- */
 
             $verificationUrl = URL::temporarySignedRoute(
-                'verification.verify', // route ismi
-                Carbon::now()->addMinutes(60), // link geçerlilik süresi
+                'verification.verify',
+                Carbon::now()->addMinutes(60),
                 [
-                    'id' => $user->id,
-                    'hash' => sha1($user->email)
+                    'id'   => $user->id,
+                    'hash' => sha1($user->email),
                 ]
             );
+
             Mail::to($user->email)->send(new VerifyEmailMail($user));
 
-            // User objesi ve verification URL döndür
+            /* ---------------- PUP PROFILE CREATE ---------------- */
+            if (isset($data['pup_profile'])) {
+                app(PupProfileService::class)
+                    ->createPupProfileForUser($user, $data['pup_profile']);
+            }
+
             return [
-                'user' => $user,
-                'verification_url' => $verificationUrl
+                'user'              => $user,
+                'verification_url'  => $verificationUrl,
             ];
         });
     }
@@ -97,7 +131,7 @@ class AuthService
         $user = User::where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            throw new \Exception('E-posta veya şifre yanlış');
+            throw new \Exception('Email or password is incorrect');
         }
 
         // Access token üret
@@ -187,7 +221,7 @@ class AuthService
     {
         $user = User::where('email', $email)->first();
         if (!$user) {
-            throw new \Exception('Bu e-posta ile kayıtlı kullanıcı bulunamadı.');
+            throw new \Exception('User not found', 404);
         }
 
         $token = Str::random(60);
@@ -199,7 +233,7 @@ class AuthService
 
         Mail::to($email)->send(new ResetPasswordMail($token, $email));
 
-        return ['message' => 'Şifre sıfırlama linki e-posta adresinize gönderildi.'];
+        return ['message' => 'A password reset link has been sent to your email address.'];
     }
 
     public function resetPassword(string $email, string $token, string $password)
@@ -227,40 +261,77 @@ class AuthService
 
         return ['message' => 'Şifre başarıyla güncellendi.'];
     }
+    public function deleteUser($userId)
+    {
+        $user=User::find($userId);
+        return DB::transaction(function () use ($user) {
+
+            /* ----------------------------
+
+            /* ----------------------------
+           Soft Delete user
+        ---------------------------- */
+            $user->delete();
+
+            /* ----------------------------
+           Tokenları iptal et (logout)
+        ---------------------------- */
+            $user->refreshTokens()->delete();
+
+            return true;
+        });
+    }
+
     public function myProfile($userId)
     {
-        $user = User::with('testUserRoles.dog')->select()->find($userId);
-        if (!$user) {
-            throw new \Exception('Not Found.');
-        }
-        return new UserProfileResource($user);
-    }
-    public function myProfileUpdate($userId, array $data)
-    {
         $user = User::find($userId);
-        if (!$user) {
-            throw new \Exception('Not Found.');
-        }
-        if (isset($data['name'])) {
-            $user->name = $data['name'];
-        }
-        if (isset($data['phone'])) {
-            $user->phone = $data['phone'];
-        }
-        if (isset($data['location_city'])) {
-            $user->location_city = $data['location_city'];
-        }
-        if (isset($data['location_district'])) {
-            $user->location_district = $data['location_district'];
-        }
-        if (isset($data['biography'])) {
-            $user->biography = $data['biography'];
-        }
-        if (isset($data['photo'])) {
-            $path = $data['photo']->store('user_photos', 'public');
-            $user->photo = $path;
-        }
-        $user->save();
-        return new UserProfileResource($user);
+        return [
+            'id'            => $user->id,
+            'fullname'      => $user->name,
+            'email'         => $user->email,
+            'date_of_birth' => $user->date_of_birth,
+            'gender'        => $user->gender,
+            'country'       => $user->country,
+            'photo_url'     => $user->photo_url,
+
+        ];
+    }
+    public function updateProfile($user, array $data)
+    {
+        return DB::transaction(function () use ($user, $data) {
+
+            /* ----------------------------------
+           BASIC USER UPDATE (FULLNAME!)
+        ---------------------------------- */
+            $user->update([
+                'name'      => $data['fullname'] ?? $user->fullname,
+                'date_of_birth' => $data['date_of_birth'] ?? $user->date_of_birth,
+                'gender'        => $data['gender'] ?? $user->gender,
+                'country'       => $data['country'] ?? $user->country,
+            ]);
+
+            /* ----------------------------------
+           PROFILE PHOTO UPDATE
+        ---------------------------------- */
+            if (!empty($data['photo'])) {
+
+                $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $data['photo']);
+                $imageData = str_replace(' ', '+', $imageData);
+
+                $fileName = 'users/' . Str::uuid() . '.jpg';
+
+                Storage::disk('public')->put($fileName, base64_decode($imageData));
+
+                // eski fotoğrafı sil (varsa)
+                if ($user->photo && Storage::disk('public')->exists($user->photo)) {
+                    Storage::disk('public')->delete($user->photo);
+                }
+
+                $user->photo = $fileName;
+                $user->save();
+            }
+
+            return $user->fresh();
+        });
     }
 }

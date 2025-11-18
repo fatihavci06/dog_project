@@ -40,4 +40,5 @@ trait HasTranslations
     {
         return $this->translate('name');
     }
+
 }

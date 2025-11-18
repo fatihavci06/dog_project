@@ -6,11 +6,11 @@
 
 <h1 class="h3 mb-4 text-gray-800">User List</h1>
 
-<!-- Search + Role Filter Form -->
+{{-- Filter --}}
 <form method="GET" action="{{ route('users') }}" class="row g-2 mb-3">
     <div class="col-md-4">
         <input type="text" name="search" class="form-control" placeholder="Search by name"
-            value="{{ request('search') }}">
+               value="{{ request('search') }}">
     </div>
 
     <div class="col-md-4">
@@ -33,71 +33,103 @@
     </div>
 </form>
 
-<!-- Table -->
-<table class="table table-bordered">
-    <thead>
+{{-- Table --}}
+<table class="table table-bordered table-striped" id="userTable">
+    <thead class="bg-light">
         <tr>
             <th>#ID</th>
             <th>Name</th>
-            <th>Role</th>
             <th>Email</th>
+            <th>Pups 🐶</th>
             <th>Status</th>
-            <th>Created</th>
             <th>Actions</th>
         </tr>
     </thead>
+
     <tbody>
-        @forelse ($users as $user)
-            <tr id="user-{{ $user->id }}">
-                <td>{{ $user->id }}</td>
-                <td>{{ $user->name }}</td>
-                <td>{{ $user->role->name ?? 'No Role' }}</td>
-                <td>{{ $user->email }}</td>
-                <td>
-                    <button class="btn btn-sm toggle-status-btn
-                        {{ $user->status === 'active' ? 'btn-success' : 'btn-danger' }}"
-                        data-id="{{ $user->id }}">
-                        {{ ucfirst($user->status) }}
-                    </button>
-                </td>
-                <td>{{ $user->created_at->format('d-m-Y') }}</td>
-                <td>
-                    <a href="{{ route('users.show', $user->id) }}" class="btn btn-info btn-sm">
-                        <i class="fas fa-user"></i> View
-                    </a>
-                </td>
-            </tr>
-        @empty
-            <tr>
-                <td colspan="7" class="text-center">No users found.</td>
-            </tr>
-        @endforelse
+        @foreach($users as $user)
+        <tr id="user-{{ $user->id }}">
+            <td>{{ $user->id }}</td>
+
+            <td>
+                <strong>{{ $user->name }}</strong>
+            </td>
+
+            <td>{{ $user->email }}</td>
+
+            <td>
+                <span class="badge bg-warning text-dark">
+                    {{ $user->pup_count }}
+                </span>
+            </td>
+
+            {{-- STATUS BUTTON --}}
+            <td class="text-center">
+                <button
+                    class="btn btn-sm toggle-status-btn
+                        @if($user->status === 'active') btn-success
+                        @elseif($user->status === 'inactive') btn-warning
+                        @else btn-danger
+                        @endif"
+                    data-id="{{ $user->id }}"
+                >
+                    {{ ucfirst($user->status) }}
+                </button>
+            </td>
+
+            {{-- ACTIONS --}}
+            <td>
+
+                {{-- Pup Profiles --}}
+                <a href="{{ route('users.pups', $user->id) }}"
+                   class="btn btn-sm btn-warning"
+                   title="View Pups">
+                    <i class="fas fa-dog"></i>
+                </a>
+
+                {{-- View Full Profile --}}
+
+
+            </td>
+        </tr>
+        @endforeach
     </tbody>
 </table>
 
-<!-- Pagination -->
 <div class="mt-3">
     {{ $users->links() }}
 </div>
 
 @endsection
 
+
 @section('scripts')
 <script>
-document.querySelectorAll('.toggle-status-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        let userId = this.dataset.id;
-        let button = this;
+$(document).ready(function(){
+
+    // DataTable
+    $('#userTable').DataTable({
+        pageLength: 10,
+        ordering: true
+    });
+
+    // Status Toggle (3-state: active, inactive, banned)
+    $('.toggle-status-btn').on('click', function(){
+
+        let userId = $(this).data('id');
+        let btn = $(this);
 
         Swal.fire({
             title: 'Are you sure?',
-            text: "Change user status?",
+            text: "This will change the user's status.",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, change it!',
             cancelButtonText: 'Cancel'
         }).then((result) => {
-            if (result.isConfirmed) {
+
+            if(result.isConfirmed){
+
                 fetch(`/users/${userId}/toggle-status`, {
                     method: 'POST',
                     headers: {
@@ -107,22 +139,42 @@ document.querySelectorAll('.toggle-status-btn').forEach(btn => {
                 })
                 .then(res => res.json())
                 .then(data => {
+
                     if(data.success){
-                        button.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-                        if(data.status === 'active'){
-                            button.classList.remove('btn-danger');
-                            button.classList.add('btn-success');
-                        } else {
-                            button.classList.remove('btn-success');
-                            button.classList.add('btn-danger');
+
+                        let newStatus = data.status;
+
+                        // Change text
+                        btn.text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
+
+                        // Reset classes
+                        btn.removeClass('btn-success btn-warning btn-danger');
+
+                        // Add color by status
+                        if(newStatus === 'active'){
+                            btn.addClass('btn-success');
+                        }
+                        else if(newStatus === 'inactive'){
+                            btn.addClass('btn-warning');
+                        }
+                        else if(newStatus === 'banned'){
+                            btn.addClass('btn-danger');
                         }
 
-                        Swal.fire('Updated!', 'User status has been changed.', 'success');
+                        Swal.fire(
+                            'Updated!',
+                            `User status changed to ${newStatus}.`,
+                            'success'
+                        );
                     }
                 });
+
             }
-        })
+
+        });
+
     });
+
 });
 </script>
 @endsection

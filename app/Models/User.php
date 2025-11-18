@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,7 +14,9 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+     use SoftDeletes;
 
+    protected $dates = ['deleted_at'];
     /**
      * The attributes that are mass assignable.
      *
@@ -26,10 +29,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'role_id',
         'status',
         'onesignal_player_id',
-        'location_city',
-        'location_district',
+        'gender',
+        'country',
+        'photo_path',
         'biography',
-        'photo'
+        'photo',
+        'date_of_birth'
     ];
 
     /**
@@ -40,7 +45,10 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
-        'photo', 'created_at', 'updated_at', 'deleted_at'
+        'photo',
+        'created_at',
+        'updated_at',
+        'deleted_at'
     ];
 
     /**
@@ -99,11 +107,15 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(Role::class, 'id', 'role_id');
     }
-     public function notifications()
+    public function notifications()
     {
         return $this->belongsToMany(Notification::class, 'notification_user')
-                    ->withPivot(['is_read', 'sent_at'])
-                    ->withTimestamps();
+            ->withPivot(['is_read', 'sent_at'])
+            ->withTimestamps();
+    }
+    public function pupProfiles()
+    {
+        return $this->hasMany(PupProfile::class);
     }
 
 }

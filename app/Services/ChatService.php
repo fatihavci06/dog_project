@@ -107,7 +107,7 @@ class ChatService
                     'user' => [
                         'id' => $otherUser->id,
                         'name' => $otherUser->name,
-                        'avatar' => $otherUser->avatar ?? null,
+                        'avatar' => $otherUser->photo_url ?? null,
                     ],
                     'last_message' => $lastMessage ? [
                         'id' => $lastMessage->id,

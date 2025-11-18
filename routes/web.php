@@ -19,6 +19,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VibeController;
 use App\Http\Controllers\GenericCrudController;
 use App\Http\Controllers\MobileAppStepInfoController;
+use App\Http\Controllers\PupProfileController;
 use App\Http\Controllers\WebAnnouncmentController;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Middleware\AdminMiddleware;
@@ -39,8 +40,29 @@ Route::middleware([AdminMiddleware::class])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users');
     Route::get('/dog-list', [DogController::class, 'dogList'])->name('dogs');
     Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
-    Route::get('/users/questionnaire/{id}', [UserController::class, 'questionnaireShow'])->name('questionnaire.show');
+    Route::get('/users', [UserController::class, 'index'])->name('users');
+
+    // User Detail Page
+    // Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+
+
+    // Pup Profiles for a Specific User
+    Route::get('/users/{user}/pups', [UserController::class, 'pups'])
+        ->name('users.pups');
+
+    // Survey List for a Specific User
+
+
+
+
+
+    // Single Pup Detail Page
+    Route::get('/pups/{pup}', [PupProfileController::class, 'show'])
+        ->name('pups.show');
+
+    // Survey detail for a pup (one question)
+    Route::get('/pups/{pup}/survey/{question}', [PupProfileController::class, 'surveyDetail'])
+        ->name('pups.survey.show');
     Route::get('/messages/latest', [ChatController::class, 'latest'])
         ->name('messages.latest');
     Route::prefix('announcements')->name('announcements.')->group(function () {

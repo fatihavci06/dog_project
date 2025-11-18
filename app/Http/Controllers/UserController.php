@@ -3,36 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     //
-    public function index(Request $request)
-    {
-        $query = User::where(function ($q) {
-            $q->where('role_id', '!=', 1)
-                ->orWhereNull('role_id');
-        });
 
-        // Search özelliği
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
-        // Role filtreleme
-        if ($request->filled('role_id')) {
-            $query->where('role_id', $request->role_id);
-        }
-
-        // Rolleri al (select box için)
-        $roles = \App\Models\Role::all();
-
-        $users = $query->paginate(20)->withQueryString();
-
-        return view('users', compact('users', 'roles'));
-    }
 
     public function toggleStatus(User $user)
     {
@@ -44,30 +22,55 @@ class UserController extends Controller
             'status' => $user->status
         ]);
     }
-    public function show(User $user)
+    public function index(Request $request)
     {
-
-        $user->load([
-            'userDogs',
-            'testUserRoles.role', // role ilişkisini yükle
-            'testUserRoles.dog'   // dog ilişkisini yükle
+        $query = User::withCount([
+            'pupProfiles as pup_count',
+            'pupProfiles as survey_count' => function ($q) {
+                $q->join('pup_profile_answers', 'pup_profiles.id', '=', 'pup_profile_answers.pup_profile_id');
+            }
         ]);
 
+        if ($request->search) {
+            $query->where('name', 'LIKE', '%' . $request->search . '%');
+        }
 
-        return view('users.show', compact('user'));
+        if ($request->role_id) {
+            $query->whereHas('roles', function ($q) use ($request) {
+                $q->where('roles.id', $request->role_id);
+            });
+        }
+
+        $users = $query->paginate(20);
+        $roles = Role::all();
+
+        return view('users', compact('users', 'roles'));
     }
-    public function questionnaireShow(string $id)
+
+
+
+    // public function show(User $user)
+    // {
+    //     $user->load([
+    //         'roles'
+    //     ]);
+
+    //     return view('users.show', compact('user'));
+    // }
+
+
+
+    public function pups(User $user)
     {
-        $testId = $id;
+        $user->load([
+            'pupProfiles.images',
+            'pupProfiles.breed',
+            'pupProfiles.ageRange'
+        ]);
 
-        // Soruları ve ilgili test cevabı olan kullanıcı cevaplarını rank sırasına göre al
-        $questions = Question::with(['userAnswers' => function ($query) use ($testId) {
-            $query->where('test_id', $testId)
-                ->orderBy('rank', 'asc'); // rank'a göre sırala
-        }, 'options'])
-            ->where('is_active', 1) // aktif sorular
-            ->get();
-
-        return view('questionnaire.show', compact('questions', 'testId'));
+        return view('users.pups', compact('user'));
     }
+
+
+
 }

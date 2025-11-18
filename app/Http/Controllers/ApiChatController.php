@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChatSendRequest;
 use App\Services\ChatService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Redis;
 
 class ApiChatController extends ApiController
 {
@@ -22,6 +24,7 @@ class ApiChatController extends ApiController
 
     public function send(ChatSendRequest $request)
     {
+
 
         return  $this->chatService->sendMessage(
             $request->user_id,

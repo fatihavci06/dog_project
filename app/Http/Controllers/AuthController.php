@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\loginRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Http\Requests\RegisterRequest;
@@ -11,6 +12,7 @@ use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends ApiController
@@ -21,6 +23,15 @@ class AuthController extends ApiController
     {
         $this->authService = $authService;
     }
+    public function changePassword(ChangePasswordRequest $request)
+{
+    $user = User::find($request->user_id);
+
+  return  $this->authService->changePassword($user, $request->validated());
+
+
+}
+
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
@@ -66,6 +77,7 @@ class AuthController extends ApiController
     }
     public function logoutApi(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'refresh_token' => 'required|string',
         ]);
@@ -87,8 +99,11 @@ class AuthController extends ApiController
             return response()->json(['message' => $e->getMessage()], 400);
         }
     }
-
     public function register(RegisterRequest $request)
+    {
+        $this->authService->register($request->all());
+    }
+    public function register2(RegisterRequest $request)
     {
         try {
             // Kullanıcıyı register et (tüm işlemler servis içinde yapılacak)
@@ -129,13 +144,7 @@ class AuthController extends ApiController
 
 
         try {
-            $data = $this->authService->login($request->only('email', 'password'));
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Successfull',
-                'data' => $data
-            ], 200);
+            return $this->authService->login($request->only('email', 'password'));
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -158,9 +167,7 @@ class AuthController extends ApiController
 
         try {
             $data   = $validator->validated();
-            $tokens = $this->authService->refresh($data['refresh_token']);
-
-            return response()->json($tokens);
+            return $tokens = $this->authService->refresh($data['refresh_token']);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -180,12 +187,7 @@ class AuthController extends ApiController
             ], 422);
         }
 
-        try {
-            $result = $this->authService->forgotPassword($request->input('email'));
-            return response()->json($result);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 400);
-        }
+        return $result = $this->authService->forgotPassword($request->input('email'));
     }
 
     public function resetPassword(Request $request)
@@ -252,6 +254,20 @@ class AuthController extends ApiController
     }
     public function myProfileUpdate(ProfileUpdateRequest $request)
     {
-        return $this->authService->myProfileUpdate($request->user_id, $request->all());
+        return $this->authService->updateProfile(
+            User::find($request->user_id),
+            $request->validated()
+        );
+    }
+    public function deleteProfile(Request $request)
+    {
+
+
+        $this->authService->deleteUser($request->user_id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your profile has been deleted successfully.'
+        ]);
     }
 }

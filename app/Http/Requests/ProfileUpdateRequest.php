@@ -11,21 +11,29 @@ class ProfileUpdateRequest extends BaseRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+     public function rules():array
     {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+        return [
 
-            'location_city' => 'nullable|string|max:100',
-            'location_district' => 'nullable|string|max:100',
-            'biography' => 'nullable|string',
-            'photo' => 'nullable|image|max:5048', // Maksimum 5048 KB
+            /* Tek alan: fullname */
+            'fullname'      => 'required|string|max:150',
+
+            'date_of_birth' => 'nullable|date|before:today',
+            'gender'        => 'nullable|in:male,female,other',
+            'country'       => 'nullable|string|max:120',
+
+            'photo' => [
+                'nullable',
+                'string',
+                'regex:/^data:image\/(jpeg|jpg|png);base64,/'
+            ],
         ];
+    }
 
-        // Eğer method PUT veya PATCH ise update işlemi olarak varsay
-
-
-        return $rules;
+    public function messages()
+    {
+        return [
+            'photo.regex' => 'Profile photo must be a valid base64 image.'
+        ];
     }
 }
