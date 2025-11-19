@@ -15,12 +15,23 @@ class GenericMultilangService
     public function listForApi($locale)
     {
         return $this->model->all()->map(function ($item) use ($locale) {
-            return [
-                'id' => $item->id,
-                'name' => $item->translate('name', $locale)
+
+            // Temel alanlar
+            $data = [
+                'id'   => $item->id,
+                'name' => $item->translate('name', $locale),
             ];
+
+            // 🔥 Eğer model Bread ise icon eklensin
+            if ($item instanceof \App\Models\Vibe) {
+                // Modelde getIconPathAttribute varsa direkt icon_path kullanılır
+                $data['icon'] = $item->icon_path;
+            }
+
+            return $data;
         });
     }
+
 
     public function all($locale)
     {

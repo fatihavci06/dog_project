@@ -9,5 +9,10 @@ class Vibe extends Model
 {
    use HasTranslations;
 
-    protected $fillable = [];
+    protected $fillable = ['icon_path'];
+
+    public function getIconPathAttribute($value)
+    {
+        return $value ? url('storage/' . ltrim($value, '/')) : null;
+    }
 }

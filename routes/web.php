@@ -103,6 +103,6 @@ Route::middleware([AdminMiddleware::class])->group(function () {
     });
     Route::get('/{model}', [GenericCrudController::class, 'index'])->name('generic.index');
     Route::post('/{model}', [GenericCrudController::class, 'store'])->name('generic.store');
-    Route::post('/{model}/{id}', [GenericCrudController::class, 'update'])->name('generic.update');
+    Route::put('/{model}/{id}', [GenericCrudController::class, 'update'])->name('generic.update');
     Route::delete('/{model}/{id}', [GenericCrudController::class, 'destroy'])->name('generic.destroy');
 });

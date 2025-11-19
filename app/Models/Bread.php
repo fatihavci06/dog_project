@@ -10,4 +10,5 @@ class Bread extends Model
     use HasTranslations;
 
     protected $fillable = [];
+
 }

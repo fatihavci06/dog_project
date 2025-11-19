@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\PupMatchmakingService;
+use Illuminate\Http\Request;
+
+class ApiPupMatchController extends ApiController
+{
+    public function matches(Request $request, int $pupProfileId, PupMatchmakingService $service)
+{
+    $page     = (int) $request->get('page', 1);
+    $perPage  = (int) $request->get('per_page', 10);
+
+    return $service->getMatchesPaginated(
+        $pupProfileId,
+        $request->user_id,
+        $page,
+        $perPage
+    );
+}
+
+}

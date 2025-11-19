@@ -9,6 +9,7 @@ use App\Http\Controllers\ApiChatController;
 use App\Http\Controllers\ApiLocationController;
 use App\Http\Controllers\ApiMessageController;
 use App\Http\Controllers\ApiMobilAppRegisterInformationController;
+use App\Http\Controllers\ApiPupMatchController;
 use App\Http\Controllers\ApiPupProfileController;
 use App\Http\Controllers\DogController;
 use App\Http\Controllers\NotificationController;
@@ -31,6 +32,8 @@ Route::prefix('question')->group(function () {
     Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
 });
 Route::middleware([JwtMiddleware::class])->group(function () {
+    Route::get('/pup/{pupProfileId}/matches', [ApiPupMatchController::class, 'matches']);
+
     Route::get('users', [AuthController::class, 'index']);
     Route::post('my-profile/change-password', [AuthController::class, 'changePassword']);
     Route::get('my-profile', [AuthController::class, 'myProfile']);
