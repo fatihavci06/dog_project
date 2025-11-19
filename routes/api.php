@@ -6,6 +6,8 @@ use App\Http\Controllers\ApiNotificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ApiCalendarController;
 use App\Http\Controllers\ApiChatController;
+use App\Http\Controllers\ApiFavoriteController;
+use App\Http\Controllers\ApiFriendshipController;
 use App\Http\Controllers\ApiLocationController;
 use App\Http\Controllers\ApiMessageController;
 use App\Http\Controllers\ApiMobilAppRegisterInformationController;
@@ -33,6 +35,18 @@ Route::prefix('question')->group(function () {
 });
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/pup/{pupProfileId}/matches', [ApiPupMatchController::class, 'matches']);
+    Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
+    Route::post('/friend/accept', [ApiFriendshipController::class, 'accept']);
+    Route::post('/friend/reject', [ApiFriendshipController::class, 'reject']);
+    Route::get('/friends',        [ApiFriendshipController::class, 'friends']);
+    Route::get('/friend/incoming', [ApiFriendshipController::class, 'incoming']);
+    Route::get('/friend/outgoing', [ApiFriendshipController::class, 'outgoing']);
+    Route::post('/friend/unfriend', [ApiFriendshipController::class, 'unfriend']);
+
+    // Favorites
+    Route::post('/favorite/add',    [ApiFavoriteController::class, 'add']);
+    Route::post('/favorite/remove', [ApiFavoriteController::class, 'remove']);
+    Route::get('/favorite/list',    [ApiFavoriteController::class, 'list']);
 
     Route::get('users', [AuthController::class, 'index']);
     Route::post('my-profile/change-password', [AuthController::class, 'changePassword']);

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Friendship;
 use App\Models\PupProfile;
 use App\Models\PupProfileAnswer;
 use Exception;
@@ -162,17 +163,41 @@ class PupMatchmakingService
         int $page = 1,
         int $perPage = 10
     ): array {
-        $mainAnswers = $this->getPupAnswers($pupProfileId);
-        if(!PupProfile::where('id',$pupProfileId)->where('user_id',  $authUserId)->exists()){
-            throw new Exception('Not found',404);
+
+        // 1) Bu profile gerçekten giriş yapan kullanıcıya mı ait?
+        if (!PupProfile::where('id', $pupProfileId)->where('user_id', $authUserId)->exists()) {
+            throw new Exception('Not found', 404);
         }
-        // kendi profilleri hariç
-        $otherProfiles = PupProfile::with('images')->where('id', '!=', $pupProfileId)
+
+        // 2) Kullanıcının arkadaş ID’lerini çek
+        $friendIds = Friendship::where(function ($q) use ($authUserId) {
+            $q->where('sender_id', $authUserId)
+                ->where('status', 'accepted');
+        })
+            ->orWhere(function ($q) use ($authUserId) {
+                $q->where('receiver_id', $authUserId)
+                    ->where('status', 'accepted');
+            })
+            ->get()
+            ->map(fn($f) => $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id)
+            ->toArray();
+
+        // ❗ arkadaşların PupProfile ID’lerini bul
+        $friendProfileIds = PupProfile::whereIn('user_id', $friendIds)->pluck('id')->toArray();
+
+        // 3) Ana profilin cevaplarını al
+        $mainAnswers = $this->getPupAnswers($pupProfileId);
+
+        // 4) Diğer profilleri getir → kendi profili + kendi user_id + arkadaş profilleri hariç
+        $otherProfiles = PupProfile::with('images')
+            ->where('id', '!=', $pupProfileId)
             ->where('user_id', '!=', $authUserId)
+            ->whereNotIn('id', $friendProfileIds) // 🔥 arkadaşlar çıkartıldı
             ->get();
 
         $result = [];
 
+        // 5) Eşleşmeleri hesapla
         foreach ($otherProfiles as $profile) {
 
             $otherAnswers = $this->getPupAnswers($profile->id);
@@ -183,21 +208,21 @@ class PupMatchmakingService
             $result[] = [
                 'profile_id'  => $profile->id,
                 'name'        => $profile->name,
-                'photo'=>$profile->images[0]->path??null,
-                'user_id'=>$profile->user_id,
-                'breed_id'    => $profile->breed_id,
+                'photo'       => $profile->images[0]->path ?? null,
+                'user_id'     => $profile->user_id,
+                'biography'   => $profile->biography,
                 'match_type'  => $matchType,
                 'match_score' => $score,
             ];
         }
 
-        // Score'a göre sırala
+        // 6) Score'a göre sırala
         $sorted = collect($result)->sortByDesc('match_score')->values();
 
-        // Pagination hesapları
-        $total = $sorted->count();
-        $lastPage = (int) ceil($total / $perPage);
-        $offset = ($page - 1) * $perPage;
+        // 7) Pagination
+        $total     = $sorted->count();
+        $lastPage  = (int) ceil($total / $perPage);
+        $offset    = ($page - 1) * $perPage;
 
         $paged = $sorted->slice($offset, $perPage)->values()->toArray();
 
