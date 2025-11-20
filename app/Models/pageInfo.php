@@ -9,6 +9,7 @@ class PageInfo extends Model
 {
     use HasPageInfoTranslations;
 
+
     protected $fillable = ['page_name', 'image_path'];
 
     protected $hidden = ['created_at', 'updated_at'];
