@@ -29,10 +29,10 @@ services:
     image: mysql:8
     container_name: laravel-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: Avc0666x*x*
       MYSQL_DATABASE: dog_project
       MYSQL_USER: laravel
-      MYSQL_PASSWORD: secret
+      MYSQL_PASSWORD: Avc0666x*x*
     ports:
       - "3307:3306"
     volumes:
@@ -44,7 +44,7 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_USER: root
-      PMA_PASSWORD: secret
+      PMA_PASSWORD: Avc0666x*x*
     ports:
       - "8081:80"
     depends_on:
