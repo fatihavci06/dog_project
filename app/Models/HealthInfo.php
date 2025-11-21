@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class HealthInfo extends Model
 {
-   use HasTranslations;
+    use HasTranslations;
 
     protected $fillable = [];
+    public function pupProfiles()
+    {
+        return $this->belongsToMany(PupProfile::class, 'pup_profile_looking_for');
+    }
 }

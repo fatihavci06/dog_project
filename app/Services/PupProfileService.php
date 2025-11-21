@@ -102,34 +102,55 @@ class PupProfileService
         return $pups->map(function ($p) {
 
             return [
-                'id'                       => $p->id,
-                'user_id'                  => $p->user_id,
-                'name'                     => $p->name,
-                'sex'                      => $p->sex,
+                'id'          => $p->id,
+                'user_id'     => $p->user_id,
+                'name'        => $p->name,
+                'sex'         => $p->sex,
 
-                'breed'                    => $p->breed ? ['id' => $p->breed->id, 'name' => $p->breed->name] : null,
-                'age_range'                => $p->ageRange ? ['id' => $p->ageRange->id, 'name' => $p->ageRange->name] : null,
-                'looking_for'              => $p->lookingFor ? ['id' => $p->lookingFor->id, 'name' => $p->lookingFor->name] : null,
-                'vibe'                     => $p->vibe ? ['id' => $p->vibe->id, 'name' => $p->vibe->name] : null,
-                'health_info'              => $p->healthInfo ? ['id' => $p->healthInfo->id, 'name' => $p->healthInfo->name] : null,
-                'travel_radius'            => $p->travelRadius ? ['id' => $p->travelRadius->id, 'name' => $p->travelRadius->name] : null,
-                'availability_for_meetup'  => $p->availabilityForMeetup ? ['id' => $p->availabilityForMeetup->id, 'name' => $p->availabilityForMeetup->name] : null,
+                // Tekli FK'ler
+                'breed'       => $p->breed ? ['id' => $p->breed->id, 'name' => $p->breed->name] : null,
+                'age_range'   => $p->ageRange ? ['id' => $p->ageRange->id, 'name' => $p->ageRange->name] : null,
+                'travel_radius' => $p->travelRadius
+                    ? ['id' => $p->travelRadius->id, 'name' => $p->travelRadius->name]
+                    : null,
 
-                'lat'                      => $p->lat,
-                'long'                     => $p->long,
-                'city'                     => $p->city,
-                'district'                 => $p->district,
-                'biography'                => $p->biography,
-
-                // 🐶 Photos
-                'images' => $p->images->map(fn($img) => [
-                    'id'    => $img->id,
-                    'path'  => $img->path
+                // Çoklu pivot alanlar
+                'looking_for' => $p->lookingFor->map(fn($i) => [
+                    'id'   => $i->id,
+                    'name' => $i->name
                 ]),
 
+                'vibe' => $p->vibe->map(fn($i) => [
+                    'id'   => $i->id,
+                    'name' => $i->name
+                ]),
+
+                'health_info' => $p->healthInfo->map(fn($i) => [
+                    'id'   => $i->id,
+                    'name' => $i->name
+                ]),
+
+                'availability_for_meetup' => $p->availabilityForMeetup->map(fn($i) => [
+                    'id'   => $i->id,
+                    'name' => $i->name
+                ]),
+
+                // Konum
+                'lat'       => $p->lat,
+                'long'      => $p->long,
+                'city'      => $p->city,
+                'district'  => $p->district,
+                'biography' => $p->biography,
+
+                // Resimler
+                'images' => $p->images->map(fn($img) => [
+                    'id'   => $img->id,
+                    'path' => $img->path
+                ]),
             ];
         });
     }
+
     public function getSurveyAnswers($pupId)
     {
         $pup = PupProfile::with([
@@ -165,25 +186,42 @@ class PupProfileService
     {
         return DB::transaction(function () use ($user, $data) {
 
-            /* ---------------- CREATE PUP PROFILE ---------------- */
+            /* ---------------- CREATE MAIN PROFILE ---------------- */
 
             $profile = PupProfile::create([
-                'user_id'                     => $user->id,
-                'name'                        => $data['name'] ?? null,
-                'sex'                         => $data['sex'] ?? null,
-                'breed_id'                    => $data['breed_id'] ?? null,
-                'age_range_id'                => $data['age_range_id'] ?? null,
-                'looking_for_id'              => $data['looking_for_id'] ?? null,
-                'vibe_id'                     => $data['vibe_id'] ?? null,
-                'health_info_id'              => $data['health_info_id'] ?? null,
-                'travel_radius_id'            => $data['travel_radius_id'] ?? null,
-                'availability_for_meetup_id'  => $data['availability_for_meetup_id'] ?? null,
-                'lat'                         => $data['location']['lat'] ?? null,
-                'long'                        => $data['location']['long'] ?? null,
-                'city'                        => $data['location']['city'] ?? null,
-                'district'                    => $data['location']['district'] ?? null,
-                'biography'                   => $data['biografy'] ?? null,
+                'user_id'          => $user->id,
+                'name'             => $data['name'] ?? null,
+                'sex'              => $data['sex'] ?? null,
+                'breed_id'         => $data['breed_id'] ?? null,
+                'age_range_id'     => $data['age_range_id'] ?? null,
+                'travel_radius_id' => $data['travel_radius_id'] ?? null,
+
+                'lat'      => $data['location']['lat'] ?? null,
+                'long'     => $data['location']['long'] ?? null,
+                'city'     => $data['location']['city'] ?? null,
+                'district' => $data['location']['district'] ?? null,
+
+                'biography' => $data['biografy'] ?? null,
             ]);
+
+
+            /* ---------------- PIVOT TABLE SYNC ---------------- */
+
+            if (!empty($data['looking_for_id'])) {
+                $profile->lookingFor()->sync($data['looking_for_id']);
+            }
+
+            if (!empty($data['vibe_id'])) {
+                $profile->vibe()->sync($data['vibe_id']);
+            }
+
+            if (!empty($data['health_info_id'])) {
+                $profile->healthInfo()->sync($data['health_info_id']);
+            }
+
+            if (!empty($data['availability_for_meetup_id'])) {
+                $profile->availabilityForMeetup()->sync($data['availability_for_meetup_id']);
+            }
 
 
             /* ---------------- SAVE IMAGES (BASE64) ---------------- */
@@ -195,15 +233,32 @@ class PupProfileService
             }
 
 
+            /* ---------------- SAVE SURVEY ANSWERS ---------------- */
 
+            if (!empty($data['answers'])) {
+                foreach ($data['answers'] as $answer) {
 
+                    $questionId = $answer['question_id'];
+                    $orderedOptions = $answer['ordered_option_ids'];
+
+                    foreach ($orderedOptions as $index => $optionId) {
+                        PupProfileAnswer::create([
+                            'pup_profile_id' => $profile->id,
+                            'question_id'    => $questionId,
+                            'option_id'      => $optionId,
+                            'order_index'    => $index + 1,
+                        ]);
+                    }
+                }
+            }
 
             return $profile;
         });
     }
+
     public function updatePupProfileForUser($user, $pupId, array $data)
     {
-         DB::transaction(function () use ($user, $pupId, $data) {
+        DB::transaction(function () use ($user, $pupId, $data) {
 
             /* ---------------- FIND PROFILE ---------------- */
             $profile = PupProfile::where('id', $pupId)
@@ -214,37 +269,52 @@ class PupProfileService
                 throw new \Exception("Pup not found or unauthorized", 404);
             }
 
-            /* ---------------- UPDATE PROFILE ---------------- */
+            /* ---------------- UPDATE MAIN PROFILE ---------------- */
             $profile->update([
-                'name'                        => $data['name'] ?? $profile->name,
-                'sex'                         => $data['sex'] ?? $profile->sex,
-                'breed_id'                    => $data['breed_id'] ?? $profile->breed_id,
-                'age_range_id'                => $data['age_range_id'] ?? $profile->age_range_id,
-                'looking_for_id'              => $data['looking_for_id'] ?? $profile->looking_for_id,
-                'vibe_id'                     => $data['vibe_id'] ?? $profile->vibe_id,
-                'health_info_id'              => $data['health_info_id'] ?? $profile->health_info_id,
-                'travel_radius_id'            => $data['travel_radius_id'] ?? $profile->travel_radius_id,
-                'availability_for_meetup_id'  => $data['availability_for_meetup_id'] ?? $profile->availability_for_meetup_id,
+                'name'            => $data['name'] ?? $profile->name,
+                'sex'             => $data['sex'] ?? $profile->sex,
+                'breed_id'        => $data['breed_id'] ?? $profile->breed_id,
+                'age_range_id'    => $data['age_range_id'] ?? $profile->age_range_id,
+                'travel_radius_id' => $data['travel_radius_id'] ?? $profile->travel_radius_id,
 
-                'lat'       => $data['location']['lat'] ?? $profile->lat,
-                'long'      => $data['location']['long'] ?? $profile->long,
-                'city'      => $data['location']['city'] ?? $profile->city,
-                'district'  => $data['location']['district'] ?? $profile->district,
+                // location
+                'lat'      => $data['location']['lat'] ?? $profile->lat,
+                'long'     => $data['location']['long'] ?? $profile->long,
+                'city'     => $data['location']['city'] ?? $profile->city,
+                'district' => $data['location']['district'] ?? $profile->district,
 
+                // biography
                 'biography' => $data['biografy'] ?? $profile->biography,
             ]);
 
-            /* ---------------- NEW IMAGES ---------------- */
+            /* ---------------- SYNC MULTIPLE PIVOT RELATIONS ---------------- */
+
+            if (isset($data['looking_for_id'])) {
+                $profile->lookingFor()->sync($data['looking_for_id']);
+            }
+
+            if (isset($data['vibe_id'])) {
+                $profile->vibe()->sync($data['vibe_id']);
+            }
+
+            if (isset($data['health_info_id'])) {
+                $profile->healthInfo()->sync($data['health_info_id']);
+            }
+
+            if (isset($data['availability_for_meetup_id'])) {
+                $profile->availabilityForMeetup()->sync($data['availability_for_meetup_id']);
+            }
+
+
+            /* ---------------- SAVE NEW IMAGES (BASE64) ---------------- */
             if (!empty($data['images'])) {
                 foreach ($data['images'] as $imageBase64) {
                     $this->saveBase64Image($profile, $imageBase64);
                 }
             }
-
-
         });
-
     }
+
 
 
 

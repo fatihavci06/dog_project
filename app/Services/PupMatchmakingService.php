@@ -189,7 +189,7 @@ class PupMatchmakingService
         $mainAnswers = $this->getPupAnswers($pupProfileId);
 
         // 4) Diğer profilleri getir → kendi profili + kendi user_id + arkadaş profilleri hariç
-        $otherProfiles = PupProfile::with('images')
+        $otherProfiles = PupProfile::with(['images', 'vibe'])
             ->where('id', '!=', $pupProfileId)
             ->where('user_id', '!=', $authUserId)
             ->whereNotIn('id', $friendProfileIds) // 🔥 arkadaşlar çıkartıldı
@@ -211,6 +211,10 @@ class PupMatchmakingService
                 'photo'       => $profile->images[0]->path ?? null,
                 'user_id'     => $profile->user_id,
                 'biography'   => $profile->biography,
+                'vibe' => $profile->vibe->map(fn($v) => [
+                    'id'   => $v->id,
+                    'name' => $v->name,
+                ]),
                 'match_type'  => $matchType,
                 'match_score' => $score,
             ];

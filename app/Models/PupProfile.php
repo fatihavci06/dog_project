@@ -12,11 +12,7 @@ class PupProfile extends Model
         'sex',
         'breed_id',
         'age_range_id',
-        'looking_for_id',
-        'vibe_id',
-        'health_info_id',
         'travel_radius_id',
-        'availability_for_meetup_id',
         'lat',
         'long',
         'city',
@@ -24,49 +20,52 @@ class PupProfile extends Model
         'biography'
     ];
 
+    /* ------------------ RELATIONS ------------------ */
+
     public function images()
-{
-    return $this->hasMany(PupProfileImage::class);
-}
+    {
+        return $this->hasMany(PupProfileImage::class);
+    }
 
-public function answers()
-{
-    return $this->hasMany(PupProfileAnswer::class);
-}
+    public function answers()
+    {
+        return $this->hasMany(PupProfileAnswer::class);
+    }
 
-public function breed()
-{
-    return $this->belongsTo(Bread::class);
-}
+    public function breed()
+    {
+        return $this->belongsTo(Bread::class);
+    }
 
-public function ageRange()
-{
-    return $this->belongsTo(AgeRange::class);
-}
+    public function ageRange()
+    {
+        return $this->belongsTo(AgeRange::class);
+    }
 
-public function lookingFor()
-{
-    return $this->belongsTo(LookingFor::class);
-}
+    public function travelRadius()
+    {
+        return $this->belongsTo(TravelRadius::class);
+    }
 
-public function vibe()
-{
-    return $this->belongsTo(Vibe::class);
-}
+    /* ------------------ NEW PIVOT RELATIONS ------------------ */
 
-public function healthInfo()
-{
-    return $this->belongsTo(HealthInfo::class);
-}
+    public function lookingFor()
+    {
+        return $this->belongsToMany(LookingFor::class, 'pup_profile_looking_for');
+    }
 
-public function travelRadius()
-{
-    return $this->belongsTo(TravelRadius::class);
-}
+    public function vibe()
+    {
+        return $this->belongsToMany(Vibe::class, 'pup_profile_vibe');
+    }
 
-public function availabilityForMeetup()
-{
-    return $this->belongsTo(AvailabilityForMeetup::class);
-}
+    public function healthInfo()
+    {
+        return $this->belongsToMany(HealthInfo::class, 'pup_profile_health_info');
+    }
 
+    public function availabilityForMeetup()
+    {
+        return $this->belongsToMany(AvailabilityForMeetup::class, 'pup_profile_availability');
+    }
 }

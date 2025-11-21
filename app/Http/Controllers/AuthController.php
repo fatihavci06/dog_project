@@ -101,19 +101,16 @@ class AuthController extends ApiController
     }
     public function register(RegisterRequest $request)
     {
+
         $this->authService->register($request->all());
     }
     public function register2(RegisterRequest $request)
     {
         try {
             // Kullanıcıyı register et (tüm işlemler servis içinde yapılacak)
-            $user = $this->authService->register($request->all());
+            return  $this->authService->register($request->all());
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Kullanıcı başarıyla oluşturuldu. Lütfen e-posta adresinizi doğrulayın.',
-                'user' => $user
-            ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',

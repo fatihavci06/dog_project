@@ -6,14 +6,12 @@ use Illuminate\Validation\Rule;
 
 class RegisterRequest extends BaseRequest
 {
-
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * Validation Rules
      */
     public function rules(): array
     {
+
         return [
 
             /* ----------------------------- USER FIELDS ----------------------------- */
@@ -35,28 +33,39 @@ class RegisterRequest extends BaseRequest
             'pup_profile' => 'nullable|array',
 
             'pup_profile.name' => 'nullable|string|max:255',
+
             'pup_profile.sex'  => [
                 'nullable',
-                Rule::in(['male', 'female','neutered'])
+                Rule::in(['male', 'female', 'neutered'])
             ],
 
-            /* ------------------------------ OPTIONAL FK -------------------------------- */
+            /* ------------------------------ SINGLE SELECT ------------------------------ */
 
-            'pup_profile.breed_id' => 'nullable|exists:breads,id',
-            'pup_profile.age_range_id' => 'nullable|exists:age_ranges,id',
-            'pup_profile.looking_for_id' => 'nullable|exists:looking_fors,id',
-            'pup_profile.vibe_id' => 'nullable|exists:vibes,id',
-            'pup_profile.health_info_id' => 'nullable|exists:health_infos,id',
-            'pup_profile.travel_radius_id' => 'nullable|exists:travel_radius,id',
-            'pup_profile.availability_for_meetup_id' => 'nullable|exists:availability_for_meetups,id',
+            'pup_profile.breed_id'          => 'nullable|integer|exists:breads,id',
+            'pup_profile.age_range_id'      => 'nullable|integer|exists:age_ranges,id',
+            'pup_profile.travel_radius_id'  => 'nullable|integer|exists:travel_radius,id',
+
+            /* ------------------------------ MULTI SELECT ------------------------------ */
+
+            'pup_profile.looking_for_id'   => 'nullable|array|min:1',
+            'pup_profile.looking_for_id.*' => 'integer|distinct|exists:looking_fors,id',
+
+            'pup_profile.vibe_id'   => 'nullable|array|min:1',
+            'pup_profile.vibe_id.*' => 'integer|distinct|exists:vibes,id',
+
+            'pup_profile.health_info_id'   => 'nullable|array|min:1',
+            'pup_profile.health_info_id.*' => 'integer|distinct|exists:health_infos,id',
+
+            'pup_profile.availability_for_meetup_id'   => 'nullable|array|min:1',
+            'pup_profile.availability_for_meetup_id.*' => 'integer|distinct|exists:availability_for_meetups,id',
 
             /* --------------------------- LOCATION OPTIONAL --------------------------- */
 
             'pup_profile.location' => 'nullable|array',
 
-            'pup_profile.location.lat'     => 'nullable|string',
-            'pup_profile.location.long'    => 'nullable|string',
-            'pup_profile.location.city'    => 'nullable|string|max:255',
+            'pup_profile.location.lat'      => 'nullable|string',
+            'pup_profile.location.long'     => 'nullable|string',
+            'pup_profile.location.city'     => 'nullable|string|max:255',
             'pup_profile.location.district' => 'nullable|string|max:255',
 
             /* ------------------------------- BIOGRAPHY -------------------------------- */
@@ -80,7 +89,7 @@ class RegisterRequest extends BaseRequest
                 'exists:options,id'
             ],
 
-            /* ------------------------- IMAGES (BASE64 REQUIRED) ------------------------ */
+            /* ------------------------- IMAGES (BASE64) ------------------------ */
 
             'pup_profile.images' => 'nullable|array',
 
@@ -92,14 +101,6 @@ class RegisterRequest extends BaseRequest
         ];
     }
 
-    public function messages()
-    {
-        return [
-            'pup_profile.answers.*.ordered_option_ids.*.exists' =>
-            'Option ID question ile eşleşmiyor veya options tablosunda bulunamadı.',
 
-            'pup_profile.images.*.regex' =>
-            'Images base64 formatında olmalıdır (data:image/jpeg;base64,...)',
-        ];
-    }
+
 }

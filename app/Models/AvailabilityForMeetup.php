@@ -10,4 +10,8 @@ class AvailabilityForMeetup extends Model
     use HasTranslations;
 
     protected $fillable = [];
+    public function pupProfiles()
+    {
+        return $this->belongsToMany(PupProfile::class, 'pup_profile_looking_for');
+    }
 }
