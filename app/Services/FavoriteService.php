@@ -47,7 +47,10 @@ class FavoriteService
 
     public function list(int $userId, int $page = 1, int $perPage = 10)
     {
-        // Arkadaş oldukları favoride görünmesin
+
+        /* -------------------------------
+       1) Friend olanları listeden çıkar
+    --------------------------------*/
         $friendIds = Friendship::where(function ($q) use ($userId) {
             $q->where('sender_id', $userId)
                 ->where('status', 'accepted');
@@ -60,17 +63,50 @@ class FavoriteService
             ->map(fn($f) => $f->sender_id == $userId ? $f->receiver_id : $f->sender_id)
             ->toArray();
 
-        // FAVORİLERİ GETİR
-        $favorites = Favorite::where('user_id', $userId)
+
+        /* -------------------------------
+       2) Favorileri çek
+    --------------------------------*/
+        $favorites = Favorite::with('favoriteUser') // User modeli
+            ->where('user_id', $userId)
             ->whereNotIn('favorite_id', $friendIds)
             ->get();
 
-        // PAGINATION
-        $total     = $favorites->count();
+
+        /* -------------------------------
+       3) Favori user’ın PupProfile’ını çek
+    --------------------------------*/
+        $mapped = $favorites->map(function ($fav) {
+
+            $user = $fav->favoriteUser;
+
+            // Bu user'a ait pup profile (ilk kayıt)
+            $pup = \App\Models\PupProfile::with('images')
+                ->where('user_id', $user->id)
+                ->first();
+
+            return [
+                'favorite_id' => $user->id,
+                'name'        => $user->name ?? null,
+
+                // pup profile bilgileri
+                'biography' => $pup->biography ?? null,
+                'photo'     => $pup?->images[0]->path ?? null,
+
+                // favori kaydının kendi ID’si
+                'favorite_record_id' => $fav->id,
+            ];
+        });
+
+
+        /* -------------------------------
+       4) Custom Pagination
+    --------------------------------*/
+        $total     = $mapped->count();
         $lastPage  = (int) ceil($total / $perPage);
         $offset    = ($page - 1) * $perPage;
 
-        $paged = $favorites->slice($offset, $perPage)->values();
+        $paged = $mapped->slice($offset, $perPage)->values();
 
         return [
             'current_page' => $page,
