@@ -7,11 +7,10 @@ services:
             dockerfile: docker/php/Dockerfile
         container_name: laravel-app
         volumes:
-            - ./:/var/www/html:cached
+            - ./:/var/www/html:delegated   # burada değişti!
         depends_on:
             - mysql
             - redis
-        # PORT YOK! PHP-FPM dışarı açılmaz
 
     nginx:
         image: nginx:alpine
@@ -20,7 +19,7 @@ services:
             - "80:80"
         volumes:
             - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-            - ./:/var/www/html:cached
+            - ./:/var/www/html:delegated
         depends_on:
             - app
 
@@ -50,9 +49,9 @@ services:
         container_name: laravel-horizon
         command: php artisan horizon
         volumes:
-            - ./:/var/www/html:cached
-            - ./storage:/var/www/html/storage:cached
-            - ./bootstrap/cache:/var/www/html/bootstrap/cache:cached
+            - ./:/var/www/html:delegated
+            - ./storage:/var/www/html/storage:delegated
+            - ./bootstrap/cache:/var/www/html/bootstrap/cache:delegated
         depends_on:
             - redis
             - mysql
