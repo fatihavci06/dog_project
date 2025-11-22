@@ -11,8 +11,7 @@ services:
         depends_on:
             - mysql
             - redis
-        ports:
-            - "8000:8000"
+        # PORT YOK! PHP-FPM dışarı açılmaz
 
     nginx:
         image: nginx:alpine
