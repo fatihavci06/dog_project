@@ -25,16 +25,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-
-# Proje dosyalarını kopyala
+# Projeyi kopyala
 COPY . .
 
-
-
-# Composer install
+# Composer Install (prod)
 ENV COMPOSER_MEMORY_LIMIT=-1
 RUN composer install --no-dev --optimize-autoloader
-
-
 
 CMD ["php-fpm"]
