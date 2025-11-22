@@ -20,12 +20,6 @@ opcache.save_comments=1
 opcache.fast_shutdown=1
 EOF
 
-# PHP-FPM WORKER PERFORMANCE AYARLARI
-RUN sed -i "s/pm.max_children = .*/pm.max_children = 20/" /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i "s/pm.start_servers = .*/pm.start_servers = 10/" /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i "s/pm.min_spare_servers = .*/pm.min_spare_servers = 10/" /usr/local/etc/php-fpm.d/www.conf \
-    && sed -i "s/pm.max_spare_servers = .*/pm.max_spare_servers = 15/" /usr/local/etc/php-fpm.d/www.conf
-
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
