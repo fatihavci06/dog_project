@@ -24,13 +24,11 @@ class AuthController extends ApiController
         $this->authService = $authService;
     }
     public function changePassword(ChangePasswordRequest $request)
-{
-    $user = User::find($request->user_id);
+    {
+        $user = User::find($request->user_id);
 
-  return  $this->authService->changePassword($user, $request->validated());
-
-
-}
+        return  $this->authService->changePassword($user, $request->validated());
+    }
 
     public function login(Request $request)
     {
@@ -103,22 +101,25 @@ class AuthController extends ApiController
     {
 
         $this->authService->register($request->all());
+        return [
+            'message' => 'auth.register_success'
+        ];
     }
-    public function register2(RegisterRequest $request)
-    {
-        try {
-            // Kullanıcıyı register et (tüm işlemler servis içinde yapılacak)
-            return  $this->authService->register($request->all());
+    // public function register2(RegisterRequest $request)
+    // {
+    //     try {
+    //         // Kullanıcıyı register et (tüm işlemler servis içinde yapılacak)
+    //         return  $this->authService->register($request->all());
 
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Kullanıcı oluşturulamadı.',
-                'error' => $e->getMessage() // production ortamında gizlenebilir
-            ], 500);
-        }
-    }
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => 'Kullanıcı oluşturulamadı.',
+    //             'error' => $e->getMessage() // production ortamında gizlenebilir
+    //         ], 500);
+    //     }
+    // }
     public function verifyEmail($id, $hash)
     {
         try {

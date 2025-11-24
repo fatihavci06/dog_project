@@ -27,37 +27,37 @@ class AuthService
         $this->jwtSecret = env('JWT_SECRET', 'your-secret-key'); // .env dosyasında JWT_SECRET
     }
     public function changePassword($user, array $data)
-{
-    return DB::transaction(function () use ($user, $data) {
+    {
+        return DB::transaction(function () use ($user, $data) {
 
-        /* ------------------------------------------------
+            /* ------------------------------------------------
            1) CURRENT PASSWORD DOĞRU MU?
         ------------------------------------------------ */
-        if (!Hash::check($data['current_password'], $user->password)) {
-            throw new \Exception('Current password is incorrect.', 422);
-        }
+            if (!Hash::check($data['current_password'], $user->password)) {
+                throw new \Exception('Current password is incorrect.', 422);
+            }
 
-        /* ------------------------------------------------
+            /* ------------------------------------------------
            2) YENİ ŞİFRE ESKİ ŞİFRE İLE AYNI MI?
         ------------------------------------------------ */
-        if (Hash::check($data['new_password'], $user->password)) {
-            throw new \Exception('New password cannot be the same as the old password.', 422);
-        }
+            if (Hash::check($data['new_password'], $user->password)) {
+                throw new \Exception('New password cannot be the same as the old password.', 422);
+            }
 
-        /* ------------------------------------------------
+            /* ------------------------------------------------
            3) ŞİFREYİ GÜNCELLE
         ------------------------------------------------ */
-        $user->password = bcrypt($data['new_password']);
-        $user->save();
+            $user->password = bcrypt($data['new_password']);
+            $user->save();
 
-        /* ------------------------------------------------
+            /* ------------------------------------------------
            4) TÜM TOKENLARI SİL → YENİDEN GİRİŞ ZORUNLU
         ------------------------------------------------ */
-       RefreshToken::where('user_id',$user->id)->delete();
+            RefreshToken::where('user_id', $user->id)->delete();
 
-        return true;
-    });
-}
+            return true;
+        });
+    }
     public function register(array $data)
     {
         return DB::transaction(function () use ($data) {
@@ -91,6 +91,9 @@ class AuthService
             Mail::to($user->email)->send(new VerifyEmailMail($user));
 
             /* ---------------- PUP PROFILE CREATE ---------------- */
+            if (isset($data['answers'])) {
+                $data['pup_profile']['answers']=$data['answers'];
+            }
             if (isset($data['pup_profile'])) {
                 app(PupProfileService::class)
                     ->createPupProfileForUser($user, $data['pup_profile']);
@@ -263,7 +266,7 @@ class AuthService
     }
     public function deleteUser($userId)
     {
-        $user=User::find($userId);
+        $user = User::find($userId);
         return DB::transaction(function () use ($user) {
 
             /* ----------------------------

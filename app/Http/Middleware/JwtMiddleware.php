@@ -44,6 +44,7 @@ class JwtMiddleware
             Log::info($roleId);
             }
 
+
         } catch (Exception $e) {
 
             return response()->json([

@@ -12,12 +12,16 @@ class SuccessResponseResource extends JsonResource
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
+        $resource = $this->resource;
+
+        $key = $resource['message'] ?? null;
+
         return [
             'success' => true,
-            'message' => $this->resource['message'] ?? 'Transaction successful',
-            'data' => $this->resource['data'] ?? null,
+            'message' => $key ? __($key) : 'Transaction successful',
+            'data'    => $resource['data'] ?? null,
         ];
     }
 }

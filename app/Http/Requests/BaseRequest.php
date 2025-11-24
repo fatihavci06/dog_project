@@ -15,6 +15,12 @@ class BaseRequest extends FormRequest
     {
         return true;
     }
+    protected function prepareForValidation()
+    {
+        if ($this->has('language')) {
+            app()->setLocale($this->language);
+        }
+    }
 
     /**
      * Get the validation rules that apply to the request.
@@ -29,10 +35,22 @@ class BaseRequest extends FormRequest
     }
     protected function failedValidation(Validator $validator)
     {
+        // ÇEVRİ: tüm validation mesajlarını __() ile çeviriyoruz
+        $translated = [];
+
+        foreach ($validator->errors()->messages() as $field => $messages) {
+            foreach ($messages as $msg) {
+                $translated[$field][] = __($msg);
+            }
+        }
+
+        // İlk mesajı üst "message" alanına koyuyoruz
+        $firstMessage = collect($translated)->first()[0];
+
         throw new HttpResponseException(response()->json([
-            'status' => false,
-            'message' => 'Validation error',
-            'errors' => $validator->errors()
+            'success' => false,
+            'message' => $firstMessage,
+            'errors'  => $translated,
         ], 422));
     }
 }

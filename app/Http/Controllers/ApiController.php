@@ -19,21 +19,22 @@ abstract class ApiController extends BaseController
     public function callAction($method, $parameters)
     {
         try {
-            // Call the framework's callAction, not self::
+            // 🔥 REQUEST LANGUAGE → LOCALE
+            if (request()->has('language')) {
+                app()->setLocale(request()->language);
+            }
+
             $result = parent::callAction($method, $parameters);
 
-            // If a JsonResponse or Resource is returned, pass through
             if ($result instanceof JsonResponse) {
                 return $result;
             }
 
-
-            // Otherwise wrap in SuccessResponseResource
             return new SuccessResponseResource([
-                'data' => $result,
+                'message' => $result['message'] ?? null,
+                'data'    => $result['data'] ?? null,
             ]);
         } catch (\Exception $e) {
-            // Wrap exceptions in your ExceptionResponseResource
             return ExceptionResponseResource::fromException($e);
         }
     }

@@ -74,17 +74,17 @@ class RegisterRequest extends BaseRequest
 
             /* ------------------------------- ANSWERS --------------------------------- */
 
-            'pup_profile.answers' => 'nullable|array',
+            'answers' => 'nullable|array',
 
-            'pup_profile.answers.*.question_id' => [
+            'answers.*.question_id' => [
                 'required',
                 'integer',
                 'exists:questions,id'
             ],
 
-            'pup_profile.answers.*.ordered_option_ids' => 'required|array|min:1',
+            'answers.*.ordered_option_ids' => 'required|array|min:1',
 
-            'pup_profile.answers.*.ordered_option_ids.*' => [
+            'answers.*.ordered_option_ids.*' => [
                 'integer',
                 'exists:options,id'
             ],
@@ -100,7 +100,56 @@ class RegisterRequest extends BaseRequest
             ],
         ];
     }
+    public function messages()
+    {
+        return [
+            'fullname.required' => 'validation.fullname_required',
+            'email.required'    => 'validation.email_required',
+            'email.email'       => 'validation.email_invalid',
+            'email.unique'      => 'validation.email_unique',
+            'password.required' => 'validation.password_required',
+            'password.min'      => 'validation.password_min',
+            'password.confirmed' => 'validation.password_confirmed',
 
+            'role.required'     => 'validation.role_required',
+            'role.in'           => 'validation.role_invalid',
 
+            'privacy_policy.required' => 'validation.privacy_required',
+            'privacy_policy.boolean'  => 'validation.privacy_boolean',
+        ];
+    }
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
 
+            $images = $this->input('pup_profile.images');
+
+            if (!$images || !is_array($images)) {
+                return;
+            }
+
+            // 6 adet max
+            if (count($images) > 6) {
+                $validator->errors()->add('pup_profile.images', __('validation.max_images'));
+            }
+
+            // Toplam boyut hesaplama
+            $totalBytes = 0;
+
+            foreach ($images as $img) {
+                // header'dan sonrasını al (base64 kısmı)
+                $base64 = preg_replace('/^data:image\/\w+;base64,/', '', $img);
+
+                // Base64'i byte'a çevir
+                $bytes = (int) (strlen($base64) * 0.75);
+
+                $totalBytes += $bytes;
+            }
+
+            // 60 MB = 60 * 1024 * 1024
+            if ($totalBytes > 60 * 1024 * 1024) {
+                $validator->errors()->add('pup_profile.images', __('validation.images_total_size'));
+            }
+        });
+    }
 }
