@@ -21,7 +21,7 @@ class ApiMobilAppRegisterInformationController extends ApiController
     {
         app()->setLocale($locale);
 
-        return MobileAppInformationStepBeyStepInfo::with('translations.language')
+        $data = MobileAppInformationStepBeyStepInfo::with('translations.language')
             ->orderBy('step_number')
             ->get()
             ->map(function ($item) use ($locale) {
@@ -32,12 +32,15 @@ class ApiMobilAppRegisterInformationController extends ApiController
                     'image_path' => $item->image_path,
                 ];
             });
+        return [
+            'data' => $data
+        ];
     }
     public function pageInfo($locale = 'en')
     {
         app()->setLocale($locale); // Trait'in doğru çalışması için
 
-        $data= PageInfo::with('translations.language')
+        $data = PageInfo::with('translations.language')
             ->get()
             ->map(function ($item) use ($locale) {
                 return [
@@ -72,7 +75,7 @@ class ApiMobilAppRegisterInformationController extends ApiController
             $basicInfo[$key] = $service->listForApi($locale);
         }
 
-       return [
+        return [
             'data' => $basicInfo
         ];
     }
