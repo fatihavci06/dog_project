@@ -25,7 +25,7 @@
                 <p><strong>Breed:</strong> {{ $pup->breed->name ?? '-' }}</p>
                 <p><strong>Age Range:</strong> {{ $pup->ageRange->name ?? '-' }}</p>
 
-                <p><strong>Looking For:</strong> {{ $pup->lookingFor->name ?? '-' }}</p>
+                <p><strong>Looking For:</strong>  {{ $pup->lookingFor->pluck('name')->join(', ') ?: '-' }}</p>
                 <p><strong>Vibe:</strong> {{ $pup->vibe->name ?? '-' }}</p>
 
                 <p><strong>Health Info:</strong> {{ $pup->healthInfo->name ?? '-' }}</p>
