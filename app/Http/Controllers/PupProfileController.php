@@ -32,7 +32,7 @@ class PupProfileController extends Controller
             'answers.option',
             'answers.question'
         ]);
-
+         dd($pup);
         return view('pups.show', compact('pup'));
     }
 
