@@ -22,10 +22,7 @@
                     <p><strong>Name:</strong> {{ $pup->name ?? '-' }}</p>
                     <p><strong>Sex:</strong> {{ $pup->sex ? ucfirst($pup->sex) : '-' }}</p>
 
-                    <p><strong>Breed:</strong>
-                        {{ $pup->breed->pluck('name')->join(', ') ?: '-' }}
-                    </p>
-
+                     <p><strong>Breed:</strong> {{ $pup->breed->name ?? '-' }}</p>
                     <p><strong>Age Range:</strong>
                         {{ $pup->ageRange->pluck('name')->join(', ') ?: '-' }}
                     </p>
