@@ -37,9 +37,7 @@
                         {{ $pup->healthInfo->pluck('name')->join(', ') ?: '-' }}
                     </p>
 
-                    <p><strong>Travel Radius:</strong>
-                        {{ $pup->travelRadius->pluck('name')->join(', ') ?: '-' }}
-                    </p>
+                     <p><strong>Travel Radius:</strong> {{ $pup->travelRadius->name ?? '-' }}</p>
 
                     <p><strong>Availability for Meetup:</strong>
                         {{ $pup->availabilityForMeetup->pluck('name')->join(', ') ?: '-' }}
