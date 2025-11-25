@@ -19,12 +19,17 @@ class QuestionController extends ApiController
     }
     public function index($locale='en')
     {
-        return $this->questionService->getAllQuestionsWithOptions($locale);
+        $data=$this->questionService->getAllQuestionsWithOptions($locale);
+         return [
+            'data' => $data
+        ];
+
     }
     public function userQuestionAnswerUpdateOrCreate(UserAnswerRequest $request)
     {
 
-        return $this->questionService->userQuestionAnswerUpdateOrCreate($request->all());
+         $this->questionService->userQuestionAnswerUpdateOrCreate($request->all());
+
     }
     public function testGet(TestShowDeleteRequest $request)
     {

@@ -37,7 +37,7 @@ class ApiMobilAppRegisterInformationController extends ApiController
     {
         app()->setLocale($locale); // Trait'in doğru çalışması için
 
-        return PageInfo::with('translations.language')
+        $data= PageInfo::with('translations.language')
             ->get()
             ->map(function ($item) use ($locale) {
                 return [
@@ -47,6 +47,9 @@ class ApiMobilAppRegisterInformationController extends ApiController
                     'image_path'  => $item->image_path,
                 ];
             });
+        return [
+            'data' => $data
+        ];
     }
 
     public function basicInfo($locale = 'en')
@@ -69,6 +72,8 @@ class ApiMobilAppRegisterInformationController extends ApiController
             $basicInfo[$key] = $service->listForApi($locale);
         }
 
-        return $basicInfo;
+       return [
+            'data' => $basicInfo
+        ];
     }
 }
