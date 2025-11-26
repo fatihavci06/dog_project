@@ -25,7 +25,6 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = User::withCount([
-            'pupProfiles as pup_count',
             'pupProfiles as survey_count' => function ($q) {
                 $q->join('pup_profile_answers', 'pup_profiles.id', '=', 'pup_profile_answers.pup_profile_id');
             }
@@ -42,6 +41,7 @@ class UserController extends Controller
         }
 
         $users = $query->paginate(20);
+
         $roles = Role::all();
 
         return view('users', compact('users', 'roles'));

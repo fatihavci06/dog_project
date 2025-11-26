@@ -50,7 +50,7 @@
         <div class="card text-white bg-info shadow">
             <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
-                    <h5 class="card-title">Adoption Seekers 🐕‍🦺</h5>
+                    <h5 class="card-title">Dog Lower🐕‍🦺</h5>
                     <h3>{{ $adoptionSeekersCount }}</h3>
                 </div>
                 <div style="font-size: 2.5rem;">🧑‍🤝‍🧑</div>

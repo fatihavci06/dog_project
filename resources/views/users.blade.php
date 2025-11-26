@@ -39,8 +39,8 @@
         <tr>
             <th>#ID</th>
             <th>Name</th>
+            <th>Role</th>
             <th>Email</th>
-            <th>Pups 🐶</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -54,14 +54,13 @@
             <td>
                 <strong>{{ $user->name }}</strong>
             </td>
+              <td>
+                <strong>{{ $user->role->name }}</strong>
+            </td>
 
             <td>{{ $user->email }}</td>
 
-            <td>
-                <span class="badge bg-warning text-dark">
-                    {{ $user->pup_count }}
-                </span>
-            </td>
+
 
             {{-- STATUS BUTTON --}}
             <td class="text-center">
