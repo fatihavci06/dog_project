@@ -16,4 +16,8 @@ return [
     'privacy_boolean'   => 'Gizlilik politikası değeri geçersiz.',
     'max_images' => 'En fazla 6 fotoğraf yükleyebilirsiniz.',
     'images_total_size' => 'Fotoğrafların toplam boyutu 60 MB\'ı geçemez.',
+    'incorrect_credentials' => 'Gönderilen bilgiler yanlış.',
+    'current_password_incorrect' => 'Mevcut şifre yanlış.',
+    'password_same' => 'Yeni şifre, eski şifre ile aynı olamaz.',
+
 ];

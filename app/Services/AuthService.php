@@ -34,14 +34,16 @@ class AuthService
            1) CURRENT PASSWORD DOĞRU MU?
         ------------------------------------------------ */
             if (!Hash::check($data['current_password'], $user->password)) {
-                throw new \Exception('Current password is incorrect.', 422);
+                throw new \Exception(__('validation.current_password_incorrect'), 422);
+
             }
 
             /* ------------------------------------------------
            2) YENİ ŞİFRE ESKİ ŞİFRE İLE AYNI MI?
         ------------------------------------------------ */
             if (Hash::check($data['new_password'], $user->password)) {
-                throw new \Exception('New password cannot be the same as the old password.', 422);
+                throw new \Exception(__('validation.password_same'), 422);
+
             }
 
             /* ------------------------------------------------
@@ -134,11 +136,12 @@ class AuthService
         $user = User::where('email', $credentials['email'])->first();
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            throw new \Exception('Email or password is incorrect');
+            throw new \Exception(__('validation.incorrect_credentials'));
+
         }
 
         // Access token üret
-        $accessToken = $this->generateAccessToken($user);
+        $accessToken = $this->generateAccessToken($user,$credentials['language'] ?? null);
 
         // Refresh token üret
         $rawRefresh = bin2hex(random_bytes(64));
@@ -156,18 +159,21 @@ class AuthService
 
         ];
     }
-    protected function generateAccessToken(User $user)
+    protected function generateAccessToken(User $user,$language = null): string
     {
         $now = time();
         $exp = $now + (240 * 60); // 15 dakika, ihtiyaca göre değiştirin
         $payload = [
             'iss' => config('app.url'),
             'user_id' => $user->id,
+            'role_id' => $user->role_id,
+            'language' => $language ?? 'en',
             'iat' => $now,
             'exp' => $exp,
             'jti' => (string) Str::uuid(),
             // 'scope' => 'user' // opsiyonel
         ];
+
 
         return JWT::encode($payload, env('JWT_SECRET'), 'HS256');
     }
@@ -224,7 +230,8 @@ class AuthService
     {
         $user = User::where('email', $email)->first();
         if (!$user) {
-            throw new \Exception('User not found', 404);
+            throw new \Exception(__('auth.user_not_found'),404);
+
         }
 
         $token = Str::random(60);

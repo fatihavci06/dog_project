@@ -33,10 +33,14 @@ class JwtMiddleware
 
             // decoded içinden user_id çekip request’e ekleyelim
             $request->merge([
-                'user_id' => $decoded->user_id ?? null
+                'user_id' => $decoded->user_id ?? null,
+                'role_id' => $decoded->role_id ?? null
             ]);
 
             $roleId = User::find($decoded->user_id)->role_id;
+
+            $language = $decoded->language ?? 'en';
+            app()->setLocale($language);
 
             if(empty($roleId) && $roleId)
             {

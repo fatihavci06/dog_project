@@ -18,4 +18,15 @@ class Announcement extends Model
     {
         return $this->belongsTo(Role::class);
     }
+      public function getCreatedAtAttribute($value)
+    {
+        return $value ? date('d-m-Y H:i:s', strtotime($value)) : null;
+    }
+
+    /** 🔥 updated_at format */
+    public function getUpdatedAtAttribute($value)
+    {
+        return $value ? date('d-m-Y H:i:s', strtotime($value)) : null;
+    }
+
 }

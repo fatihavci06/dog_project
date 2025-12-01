@@ -75,6 +75,7 @@ class AuthController extends ApiController
     }
     public function logoutApi(Request $request)
     {
+        app()->setLocale($request->language ?? 'en');
 
         $validator = Validator::make($request->all(), [
             'refresh_token' => 'required|string',
@@ -92,7 +93,7 @@ class AuthController extends ApiController
 
             $this->authService->logout($data['refresh_token']);
 
-            return response()->json(['message' => 'Logged out successfully']);
+              return response()->json(['message' => __('auth.logout_success')], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
@@ -142,7 +143,7 @@ class AuthController extends ApiController
 
 
         try {
-            return $this->authService->login($request->only('email', 'password'));
+            return['data'=>$this->authService->login($request->only('email', 'password','language'))]; ;
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -165,7 +166,7 @@ class AuthController extends ApiController
 
         try {
             $data   = $validator->validated();
-            return $tokens = $this->authService->refresh($data['refresh_token']);
+            return ['data'=> $this->authService->refresh($data['refresh_token'])];
         } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -185,7 +186,7 @@ class AuthController extends ApiController
             ], 422);
         }
 
-        return $result = $this->authService->forgotPassword($request->input('email'));
+        return ['data'=>$this->authService->forgotPassword($request->input('email'))];
     }
 
     public function resetPassword(Request $request)
@@ -248,7 +249,7 @@ class AuthController extends ApiController
     }
     public function myProfile(Request $request)
     {
-        return $this->authService->myProfile($request->user_id);
+        return['data'=> $this->authService->myProfile($request->user_id)];
     }
     public function myProfileUpdate(ProfileUpdateRequest $request)
     {

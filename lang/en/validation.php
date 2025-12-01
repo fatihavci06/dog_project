@@ -16,4 +16,7 @@ return [
     'privacy_boolean'   => 'Invalid privacy policy value.',
     'max_images' => 'You can upload a maximum of 6 images.',
     'images_total_size' => 'The total size of the images cannot exceed 60 MB.',
+    'incorrect_credentials' => 'The provided credentials are incorrect.',
+    'current_password_incorrect' => 'The current password is incorrect.',
+    'password_same' => 'The new password cannot be the same as the old password.',
 ];

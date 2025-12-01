@@ -21,7 +21,7 @@ class ApiAnnouncmentController extends ApiController
     {
 
 
-        return $this->announcementService->apiGetList($request->all());
+        return['data'=> $this->announcementService->apiGetList($request->all())];
     }
 
     /**
@@ -45,7 +45,8 @@ class ApiAnnouncmentController extends ApiController
      */
     public function show(Request $request, string $id)
     {
-        return $this->announcementService->findById($request->all(),$id);
+
+        return['data'=> $this->announcementService->findById($request->all(),$id)];
     }
 
     /**

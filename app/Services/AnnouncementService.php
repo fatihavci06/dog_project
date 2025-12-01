@@ -59,6 +59,7 @@ class AnnouncementService
     public function findById(array $data,string $id): ?Announcement
     {
         $query = Announcement::query();
+
         $roleId = $data['role_id'];
             $query->where(function ($q) use ($roleId) {
                 $q->where('role_id', $roleId)

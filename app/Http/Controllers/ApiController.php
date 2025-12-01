@@ -31,8 +31,8 @@ abstract class ApiController extends BaseController
             }
 
             return new SuccessResponseResource([
-                'message' => $result['message'] ?? null,
-                'data'    => $result['data'] ?? null,
+                'message' => __($result['message'] ?? 'messages.success'), // 🔥 sadece burası çeviri
+                'data'    => $result['data'] ?? $result
             ]);
         } catch (\Exception $e) {
             return ExceptionResponseResource::fromException($e);

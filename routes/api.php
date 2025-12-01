@@ -54,9 +54,9 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::delete('my-profile/delete', [AuthController::class, 'deleteProfile']);
     Route::put('my-profile/update', [AuthController::class, 'myProfileUpdate']);
     Route::get('/survey/{pupProfile}', [ApiPupProfileController::class, 'questionsWithAnswers']);
-    Route::get('/my-pups/{locale}', [ApiPupProfileController::class, 'myPups']);
-    Route::get('pup/{pupId}/survey-answers/{locale}', [ApiPupProfileController::class, 'getAnswers']);
-    Route::put('pup/{pupId}/survey/update/{locale}', [ApiPupProfileController::class, 'updateSurvey']);
+    Route::get('/my-pups', [ApiPupProfileController::class, 'myPups']);
+    Route::get('pup/{pupId}/survey-answers', [ApiPupProfileController::class, 'getAnswers']);
+    Route::put('pup/{pupId}/survey/update', [ApiPupProfileController::class, 'updateSurvey']);
     Route::delete('pup/delete/{pupId}', [ApiPupProfileController::class, 'destroy']);
     Route::post('pup/create', [ApiPupProfileController::class, 'store']);
     Route::put('pup/update/{id}', [ApiPupProfileController::class, 'update']);

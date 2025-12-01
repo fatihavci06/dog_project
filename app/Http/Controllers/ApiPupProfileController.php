@@ -21,25 +21,24 @@ class ApiPupProfileController extends ApiController
     {
         $this->service = $service;
     }
-    public function updateSurvey(SurveyUpdateRequest $request, $pupId, $locale)
+    public function updateSurvey(SurveyUpdateRequest $request, $pupId)
     {
-        app()->setLocale($locale);
+
 
         return $this->service->updateSurvey($pupId, $request->answers);
     }
-    public function getAnswers(Request $request, $pupId, $locale)
+    public function getAnswers(Request $request, $pupId)
     {
-        app()->setLocale($locale);
+
         $control = PupProfile::where('user_id', $request->user_id)->where('id', $pupId)->exists();
         if (!$control) {
             throw new Exception('Not found.', 404);
         }
         return  $this->service->getSurveyAnswers($pupId);
     }
-    public function myPups(Request $request, $locale)
+    public function myPups(Request $request)
     {
 
-        app()->setLocale($locale);
 
         return $this->service->myPups($request->user_id);
     }
