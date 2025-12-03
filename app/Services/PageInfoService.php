@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PageInfo;
+use Illuminate\Support\Facades\Storage;
 
 class PageInfoService
 {
@@ -32,7 +33,15 @@ class PageInfoService
     public function update($id, array $data)
     {
         $page = PageInfo::findOrFail($id);
+         if (!empty($data['remove_image']) && $data['remove_image'] == 1) {
 
+        // Dosya var mı kontrol et → varsa sil
+        if ($page->image_path && Storage::exists($page->image_path)) {
+            Storage::delete($page->image_path);
+        }
+
+        $page->image_path = null;
+    }
 
 
         if (isset($data['image_path'])) {
