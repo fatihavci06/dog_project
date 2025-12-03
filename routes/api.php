@@ -17,6 +17,7 @@ use App\Http\Controllers\DogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PupProfileController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\ScreenController;
 use App\Http\Middleware\JwtMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,7 @@ Route::prefix('question')->group(function () {
     Route::get('list/{language?}', [QuestionController::class, 'index']);
     Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
 });
+Route::get('/screen/{id}', [ScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/pup/{pupProfileId}/matches', [ApiPupMatchController::class, 'matches']);
     Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
@@ -60,6 +62,8 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::delete('pup/delete/{pupId}', [ApiPupProfileController::class, 'destroy']);
     Route::post('pup/create', [ApiPupProfileController::class, 'store']);
     Route::put('pup/update/{id}', [ApiPupProfileController::class, 'update']);
+
+
     Route::prefix('test')->group(function () {
         Route::get('get/{test_id}', [QuestionController::class, 'testGet']);
         Route::post('update/{test_id}', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate'])->name('test.update');
