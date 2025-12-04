@@ -135,7 +135,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     async function fetchMessages() {
         try {
-            const response = await fetch("{{ route('messages.latest') }}");
+            const response = await fetch("/messages/latest");
+
             const data = await response.json();
 
             if (!data) return;
