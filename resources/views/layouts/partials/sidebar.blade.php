@@ -78,6 +78,8 @@
                 <a class="collapse-item text-white" href="{{ url('/TravelRadius') }}">Travel Radius</a>
                 <a class="collapse-item text-white" href="{{ url('/AvailabilityForMeetup') }}">Availability for
                     Meetup</a>
+                <a class="collapse-item text-white" href="{{ route('screens.index') }}">Screen Settings
+                    </a>
 
 
             </div>

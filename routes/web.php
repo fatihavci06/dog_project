@@ -20,6 +20,7 @@ use App\Http\Controllers\VibeController;
 use App\Http\Controllers\GenericCrudController;
 use App\Http\Controllers\MobileAppStepInfoController;
 use App\Http\Controllers\PupProfileController;
+use App\Http\Controllers\ScreenController;
 use App\Http\Controllers\WebAnnouncmentController;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Middleware\AdminMiddleware;
@@ -89,6 +90,14 @@ Route::middleware([AdminMiddleware::class])->group(function () {
         Route::get('/mobile-steps', [MobileAppStepInfoController::class, 'index'])->name('mobileSteps.index');
         Route::post('/mobile-steps/{id}', [MobileAppStepInfoController::class, 'update'])->name('mobileSteps.update');
     });
+    Route::prefix('mobile-app-settings/screens')->group(function () {
+        Route::get('/', [ScreenController::class, 'index'])->name('screens.index');
+        Route::get('list', [ScreenController::class, 'list'])->name('screens.list');
+        Route::post('update/{id}', [ScreenController::class, 'update'])->name('screens.update');
+        Route::get('/get/{id}', [ScreenController::class, 'get'])->name('screens.get');
+
+    });
+
 
 
     Route::prefix('messages')->group(function () {

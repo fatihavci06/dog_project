@@ -1,71 +1,44 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\ScreenService;
 
 class ScreenController extends Controller
 {
-    public function getScreen($id)
+    public function __construct(private ScreenService $service) {}
+
+    public function index()
     {
-        // Burada ekran kayıtlarını ID'ye göre eşliyoruz
-        $screens = [
-            "1" => [
-                "screen_id"   => "1",
-                "screen_slug" => "chat_empty",
-                "content"     => [
-                    "hero_image" => [
-                        "visible"  => true,
-                        "url"      => "https://cdn.example.com/images/dog-hero.jpg",
-                        "position" => "top",
-                        "style"    => [
-                            "aspect_ratio"  => 1.2,
-                            "resize_mode"   => "cover",
-                            "corner_radius" => 20
-                        ]
-                    ],
+        return view('screens.index');
+    }
 
-                    "text_group" => [
-                        "visible"            => true,
-                        "position_on_screen" => "center",
-                        "text_align"         => "center",
-                        "overlay_on_image"   => false,
+    public function list()
+    {
+        return response()->json([
+            "data" => $this->service->getAll()
+        ]);
+    }
 
-                        "title" => [
-                            "text"        => "WoofDate Awaits!!",
-                            "color"       => "#333333",
-                            "font_size"   => 28,
-                            "font_weight" => "bold"
-                        ],
+    public function get($id)
+    {
+        return response()->json($this->service->getById($id));
+    }
 
-                        "subtitle" => [
-                            "text"       => "Connect with local dog owners for playdates...",
-                            "color"      => "#666666",
-                            "font_size" => 16,
-                            "margin_top" => 12
-                        ]
-                    ],
+    public function update(Request $request, $id)
+    {
+        $data = $request->all();
 
-                    "cta_button" => [
-                        "visible"      => true,
-                        "text"         => "Get Started",
-                        "action_type"  => "navigate",
-                        "action_value" => "NewChatPage",
-                        "theme_id"     => 1,
-                        "show_icon"    => true
-                    ]
-                ]
-            ]
-        ];
-
-        // ID bulunamazsa
-        if (!isset($screens[$id])) {
-            return response()->json([
-                "message" => "Screen not found"
-            ], 404);
+        if ($request->hasFile('hero_image_file')) {
+            $path = $request->hero_image_file->store('screens', 'public');
+            $data['content']['hero_image']['url'] = asset('storage/' . $path);
         }
 
-        // ID’ye göre ekranı döndür
-        return response()->json($screens[$id]);
+        $screen = $this->service->update($id, $data);
+
+        return response()->json([
+            "message" => "Updated successfully",
+            "data" => $screen
+        ]);
     }
 }

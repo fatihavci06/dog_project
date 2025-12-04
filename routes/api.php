@@ -13,6 +13,7 @@ use App\Http\Controllers\ApiMessageController;
 use App\Http\Controllers\ApiMobilAppRegisterInformationController;
 use App\Http\Controllers\ApiPupMatchController;
 use App\Http\Controllers\ApiPupProfileController;
+use App\Http\Controllers\ApiScreenController;
 use App\Http\Controllers\DogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PupProfileController;
@@ -34,7 +35,7 @@ Route::prefix('question')->group(function () {
     Route::get('list/{language?}', [QuestionController::class, 'index']);
     Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
 });
-Route::get('/screen/{id}', [ScreenController::class, 'getScreen']);
+Route::get('/screen/{id}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/pup/{pupProfileId}/matches', [ApiPupMatchController::class, 'matches']);
     Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
