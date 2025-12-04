@@ -300,7 +300,8 @@
     <script>
         let table = $('#screenTable').DataTable({
             ajax: {
-                url: "{{ route('screens.list') }}",
+               url: "/mobile-app-settings/screens/list",
+
                 dataSrc: "data"
             },
             columns: [{
