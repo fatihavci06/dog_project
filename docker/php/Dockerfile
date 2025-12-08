@@ -27,6 +27,7 @@ WORKDIR /var/www/html
 
 # Projeyi kopyala
 COPY . .
+COPY ./docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 
 # Composer Install (prod)
 ENV COMPOSER_MEMORY_LIMIT=-1
