@@ -2,7 +2,7 @@ APP_NAME=Laravel
 APP_ENV=local
 APP_KEY=base64:W81+/oGB1R0w66ruWtu0GksBAsv6Ko1egmVi235j4zc=
 APP_DEBUG=true
-APP_URL=http://localhost
+APP_URL=https://pcrwl.com
 
 APP_LOCALE=en
 APP_FALLBACK_LOCALE=en

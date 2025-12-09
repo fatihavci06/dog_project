@@ -31,7 +31,7 @@ class ScreenController extends Controller
 
         if ($request->hasFile('hero_image_file')) {
             $path = $request->hero_image_file->store('screens', 'public');
-            $data['content']['hero_image']['url'] = asset('storage/' . $path);
+            $data['content']['hero_image']['url'] = secure_asset('storage/' . $path);
         }
 
         $screen = $this->service->update($id, $data);
