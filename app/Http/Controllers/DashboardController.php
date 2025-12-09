@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PupProfile;
 use App\Models\User;
 use App\Models\UserDog;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ class DashboardController extends Controller
         $activeUsersCount = User::where('status', 'active')->count();
 
         // Aktif köpek sayısı (status = 'active')
-        $activeDogsCount = UserDog::count();
+        $activeDogsCount = PupProfile::where('name', '!=', null)->where('status', 'active')->count();
         $dogOwnersCount = User::where('role_id', 3)->where('status', 'active')->count();
 
         // Dog Adoption Seekers (role_id = 4)
