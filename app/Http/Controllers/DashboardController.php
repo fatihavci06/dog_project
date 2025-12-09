@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $activeUsersCount = User::where('status', 'active')->count();
 
         // Aktif köpek sayısı (status = 'active')
-        $activeDogsCount = PupProfile::where('name', '!=', null)->where('status', 'active')->count();
+        $activeDogsCount = PupProfile::where('name', '!=', null)->count();
         $dogOwnersCount = User::where('role_id', 3)->where('status', 'active')->count();
 
         // Dog Adoption Seekers (role_id = 4)
