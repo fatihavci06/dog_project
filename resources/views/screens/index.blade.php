@@ -58,11 +58,11 @@
                     <div class="row mb-4" id="layoutList">
                         @php
                              $layouts = [
-        ["key" => "hero_overlay_bottom", "image" => asset('storage/screens/full_hero_static.png')],
-        ["key" => "hero_overlay_center", "image" => asset('storage/screens/hero_overlay_bottom.png')],
-        ["key" => "hero_overlay_top", "image" => asset('storage/screens/image_top_text_middle.png')],
-        ["key" => "full_center", "image" => asset('storage/screens/text_only.png')],
-        ["key" => "full_bottom", "image" => asset('storage/screens/text_top_image_bottom.png')],
+        ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static.png')],
+        ["key" => "hero_overlay_center", "image" => asset('screens/hero_overlay_bottom.png')],
+        ["key" => "hero_overlay_top", "image" => asset('screens/image_top_text_middle.png')],
+        ["key" => "full_center", "image" => asset('screens/text_only.png')],
+        ["key" => "full_bottom", "image" => asset('screens/text_top_image_bottom.png')],
     ];
                         @endphp
 
