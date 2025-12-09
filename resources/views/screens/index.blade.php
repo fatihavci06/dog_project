@@ -78,15 +78,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label d-block">🎞️ Media Type</label>
-                            <div class="form-check form-check-inline">
-                                <input type="radio" name="content[hero_type]" value="image" class="form-check-input"> Image
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input type="radio" name="content[hero_type]" value="video" class="form-check-input"> Video
-                            </div>
-                        </div>
+
 
                         <div class="col-md-6">
                             <label class="form-label">Media URL</label>
