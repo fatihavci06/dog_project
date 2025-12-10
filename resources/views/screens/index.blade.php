@@ -95,17 +95,17 @@
 
                     <div class="mb-3">
                         <label class="form-label">Title</label>
-                        <input type="text" class="form-control" name="content[title]">
+                        <input type="text" class="form-control" name="content[title]" maxlength="50">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Subtitle</label>
-                        <input type="text" class="form-control" name="content[subtitle]">
+                        <input type="text" class="form-control" name="content[subtitle]" maxlength="150">
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">CTA Text</label>
-                        <input type="text" class="form-control" name="content[cta_text]">
+                        <input type="text" class="form-control" name="content[cta_text]" maxlength="20">
                     </div>
 
                 </form>
