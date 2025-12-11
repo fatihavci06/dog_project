@@ -22,6 +22,10 @@ class FavoriteService
         if ($exists) {
             throw new Exception("This user is already in your favorites.", 400);
         }
+        Favorite::create([
+            'user_id'     => $userId,
+            'favorite_id' => $favoriteId
+        ]);
 
 
     }
