@@ -16,8 +16,8 @@ class Favorite extends Model
         return $this->belongsTo(User::class,'user_id');
     }
 
-    public function favoriteUser() {
-        return $this->belongsTo(User::class,'favorite_id');
+    public function favoritePupProfile() {
+        return $this->belongsTo(PupProfile::class,'favorite_id');
     }
     protected function createdAt(): Attribute
     {

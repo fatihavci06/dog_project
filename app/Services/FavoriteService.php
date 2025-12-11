@@ -23,10 +23,7 @@ class FavoriteService
             throw new Exception("This user is already in your favorites.", 400);
         }
 
-        return Favorite::create([
-            'user_id' => $userId,
-            'pup_profile_id' => $favoriteId
-        ]);
+
     }
 
 
@@ -67,7 +64,7 @@ class FavoriteService
         /* -------------------------------
        2) Favorileri çek
     --------------------------------*/
-        $favorites = Favorite::with('favoriteUser') // User modeli
+        $favorites = Favorite::with('favoritePupProfile') // User modeli
             ->where('user_id', $userId)
             ->whereNotIn('favorite_id', $friendIds)
             ->get();
@@ -78,23 +75,22 @@ class FavoriteService
     --------------------------------*/
         $mapped = $favorites->map(function ($fav) {
 
-            $user = $fav->favoriteUser;
+            $pupProfile = $fav->favoritePupProfile;
 
             // Bu user'a ait pup profile (ilk kayıt)
             $pup = \App\Models\PupProfile::with('images')
-                ->where('user_id', $user->id)
+                ->where('id', $pupProfile->id)
                 ->first();
 
             return [
-                'pup_profile_id' => $user->id,
-                'name'        => $user->name ?? null,
+                'pup_profile_id' => $pupProfile->id,
+                'name'        => $pupProfile->name ?? null,
 
                 // pup profile bilgileri
-                'biography' => $pup->biography ?? null,
+                'sex' => $pup->sex ?? null,
                 'photo'     => $pup?->images[0]->path ?? null,
+                'biography' => $pup->biography ?? null,
 
-                // favori kaydının kendi ID’si
-                'favorite_record_id' => $fav->id,
             ];
         });
 
