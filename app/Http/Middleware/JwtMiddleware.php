@@ -26,7 +26,7 @@ class JwtMiddleware
 
         $token = $matches[1];
 
-        try {
+        // try {
             // Burada secret .env’den alınıyor
             $secret = config('app.jwt_secret', env('JWT_SECRET'));
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
@@ -55,13 +55,13 @@ Log::info("TOKEN SIGN PART LENGTH: " . strlen(explode('.', $token)[2]));
             }
 
 
-        } catch (Exception $e) {
+        // } catch (Exception $e) {
 
-            return response()->json([
-                'message' => 'Invalid or expired token.',
-                'error'   => $e->getMessage()
-            ], 401);
-        }
+        //     return response()->json([
+        //         'message' => 'Invalid or expired token.',
+        //         'error'   => $e->getMessage()
+        //     ], 401);
+        // }
 
         return $next($request);
     }
