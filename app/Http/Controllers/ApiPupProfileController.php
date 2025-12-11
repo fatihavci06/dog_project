@@ -53,6 +53,14 @@ class ApiPupProfileController extends ApiController
             $request->validated()
         );
     }
+    public function myPupShow(Request $request, $id)
+    {
+        $control = PupProfile::where('user_id', $request->user_id)->where('id', $id)->exists();
+        if (!$control) {
+            throw new Exception('Not found.', 404);
+        }
+        return $this->service->getPupProfileDetails($id);
+    }
     public function update(PupProfileUpdateRequest $request, $id)
     {
         return $this->service->updatePupProfileForUser(

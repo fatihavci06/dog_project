@@ -182,6 +182,78 @@ class PupProfileService
             })
             ->values();
     }
+    public function getPupProfileDetails($pupId)
+    {
+
+        $p = PupProfile::with([
+            'breed',
+            'ageRange',
+            'lookingFor',
+            'vibe',
+            'healthInfo',
+            'travelRadius',
+            'availabilityForMeetup',
+            'images',
+            'answers.option',
+            'answers.question'
+        ])
+            ->where('id', $pupId)
+            ->firstOrFail();
+
+        return [
+            'id'          => $p->id,
+            'user_id'     => $p->user_id,
+            'name'        => $p->name,
+            'sex'         => $p->sex,
+
+            // Tekli FK'ler
+            'breed'       => $p->breed
+                ? ['id' => $p->breed->id, 'name' => $p->breed->name]
+                : null,
+
+            'age_range'   => $p->ageRange
+                ? ['id' => $p->ageRange->id, 'name' => $p->ageRange->name]
+                : null,
+
+            'travel_radius' => $p->travelRadius
+                ? ['id' => $p->travelRadius->id, 'name' => $p->travelRadius->name]
+                : null,
+
+            // Çoklu pivot alanlar
+            'looking_for' => $p->lookingFor->map(fn($i) => [
+                'id'   => $i->id,
+                'name' => $i->name
+            ]),
+
+            'vibe' => $p->vibe->map(fn($i) => [
+                'id'   => $i->id,
+                'name' => $i->name
+            ]),
+
+            'health_info' => $p->healthInfo->map(fn($i) => [
+                'id'   => $i->id,
+                'name' => $i->name
+            ]),
+
+            'availability_for_meetup' => $p->availabilityForMeetup->map(fn($i) => [
+                'id'   => $i->id,
+                'name' => $i->name
+            ]),
+
+            // Konum
+            'lat'       => $p->lat,
+            'long'      => $p->long,
+            'city'      => $p->city,
+            'district'  => $p->district,
+            'biography' => $p->biography,
+
+            // Resimler
+            'images' => $p->images->map(fn($img) => [
+                'id'   => $img->id,
+                'path' => $img->path
+            ]),
+        ];
+    }
     public function createPupProfileForUser($user, array $data)
     {
         return DB::transaction(function () use ($user, $data) {
