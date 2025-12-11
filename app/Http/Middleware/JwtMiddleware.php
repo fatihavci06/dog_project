@@ -28,9 +28,8 @@ class JwtMiddleware
 
         // try {
             // Burada secret .env’den alınıyor
-            $secret = config('app.jwt_secret', env('JWT_SECRET'));
-         dd($token);
-            $decoded = JWT::decode($token, new Key($secret, 'HS256'));
+          $secret = env('JWT_SECRET'); // BUNU KULLAN
+$decoded = JWT::decode($token, new Key($secret, 'HS256'));
 
             // decoded içinden user_id çekip request’e ekleyelim
             $request->merge([
