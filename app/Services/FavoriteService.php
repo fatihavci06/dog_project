@@ -25,7 +25,7 @@ class FavoriteService
 
         return Favorite::create([
             'user_id' => $userId,
-            'favorite_id' => $favoriteId
+            'pup_profile_id' => $favoriteId
         ]);
     }
 
@@ -86,7 +86,7 @@ class FavoriteService
                 ->first();
 
             return [
-                'favorite_id' => $user->id,
+                'pup_profile_id' => $user->id,
                 'name'        => $user->name ?? null,
 
                 // pup profile bilgileri
