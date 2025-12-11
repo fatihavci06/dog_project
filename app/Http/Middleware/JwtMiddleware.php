@@ -30,7 +30,13 @@ class JwtMiddleware
             // Burada secret .env’den alınıyor
           $secret = env('JWT_SECRET'); // BUNU KULLAN
 $decoded = JWT::decode($token, new Key($secret, 'HS256'));
+        Log::info("JWT SECRET USED: " . env('JWT_SECRET'));
+Log::info("JWT SECRET USED: " . env('JWT_SECRET'));
 
+$headerPart = explode('.', $token)[0];
+$decodedHeader = json_decode(base64_decode(strtr($headerPart, '-_', '+/')), true);
+
+Log::info("TOKEN ALG: " . ($decodedHeader['alg'] ?? 'YOK'));
             // decoded içinden user_id çekip request’e ekleyelim
             $request->merge([
                 'user_id' => $decoded->user_id ?? null,
