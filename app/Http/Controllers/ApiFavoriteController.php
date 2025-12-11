@@ -10,12 +10,12 @@ class ApiFavoriteController extends ApiController
 {
     public function add(FavoriteRequest $request, FavoriteService $service)
     {
-        return $service->add($request->user_id, $request->favorite_id);
+        return $service->add($request->user_id, $request->pup_profile_id);
     }
 
     public function remove(FavoriteRequest $request, FavoriteService $service)
     {
-        return $service->remove($request->user_id, $request->favorite_id);
+        return $service->remove($request->user_id, $request->pup_profile_id);
     }
 
     public function list(Request $request, FavoriteService $service)
