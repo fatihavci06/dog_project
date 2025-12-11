@@ -26,17 +26,17 @@ class JwtMiddleware
 
         $token = $matches[1];
 
-        // try {
+        try {
             // Burada secret .env’den alınıyor
-          $secret = env('JWT_SECRET'); // BUNU KULLAN
-$decoded = JWT::decode($token, new Key($secret, 'HS256'));
-        Log::info("JWT SECRET USED: " . env('JWT_SECRET'));
-Log::info("JWT SECRET USED: " . env('JWT_SECRET'));
+            $secret = config('app.jwt_secret', env('JWT_SECRET'));
+            $decoded = JWT::decode($token, new Key($secret, 'HS256'));
+Log::info("SECRET USED: " . env('JWT_SECRET'));
 
 $headerPart = explode('.', $token)[0];
 $decodedHeader = json_decode(base64_decode(strtr($headerPart, '-_', '+/')), true);
+Log::info("TOKEN ALG: " . ($decodedHeader['alg'] ?? 'ALG BULUNAMADI'));
 
-Log::info("TOKEN ALG: " . ($decodedHeader['alg'] ?? 'YOK'));
+Log::info("TOKEN SIGN PART LENGTH: " . strlen(explode('.', $token)[2]));
             // decoded içinden user_id çekip request’e ekleyelim
             $request->merge([
                 'user_id' => $decoded->user_id ?? null,
@@ -55,13 +55,13 @@ Log::info("TOKEN ALG: " . ($decodedHeader['alg'] ?? 'YOK'));
             }
 
 
-        // } catch (Exception $e) {
+        } catch (Exception $e) {
 
-        //     return response()->json([
-        //         'message' => 'Invalid or expired token.',
-        //         'error'   => $e->getMessage()
-        //     ], 401);
-        // }
+            return response()->json([
+                'message' => 'Invalid or expired token.',
+                'error'   => $e->getMessage()
+            ], 401);
+        }
 
         return $next($request);
     }
