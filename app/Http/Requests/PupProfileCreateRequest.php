@@ -52,7 +52,22 @@ class PupProfileCreateRequest extends BaseRequest
             ------------------------------------------- */
              'images'     => 'nullable|array',
             'images.*'   => ['nullable','string', 'regex:/^data:image\/(jpeg|jpg|png);base64,/'],
+             /* ------------------------------- ANSWERS --------------------------------- */
 
+            'answers' => 'nullable|array',
+
+            'answers.*.question_id' => [
+                'required',
+                'integer',
+                'exists:questions,id'
+            ],
+
+            'answers.*.ordered_option_ids' => 'required|array|min:1',
+
+            'answers.*.ordered_option_ids.*' => [
+                'integer',
+                'exists:options,id'
+            ],
             /* -------------------------------------------
                SURVEY ANSWERS (optional)
             ------------------------------------------- */

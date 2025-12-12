@@ -306,7 +306,6 @@ class PupProfileService
 
 
             /* ---------------- SAVE SURVEY ANSWERS ---------------- */
-
             if (!empty($data['answers'])) {
                 foreach ($data['answers'] as $answer) {
 
