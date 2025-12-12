@@ -83,7 +83,7 @@ class FavoriteService
 
             // Bu user'a ait pup profile (ilk kayıt)
             $pup = \App\Models\PupProfile::with('images')
-                ->where('id', $pupProfile->id)
+                ->where('id', $fav->favorite_id)
                 ->first();
 
             return [
