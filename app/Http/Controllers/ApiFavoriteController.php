@@ -6,7 +6,7 @@ use App\Http\Requests\FavoriteRequest;
 use App\Services\FavoriteService;
 use Illuminate\Http\Request;
 
-class ApiFavoriteController extends ApiController
+class ApiFavoriteController extends Controller
 {
     public function add(FavoriteRequest $request, FavoriteService $service)
     {
