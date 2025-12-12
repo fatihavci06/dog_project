@@ -379,7 +379,12 @@ class PupProfileService
 
 
             /* ---------------- SAVE NEW IMAGES (BASE64) ---------------- */
-            if (!empty($data['images'])) {
+            if (array_key_exists('images', $data)) {
+
+                // 1️⃣ Eski fotoğrafları sil
+                $profile->images()->delete();
+
+                // 2️⃣ Yenilerini ekle
                 foreach ($data['images'] as $imageBase64) {
                     $this->saveBase64Image($profile, $imageBase64);
                 }
