@@ -87,7 +87,7 @@ class FavoriteService
                 ->first();
 
             return [
-                'pup_profile_id' => $pupProfile->id,
+                'pup_profile_id' => $pupProfile->id??null,
                 'name'        => $pupProfile->name ?? null,
 
                 // pup profile bilgileri
