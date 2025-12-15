@@ -14,8 +14,6 @@ class JwtMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-         Log::info('=== JWT MIDDLEWARE TETİKLENDİ ===');
-
         $authHeader = $request->header('Authorization');
 
         if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
@@ -26,42 +24,50 @@ class JwtMiddleware
 
         $token = $matches[1];
 
-        // try {
-            // Burada secret .env’den alınıyor
-            $secret = config(env('JWT_SECRET'));
-            $decoded = JWT::decode($token, new Key($secret, 'HS256'));
-Log::info("SECRET USED: " . env('JWT_SECRET'));
+        /**
+         * 🔐 JWT AYARLARI (DİREKT MIDDLEWARE İÇİNDE)
+         */
+        $secret = env('JWT_SECRET');      // .env’den okunur
+        $algo   = 'HS256';                // Sabit
+        $ttl    = 60 * 60 * 24;            // 1 gün (opsiyonel)
 
-$headerPart = explode('.', $token)[0];
-$decodedHeader = json_decode(base64_decode(strtr($headerPart, '-_', '+/')), true);
-Log::info("TOKEN ALG: " . ($decodedHeader['alg'] ?? 'ALG BULUNAMADI'));
+        if (!$secret) {
+            Log::error('JWT_SECRET is missing in .env');
+            return response()->json([
+                'message' => 'JWT configuration error.'
+            ], 500);
+        }
 
-Log::info("TOKEN SIGN PART LENGTH: " . strlen(explode('.', $token)[2]));
-            // decoded içinden user_id çekip request’e ekleyelim
-            $request->merge([
-                'user_id' => $decoded->user_id ?? null,
-                'role_id' => $decoded->role_id ?? null
-            ]);
+        try {
+            $decoded = JWT::decode($token, new Key($secret, $algo));
 
-            $roleId = User::find($decoded->user_id)->role_id;
+            // Kullanıcıyı bul
+            $user = User::find($decoded->user_id ?? null);
 
-            $language = $decoded->language ?? 'en';
-            app()->setLocale($language);
-
-            if(empty($roleId) && $roleId)
-            {
-                 $request->merge(['role_id' => $roleId]);
-            Log::info($roleId);
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found.'
+                ], 401);
             }
 
+            // Request içine ekle
+            $request->merge([
+                'user_id' => $user->id,
+                'role_id' => $user->role_id,
+            ]);
 
-        // } catch (Exception $e) {
+            // Dil
+            app()->setLocale($decoded->language ?? 'en');
 
-        //     return response()->json([
-        //         'message' => 'Invalid or expired token.',
-        //         'error'   => $e->getMessage()
-        //     ], 401);
-        // }
+        } catch (Exception $e) {
+            Log::warning('JWT verification failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Invalid or expired token.'
+            ], 401);
+        }
 
         return $next($request);
     }
