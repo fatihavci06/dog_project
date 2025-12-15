@@ -15,23 +15,40 @@ class PupMatchmakingService
         int $authUserId
     ): array {
 
-        // 🔐 Profil var mı
+        // 1) Hedef Profili ve Sahibini (User) Çek
         $profile = PupProfile::with([
+            'user', // 🔥 User bilgisi için eklendi
             'images',
             'vibe',
             'breed',
             'ageRange',
             'travelRadius',
-
         ])->find($pupProfileId);
 
         if (!$profile) {
             throw new \Exception('Profile not found', 404);
         }
 
+        // 2) Giriş Yapan Kullanıcının (Auth User) Profilini Çek (Koordinatlar için)
+        // Not: Eğer kullanıcının birden fazla köpeği varsa, aktif olanı seçmek için
+        // logic gerekebilir. Şimdilik kullanıcının ilk/tek profilini alıyoruz.
+        $authProfile = PupProfile::where('user_id', $authUserId)->first();
+
+        // 3) Mesafe Hesaplama
+        // authProfile yoksa (henüz profil oluşturmamışsa) mesafe null döner.
+        $distanceKm = null;
+        if ($authProfile) {
+            $distanceKm = $this->calculateDistance(
+                $authProfile->lat,
+                $authProfile->long,
+                $profile->lat, // Hedef profilin lat
+                $profile->long // Hedef profilin long
+            );
+        }
+
         /* ============================
-       FRIEND (MATCH) KONTROLÜ
-    ============================ */
+            FRIEND (MATCH) KONTROLÜ
+           ============================ */
         $isMatch = Friendship::where('status', 'accepted')
             ->where(function ($q) use ($authUserId, $profile) {
                 $q->where('sender_id', $authUserId)
@@ -44,8 +61,8 @@ class PupMatchmakingService
             ->exists();
 
         /* ============================
-       FAVORİ KONTROLÜ
-    ============================ */
+            FAVORİ KONTROLÜ
+           ============================ */
         $isFavorite = Favorite::where('user_id', $authUserId)
             ->where('favorite_id', $profile->id)
             ->exists();
@@ -55,6 +72,13 @@ class PupMatchmakingService
             'name'           => $profile->name,
             'biography'      => $profile->biography,
             'sex'            => $profile->sex,
+
+            // 🔥 USER BİLGİSİ
+            'user' => [
+                'id'   => $profile->user->id,
+                'name' => $profile->user->name,
+                // İsterseniz avatar vb. ekleyebilirsiniz
+            ],
 
             'breed'         => $profile->breed->translate('name'),
             'age'           => $profile->ageRange->translate('name'),
@@ -70,9 +94,10 @@ class PupMatchmakingService
                 'name' => $v->translate('name'),
             ]),
 
-            // 🔥 FLAGS
+            // 🔥 FLAGS & MESAFE
             'is_favorite' => $isFavorite,
             'is_match'    => $isMatch,
+            'distance_km' => $distanceKm, // Null veya float döner (örn: 12.5)
         ];
     }
 
@@ -325,11 +350,11 @@ class PupMatchmakingService
             // 🔥 MESAFE HESAPLAMA ÇAĞRISI
             // Veritabanında sütun adlarınızın 'lat' ve 'long' (veya 'lng') olduğundan emin olun.
             $distanceKm = $this->calculateDistance(
-    $currentProfile->lat,
-    $currentProfile->long,
-    $profile->lat,
-    $profile->long
-);
+                $currentProfile->lat,
+                $currentProfile->long,
+                $profile->lat,
+                $profile->long
+            );
 
             $result[] = [
                 'pup_profile_id' => $profile->id,
