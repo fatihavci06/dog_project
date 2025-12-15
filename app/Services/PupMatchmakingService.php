@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
 use App\Models\PupProfileAnswer;
@@ -169,7 +170,7 @@ class PupMatchmakingService
             throw new Exception('Not found', 404);
         }
 
-        // 2) Kullanıcının arkadaş ID’lerini çek
+        // 2) Kullanıcının arkadaş ID’lerini çek (accepted)
         $friendIds = Friendship::where(function ($q) use ($authUserId) {
             $q->where('sender_id', $authUserId)
                 ->where('status', 'accepted');
@@ -182,17 +183,25 @@ class PupMatchmakingService
             ->map(fn($f) => $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id)
             ->toArray();
 
-        // ❗ arkadaşların PupProfile ID’lerini bul
-        $friendProfileIds = PupProfile::whereIn('user_id', $friendIds)->pluck('id')->toArray();
+        // Arkadaşların pup profile ID’leri
+        $friendProfileIds = PupProfile::whereIn('user_id', $friendIds)
+            ->pluck('id')
+            ->toArray();
 
-        // 3) Ana profilin cevaplarını al
+        // 🔥 Kullanıcının FAVORİ pup profile ID’leri (TEK SORGU)
+        $favoriteProfileIds = Favorite::where('user_id', $authUserId)
+            ->pluck('favorite_id')
+            ->toArray();
+
+        // 3) Ana profilin cevapları
         $mainAnswers = $this->getPupAnswers($pupProfileId);
 
-        // 4) Diğer profilleri getir → kendi profili + kendi user_id + arkadaş profilleri hariç
-        $otherProfiles = PupProfile::with(['images', 'vibe'])
+        // 4) Diğer profiller
+        $otherProfiles = PupProfile::with(['images', 'vibe', 'breed', 'ageRange', 'travelRadius'])
             ->where('id', '!=', $pupProfileId)
+            ->where('name', '!=', null)
             ->where('user_id', '!=', $authUserId)
-            ->whereNotIn('id', $friendProfileIds) // 🔥 arkadaşlar çıkartıldı
+            ->whereNotIn('id', $friendProfileIds) // arkadaşlar hariç
             ->get();
 
         $result = [];
@@ -206,27 +215,38 @@ class PupMatchmakingService
             $score     = $this->matchScore($matchType);
 
             $result[] = [
-                'profile_id'  => $profile->id,
-                'name'        => $profile->name,
-                'photo'       => $profile->images[0]->path ?? null,
-                'user_id'     => $profile->user_id,
-                'biography'   => $profile->biography,
+                'pup_profile_id' => $profile->id,
+                'name'           => $profile->name,
+                'photo'          => $profile->images[0]->path ?? null,
+                'user_id'        => $profile->user_id,
+                'biography'      => $profile->biography,
+
                 'vibe' => $profile->vibe->map(fn($v) => [
                     'id'   => $v->id,
-                    'name' => $v->name,
+                    'name' => $v->translate('name'),
                 ]),
+
+                'sex'           => $profile->sex,
+                'breed'         => $profile->breed->translate('name'),
+                'age'           => $profile->ageRange->translate('name'),
+                'travel_radius' => $profile->travelRadius->translate('name'),
+
                 'match_type'  => $matchType,
                 'match_score' => $score,
+
+                // 🔥 YENİ ALANLAR
+                'is_favorite' => in_array($profile->id, $favoriteProfileIds),
+                'is_match'    => in_array($profile->id, $friendProfileIds),
             ];
         }
 
-        // 6) Score'a göre sırala
+        // 6) Score’a göre sırala
         $sorted = collect($result)->sortByDesc('match_score')->values();
 
         // 7) Pagination
-        $total     = $sorted->count();
-        $lastPage  = (int) ceil($total / $perPage);
-        $offset    = ($page - 1) * $perPage;
+        $total    = $sorted->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $offset   = ($page - 1) * $perPage;
 
         $paged = $sorted->slice($offset, $perPage)->values()->toArray();
 
