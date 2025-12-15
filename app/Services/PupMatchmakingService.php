@@ -230,13 +230,14 @@ class PupMatchmakingService
                 'breed'         => $profile->breed->translate('name'),
                 'age'           => $profile->ageRange->translate('name'),
                 'travel_radius' => $profile->travelRadius->translate('name'),
+                 // 🔥 YENİ ALANLAR
+                'is_favorite' => in_array($profile->id, $favoriteProfileIds),
+                'is_match'    => in_array($profile->id, $friendProfileIds),
 
                 'match_type'  => $matchType,
                 'match_score' => $score,
 
-                // 🔥 YENİ ALANLAR
-                'is_favorite' => in_array($profile->id, $favoriteProfileIds),
-                'is_match'    => in_array($profile->id, $friendProfileIds),
+
             ];
         }
 
