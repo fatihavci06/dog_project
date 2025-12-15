@@ -8,7 +8,7 @@ use App\Models\Bread;
 use App\Models\HealthInfo;
 use App\Models\LookingFor;
 use App\Models\MobileAppInformationStepBeyStepInfo;
-use App\Models\pageInfo;
+use App\Models\PageInfo;
 use App\Models\TravelRadius;
 use App\Models\Vibe;
 use App\Services\BreadService;
