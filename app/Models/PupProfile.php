@@ -68,4 +68,8 @@ class PupProfile extends Model
     {
         return $this->belongsToMany(AvailabilityForMeetup::class, 'pup_profile_availability');
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

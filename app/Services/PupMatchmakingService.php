@@ -218,6 +218,42 @@ class PupMatchmakingService
             default   => 1,
         };
     }
+    /**
+     * İki koordinat arasındaki mesafeyi hesaplar (KM cinsinden).
+     */
+    /**
+     * İki koordinat arasındaki mesafeyi hesaplar (KM cinsinden).
+     * Koordinatlar eksikse null döner.
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2): ?float
+    {
+        // 1) Herhangi bir değer NULL veya boş string ise hesaplama yapma, null dön.
+        // Not: '===' yerine 'empty' kullanmıyoruz çünkü 0.0 koordinatı geçerli bir yerdir.
+        if (is_null($lat1) || is_null($lon1) || is_null($lat2) || is_null($lon2)) {
+            return null;
+        }
+
+        // Değerlerin sayısal olduğundan emin olalım (String '41.00' gelebilir)
+        $lat1 = (float) $lat1;
+        $lon1 = (float) $lon1;
+        $lat2 = (float) $lat2;
+        $lon2 = (float) $lon2;
+
+        $earthRadius = 6371; // Dünya yarıçapı (km)
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        $distance = $earthRadius * $c;
+
+        return round($distance, 1);
+    }
 
 
     /**
@@ -231,8 +267,12 @@ class PupMatchmakingService
         int $perPage = 10
     ): array {
 
-        // 1) Bu profile gerçekten giriş yapan kullanıcıya mı ait?
-        if (!PupProfile::where('id', $pupProfileId)->where('user_id', $authUserId)->exists()) {
+        // 1) Profil verisini çek (Sadece varlık kontrolü değil, lat/long verisi için objeyi alıyoruz)
+        $currentProfile = PupProfile::where('id', $pupProfileId)
+            ->where('user_id', $authUserId)
+            ->first();
+
+        if (!$currentProfile) {
             throw new Exception('Not found', 404);
         }
 
@@ -254,7 +294,7 @@ class PupMatchmakingService
             ->pluck('id')
             ->toArray();
 
-        // 🔥 Kullanıcının FAVORİ pup profile ID’leri (TEK SORGU)
+        // Kullanıcının FAVORİ pup profile ID’leri
         $favoriteProfileIds = Favorite::where('user_id', $authUserId)
             ->pluck('favorite_id')
             ->toArray();
@@ -263,28 +303,42 @@ class PupMatchmakingService
         $mainAnswers = $this->getPupAnswers($pupProfileId);
 
         // 4) Diğer profiller
+        // NOT: Eğer veritabanınızda on binlerce kayıt varsa, lat/long filtrelemesini
+        // burada SQL içinde (scopeDistance gibi) yapmanız performans için daha iyi olur.
+        // Şimdilik mevcut yapınızı bozmadan PHP tarafında hesaplıyoruz.
         $otherProfiles = PupProfile::with(['images', 'vibe', 'breed', 'ageRange', 'travelRadius'])
             ->where('id', '!=', $pupProfileId)
             ->where('name', '!=', null)
             ->where('user_id', '!=', $authUserId)
-            ->whereNotIn('id', $friendProfileIds) // arkadaşlar hariç
+            ->whereNotIn('id', $friendProfileIds)
             ->get();
 
         $result = [];
 
-        // 5) Eşleşmeleri hesapla
+        // 5) Eşleşmeleri ve Mesafeyi hesapla
         foreach ($otherProfiles as $profile) {
 
             $otherAnswers = $this->getPupAnswers($profile->id);
-
             $matchType = $this->getMatchType($mainAnswers, $otherAnswers);
             $score     = $this->matchScore($matchType);
+
+            // 🔥 MESAFE HESAPLAMA ÇAĞRISI
+            // Veritabanında sütun adlarınızın 'lat' ve 'long' (veya 'lng') olduğundan emin olun.
+            $distanceKm = $this->calculateDistance(
+    $currentProfile->lat,
+    $currentProfile->long,
+    $profile->lat,
+    $profile->long
+);
 
             $result[] = [
                 'pup_profile_id' => $profile->id,
                 'name'           => $profile->name,
                 'photo'          => $profile->images[0]->path ?? null,
-                'user_id'        => $profile->user_id,
+                'user' => [
+                    'id'   => $profile->user->id,
+                    'name' => $profile->user->name,
+                ],
                 'biography'      => $profile->biography,
 
                 'vibe' => $profile->vibe->map(fn($v) => [
@@ -296,18 +350,19 @@ class PupMatchmakingService
                 'breed'         => $profile->breed->translate('name'),
                 'age'           => $profile->ageRange->translate('name'),
                 'travel_radius' => $profile->travelRadius->translate('name'),
-                // 🔥 YENİ ALANLAR
-                'is_favorite' => in_array($profile->id, $favoriteProfileIds),
-                'is_match'    => in_array($profile->id, $friendProfileIds),
 
-                'match_type'  => $matchType,
-                'match_score' => $score,
+                'is_favorite'   => in_array($profile->id, $favoriteProfileIds),
+                'is_match'      => in_array($profile->id, $friendProfileIds),
 
+                'match_type'    => $matchType,
+                'match_score'   => $score,
 
+                // 🔥 YENİ EKLENEN MESAFE ALANI
+                'distance_km'   => $distanceKm,
             ];
         }
 
-        // 6) Score’a göre sırala
+        // 6) Score’a göre sırala (İsterseniz mesafeye göre de ikincil sıralama yapabilirsiniz)
         $sorted = collect($result)->sortByDesc('match_score')->values();
 
         // 7) Pagination
