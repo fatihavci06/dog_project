@@ -6,6 +6,8 @@ services:
             context: .
             dockerfile: docker/php/Dockerfile
         container_name: laravel-app
+        env_file:
+            - .env   # 🔥 KRİTİK SATIR
         volumes:
             - ./:/var/www/html:delegated   # burada değişti!
         depends_on:

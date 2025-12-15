@@ -8,6 +8,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Message;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (request()->header('X-Forwarded-Proto') === 'https' || request()->isSecure()) {
+            URL::forceScheme('https');
+        }
+
         Paginator::useBootstrapFive(); // Bootstrap 5 için
         View::composer('layouts.partials.navbar', function ($view) {
             if (Auth::check()) {
