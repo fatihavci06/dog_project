@@ -10,6 +10,7 @@ class PageInfoService
     public function all()
     {
         return PageInfo::with('translations.language')->get();
+
     }
 
     public function create(array $data)
