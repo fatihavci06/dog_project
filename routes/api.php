@@ -37,6 +37,8 @@ Route::prefix('question')->group(function () {
 Route::get('/screen/{id}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/pup/{pupProfileId}/discover', [ApiPupMatchController::class, 'matches']);
+    Route::get('/profile/show/{id}', [ApiPupMatchController::class, 'showProfile']);
+
     Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
     Route::post('/friend/accept', [ApiFriendshipController::class, 'accept']);
     Route::post('/friend/reject', [ApiFriendshipController::class, 'reject']);

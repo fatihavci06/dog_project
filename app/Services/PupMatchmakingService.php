@@ -10,6 +10,72 @@ use Exception;
 
 class PupMatchmakingService
 {
+    public function getMatchDetail(
+        int $pupProfileId,
+        int $authUserId
+    ): array {
+
+        // 🔐 Profil var mı
+        $profile = PupProfile::with([
+            'images',
+            'vibe',
+            'breed',
+            'ageRange',
+            'travelRadius',
+
+        ])->find($pupProfileId);
+
+        if (!$profile) {
+            throw new \Exception('Profile not found', 404);
+        }
+
+        /* ============================
+       FRIEND (MATCH) KONTROLÜ
+    ============================ */
+        $isMatch = Friendship::where('status', 'accepted')
+            ->where(function ($q) use ($authUserId, $profile) {
+                $q->where('sender_id', $authUserId)
+                    ->where('receiver_id', $profile->user_id);
+            })
+            ->orWhere(function ($q) use ($authUserId, $profile) {
+                $q->where('sender_id', $profile->user_id)
+                    ->where('receiver_id', $authUserId);
+            })
+            ->exists();
+
+        /* ============================
+       FAVORİ KONTROLÜ
+    ============================ */
+        $isFavorite = Favorite::where('user_id', $authUserId)
+            ->where('favorite_id', $profile->id)
+            ->exists();
+
+        return [
+            'pup_profile_id' => $profile->id,
+            'name'           => $profile->name,
+            'biography'      => $profile->biography,
+            'sex'            => $profile->sex,
+
+            'breed'         => $profile->breed->translate('name'),
+            'age'           => $profile->ageRange->translate('name'),
+            'travel_radius' => $profile->travelRadius->translate('name'),
+
+            'images' => $profile->images->map(fn($img) => [
+                'id'   => $img->id,
+                'path' => $img->path,
+            ]),
+
+            'vibe' => $profile->vibe->map(fn($v) => [
+                'id'   => $v->id,
+                'name' => $v->translate('name'),
+            ]),
+
+            // 🔥 FLAGS
+            'is_favorite' => $isFavorite,
+            'is_match'    => $isMatch,
+        ];
+    }
+
     /**
      * PupProfile'ın tüm cevaplarını getirir.
      * Format:
@@ -230,7 +296,7 @@ class PupMatchmakingService
                 'breed'         => $profile->breed->translate('name'),
                 'age'           => $profile->ageRange->translate('name'),
                 'travel_radius' => $profile->travelRadius->translate('name'),
-                 // 🔥 YENİ ALANLAR
+                // 🔥 YENİ ALANLAR
                 'is_favorite' => in_array($profile->id, $favoriteProfileIds),
                 'is_match'    => in_array($profile->id, $friendProfileIds),
 
