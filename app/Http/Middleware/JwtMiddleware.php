@@ -28,7 +28,7 @@ class JwtMiddleware
 
         // try {
             // Burada secret .env’den alınıyor
-            $secret = config('app.jwt_secret', env('JWT_SECRET'));
+            $secret = config(env('JWT_SECRET'));
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
 Log::info("SECRET USED: " . env('JWT_SECRET'));
 
