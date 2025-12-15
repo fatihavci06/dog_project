@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Support\Jwt as SupportJwt;
 use Closure;
 use Exception;
 use Firebase\JWT\JWT;
@@ -39,25 +40,28 @@ class JwtMiddleware
         }
 
         // try {
-            $decoded = JWT::decode($token, new Key($secret, $algo));
+        $decoded = JWT::decode(
+            $token,
+            new Key(SupportJwt::secret(), SupportJwt::algo())
+        );
 
-            // Kullanıcıyı bul
-            $user = User::find($decoded->user_id ?? null);
+        // Kullanıcıyı bul
+        $user = User::find($decoded->user_id ?? null);
 
-            if (!$user) {
-                return response()->json([
-                    'message' => 'User not found.'
-                ], 401);
-            }
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found.'
+            ], 401);
+        }
 
-            // Request içine ekle
-            $request->merge([
-                'user_id' => $user->id,
-                'role_id' => $user->role_id,
-            ]);
+        // Request içine ekle
+        $request->merge([
+            'user_id' => $user->id,
+            'role_id' => $user->role_id,
+        ]);
 
-            // Dil
-            app()->setLocale($decoded->language ?? 'en');
+        // Dil
+        app()->setLocale($decoded->language ?? 'en');
 
         // } catch (Exception $e) {
         //     Log::warning('JWT verification failed', [

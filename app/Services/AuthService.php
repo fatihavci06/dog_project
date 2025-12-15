@@ -7,6 +7,7 @@ use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmailMail;
 use App\Models\RefreshToken;
 use App\Models\User;
+use App\Support\Jwt as SupportJwt;
 use Carbon\Carbon;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -35,7 +36,6 @@ class AuthService
         ------------------------------------------------ */
             if (!Hash::check($data['current_password'], $user->password)) {
                 throw new \Exception(__('validation.current_password_incorrect'), 422);
-
             }
 
             /* ------------------------------------------------
@@ -43,7 +43,6 @@ class AuthService
         ------------------------------------------------ */
             if (Hash::check($data['new_password'], $user->password)) {
                 throw new \Exception(__('validation.password_same'), 422);
-
             }
 
             /* ------------------------------------------------
@@ -94,7 +93,7 @@ class AuthService
 
             /* ---------------- PUP PROFILE CREATE ---------------- */
             if (isset($data['answers'])) {
-                $data['pup_profile']['answers']=$data['answers'];
+                $data['pup_profile']['answers'] = $data['answers'];
             }
             if (isset($data['pup_profile'])) {
                 app(PupProfileService::class)
@@ -137,11 +136,10 @@ class AuthService
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw new \Exception(__('validation.incorrect_credentials'));
-
         }
 
         // Access token üret
-        $accessToken = $this->generateAccessToken($user,$credentials['language'] ?? null);
+        $accessToken = $this->generateAccessToken($user, $credentials['language'] ?? null);
 
         // Refresh token üret
         $rawRefresh = bin2hex(random_bytes(64));
@@ -159,7 +157,7 @@ class AuthService
 
         ];
     }
-    protected function generateAccessToken(User $user,$language = null): string
+    protected function generateAccessToken(User $user, $language = null): string
     {
         $now = time();
         $exp = $now + (240 * 60); // 15 dakika, ihtiyaca göre değiştirin
@@ -175,7 +173,7 @@ class AuthService
         ];
 
 
-        return JWT::encode($payload, env('JWT_SECRET'), 'HS256');
+        return JWT::encode($payload, SupportJwt::secret(), SupportJwt::algo());
     }
     public function refresh(string $incomingToken): array
     {
@@ -230,8 +228,7 @@ class AuthService
     {
         $user = User::where('email', $email)->first();
         if (!$user) {
-            throw new \Exception(__('auth.user_not_found'),404);
-
+            throw new \Exception(__('auth.user_not_found'), 404);
         }
 
         $token = Str::random(60);
