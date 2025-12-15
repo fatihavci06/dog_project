@@ -38,7 +38,7 @@ class JwtMiddleware
             ], 500);
         }
 
-        try {
+        // try {
             $decoded = JWT::decode($token, new Key($secret, $algo));
 
             // Kullanıcıyı bul
@@ -59,15 +59,15 @@ class JwtMiddleware
             // Dil
             app()->setLocale($decoded->language ?? 'en');
 
-        } catch (Exception $e) {
-            Log::warning('JWT verification failed', [
-                'error' => $e->getMessage()
-            ]);
+        // } catch (Exception $e) {
+        //     Log::warning('JWT verification failed', [
+        //         'error' => $e->getMessage()
+        //     ]);
 
-            return response()->json([
-                'message' => 'Invalid or expired token.'
-            ], 401);
-        }
+        //     return response()->json([
+        //         'message' => 'Invalid or expired token.'
+        //     ], 401);
+        // }
 
         return $next($request);
     }
