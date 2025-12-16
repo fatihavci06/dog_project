@@ -92,6 +92,12 @@ class PupMatchmakingService
             'vibe' => $profile->vibe->map(fn($v) => [
                 'id'   => $v->id,
                 'name' => $v->translate('name'),
+                'icon_path' => $v->icon_path,
+            ]),
+            'looking_for' => $profile->lookingFor->map(fn($v) => [
+                'id'   => $v->id,
+                'name' => $v->translate('name'),
+
             ]),
 
             // 🔥 FLAGS & MESAFE
