@@ -45,7 +45,7 @@ class PupProfileCreateRequest extends BaseRequest
             /* -------------------------------------------
                BIOGRAPHY
             ------------------------------------------- */
-            'biography' => 'nullable|string',
+            'biography' => 'required|string',
 
             /* -------------------------------------------
                IMAGES (base64)
