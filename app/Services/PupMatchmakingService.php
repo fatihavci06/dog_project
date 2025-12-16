@@ -101,6 +101,8 @@ class PupMatchmakingService
             ]),
 
             // 🔥 FLAGS & MESAFE
+            'city'        => $profile->city,
+            'district'    => $profile->district,
             'is_favorite' => $isFavorite,
             'is_match'    => $isMatch,
             'distance_km' => $distanceKm, // Null veya float döner (örn: 12.5)
