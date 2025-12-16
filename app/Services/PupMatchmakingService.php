@@ -99,6 +99,11 @@ class PupMatchmakingService
                 'name' => $v->translate('name'),
 
             ]),
+            'availability_for_meetup' => $profile->availabilityForMeetup->map(fn($v) => [
+                'id'   => $v->id,
+                'name' => $v->translate('name'),
+
+            ]),
 
             // 🔥 FLAGS & MESAFE
             'city'        => $profile->city,
