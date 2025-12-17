@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helper\MatchClass;
 use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
@@ -111,6 +112,10 @@ class PupMatchmakingService extends BaseService
             'is_favorite' => $isFavorite,
             'is_match'    => $isMatch,
             'distance_km' => $distanceKm, // Null veya float döner (örn: 12.5)
+            'match_type' => MatchClass::getMatchType(
+                 $this->getPupAnswers($authProfile->id ?? 0),
+                $this->getPupAnswers($profile->id)
+            ),
         ];
     }
 
@@ -329,7 +334,7 @@ class PupMatchmakingService extends BaseService
         foreach ($otherProfiles as $profile) {
 
             $otherAnswers = $this->getPupAnswers($profile->id);
-            $matchType = $this->getMatchType($mainAnswers, $otherAnswers);
+            $matchType = MatchClass::getMatchType($mainAnswers, $otherAnswers);
             $score     = $this->matchScore($matchType);
 
             // 🔥 MESAFE HESAPLAMA ÇAĞRISI

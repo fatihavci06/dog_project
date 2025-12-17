@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helper\MatchClass;
 use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
@@ -126,7 +127,9 @@ class FavoriteService extends BaseService
                 // 🔥 FLAG’LER
                 'is_favorite' => in_array($pup->id, $favoriteIds) ? 1 : 0,
                 'is_match'    => in_array($pup->id, $friendIds) ? 1 : 0,
-                'distance_km' => $distanceKm
+                'distance_km' => $distanceKm,
+                'match_type' => MatchClass::getMatchType($pup->answers->toArray(), $authProfile ? $authProfile->answers->toArray() : []
+                ),
             ];
         });
 

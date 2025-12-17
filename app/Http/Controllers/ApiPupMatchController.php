@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\PupMatchmakingService;
 use Illuminate\Http\Request;
 
-class ApiPupMatchController extends Controller
+class ApiPupMatchController extends ApiController
 {
     public function matches(Request $request, int $pupProfileId, PupMatchmakingService $service)
     {

@@ -57,4 +57,8 @@ class ApiFriendshipController extends ApiController
 
         return $service->cancelFriendRequest($request->user_id, $request->friend_id);
     }
+    public function totalMatchAndChats(Request $request, FriendshipService $service)
+    {
+        return $service->totalMatchAndChats($request->user_id);
+    }
 }

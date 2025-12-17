@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helper\MatchClass;
 use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
@@ -110,6 +111,10 @@ class FriendshipService extends BaseService
                     'photo'          => $req->receiver->images[0]->path ?? null,
                     'biography'      => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+                    'match_type'   => MatchClass::getMatchType(
+                         $req->sender->answers->toArray(),
+                        $req->receiver->answers->toArray()
+                    ),
 
                     'distance_km' => $this->calculateDistance(
                         $req->receiver->lat ?? 0,
@@ -171,6 +176,10 @@ class FriendshipService extends BaseService
                     'photo'          => $req->receiver->images[0]->path ?? null,
                     'biography'      => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+                    'match_type'   => MatchClass::getMatchType(
+                        $req->sender->answers->toArray(),
+                        $req->receiver->answers->toArray()
+                    ),
 
                     'distance_km' => $this->calculateDistance(
                         $req->receiver->lat ?? 0,
@@ -214,6 +223,10 @@ class FriendshipService extends BaseService
                     'photo'          => $req->receiver->images[0]->path ?? null,
                     'biography'      => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+                    'match_type'   => MatchClass::getMatchType(
+                         $req->sender->answers->toArray(),
+                        $req->receiver->answers->toArray()
+                    ),
 
                     'distance_km' => $this->calculateDistance(
                         $req->receiver->lat,
@@ -235,5 +248,30 @@ class FriendshipService extends BaseService
     {
         // 1. Kullanıcının kendi pup profillerini bul (Güvenlik için)
        Friendship::where('id', $friendPupId)->delete();
+    }
+    public function totalMatchAndChats(int $userId)
+    {
+        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+
+        $totalMatches = Friendship::where(function ($q) use ($pupProfileIds) {
+            $q->whereIn('sender_id', $pupProfileIds)
+                ->where('status', 'accepted');
+        })
+            ->orWhere(function ($q) use ($pupProfileIds) {
+                $q->whereIn('receiver_id', $pupProfileIds)
+                    ->where('status', 'accepted');
+            })
+            ->count();
+
+        // Toplam chat sayısını hesapla
+        $totalChats = \App\Models\Conversation::where(function ($q) use ($pupProfileIds) {
+            $q->whereIn('user_one_id', $pupProfileIds)
+                ->orWhereIn('user_two_id', $pupProfileIds);
+        })->count();
+
+        return [
+            'total_matches' => $totalMatches,
+            'total_chats'   => $totalChats,
+        ];
     }
 }
