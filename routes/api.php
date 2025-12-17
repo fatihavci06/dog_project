@@ -46,7 +46,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/friend/incoming', [ApiFriendshipController::class, 'incoming']);
     Route::get('/friend/outgoing', [ApiFriendshipController::class, 'outgoing']);
     Route::post('/friend/unfriend', [ApiFriendshipController::class, 'unfriend']);
-
+    Route::post('/friend/cancel-friend-request', [ApiFriendshipController::class, 'cancelFriendRequest']);
     // Favorites
     Route::post('/favorite/add',    [ApiFavoriteController::class, 'add']);
     Route::post('/favorite/remove', [ApiFavoriteController::class, 'remove']);

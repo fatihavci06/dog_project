@@ -11,17 +11,17 @@ class ApiFriendshipController extends ApiController
 {
     public function send(FriendSendRequest $request, FriendshipService $service)
     {
-        return $service->send($request->user_id, $request->receiver_id);
+        return $service->send($request->my_pup_profile_id, $request->target_pup_profile_id);
     }
 
     public function accept(FriendActionRequest $request, FriendshipService $service)
     {
-        return $service->accept($request->user_id, $request->sender_id);
+        return $service->accept($request->user_id, $request->friend_id);
     }
 
     public function reject(FriendActionRequest $request, FriendshipService $service)
     {
-        return $service->reject($request->user_id, $request->sender_id);
+        return $service->reject($request->user_id, $request->friend_id);
     }
 
     public function friends(Request $request, FriendshipService $service)
@@ -44,9 +44,17 @@ class ApiFriendshipController extends ApiController
     public function unfriend(Request $request, FriendshipService $service)
     {
         $request->validate([
-            'friend_id' => 'required|integer|exists:users,id'
+            'friend_id' => 'required|integer|exists:friendships,id'
         ]);
 
         return $service->unfriend($request->user_id, $request->friend_id);
+    }
+    public function cancelFriendRequest(Request $request, FriendshipService $service)
+    {
+        $request->validate([
+            'friend_id' => 'required|integer|exists:friendships,id'
+        ]);
+
+        return $service->cancelFriendRequest($request->user_id, $request->friend_id);
     }
 }

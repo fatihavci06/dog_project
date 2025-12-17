@@ -12,12 +12,14 @@ class Friendship extends Model
         'status'
     ];
 
-    public function sender() {
-        return $this->belongsTo(User::class, 'sender_id');
+    public function sender()
+    {
+        return $this->belongsTo(PupProfile::class, 'sender_id', 'id');
     }
 
-    public function receiver() {
-        return $this->belongsTo(User::class, 'receiver_id');
+    public function receiver()
+    {
+        return $this->belongsTo(PupProfile::class, 'receiver_id', 'id');
     }
 
 }

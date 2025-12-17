@@ -16,7 +16,7 @@ class FriendActionRequest extends BaseRequest
     public function rules(): array
     {
         return [
-             'sender_id' => 'required|integer|exists:users,id'
+             'friend_id' => 'required|integer|exists:friendships,id'
         ];
     }
 }

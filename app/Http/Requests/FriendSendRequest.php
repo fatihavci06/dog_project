@@ -11,7 +11,8 @@ class FriendSendRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'receiver_id' => 'required|integer|exists:users,id'
+            'my_pup_profile_id' => 'required|integer|exists:pup_profiles,id',
+            'target_pup_profile_id' => 'required|integer|exists:pup_profiles,id'
 
         ];
     }

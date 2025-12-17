@@ -2,25 +2,27 @@
 
 namespace App\Services;
 
+use App\Models\Favorite;
 use App\Models\Friendship;
+use App\Models\PupProfile;
 use Exception;
 
-class FriendshipService
+class FriendshipService extends BaseService
 {
-    public function send(int $authUserId, int $receiverId)
+    public function send(int $myPupProfileId, int $targetPupProfileId)
     {
-        if ($authUserId == $receiverId) {
+        if ($myPupProfileId == $targetPupProfileId) {
             throw new Exception("You cannot send requests to yourself.", 400);
         }
 
         // Zaten ilişki var mı?
-        $exists = Friendship::where(function ($q) use ($authUserId, $receiverId) {
-            $q->where('sender_id', $authUserId)
-                ->where('receiver_id', $receiverId);
+        $exists = Friendship::where(function ($q) use ($myPupProfileId, $targetPupProfileId) {
+            $q->where('sender_id', $myPupProfileId)
+                ->where('receiver_id', $targetPupProfileId);
         })
-            ->orWhere(function ($q) use ($authUserId, $receiverId) {
-                $q->where('sender_id', $receiverId)
-                    ->where('receiver_id', $authUserId);
+            ->orWhere(function ($q) use ($myPupProfileId, $targetPupProfileId) {
+                $q->where('sender_id', $targetPupProfileId)
+                    ->where('receiver_id', $myPupProfileId);
             })
             ->first();
 
@@ -29,17 +31,16 @@ class FriendshipService
         }
 
         return Friendship::create([
-            'sender_id' => $authUserId,
-            'receiver_id' => $receiverId,
+            'sender_id' => $myPupProfileId,
+            'receiver_id' => $targetPupProfileId,
             'status' => 'pending'
         ]);
     }
 
 
-    public function accept(int $authUserId, int $senderId)
+    public function accept(int $authUserId, int $friendId)
     {
-        $req = Friendship::where('sender_id', $senderId)
-            ->where('receiver_id', $authUserId)
+        $req = Friendship::where('id', $friendId)
             ->where('status', 'pending')
             ->first();
 
@@ -52,12 +53,12 @@ class FriendshipService
     }
 
 
-    public function reject(int $authUserId, int $senderId)
+    public function reject(int $authUserId, int $friendId)
     {
-        $req = Friendship::where('sender_id', $senderId)
-            ->where('receiver_id', $authUserId)
+        $req = Friendship::where('id', $friendId)
             ->where('status', 'pending')
             ->first();
+
 
         if (!$req) {
             throw new Exception("There are no pending requests.", 404);
@@ -71,31 +72,52 @@ class FriendshipService
     public function listFriends(int $userId, int $page = 1, int $perPage = 10)
     {
         // 1) Arkadaşları getir
-        $friends = Friendship::where(function ($q) use ($userId) {
-            $q->where('sender_id', $userId)
+        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+        $favoriteIds = Favorite::where('user_id', $userId)
+            ->pluck('favorite_id')
+            ->toArray();
+
+        $friends = Friendship::where(function ($q) use ($pupProfileIds) {
+            $q->whereIn('sender_id', $pupProfileIds)
                 ->where('status', 'accepted');
         })
-            ->orWhere(function ($q) use ($userId) {
-                $q->where('receiver_id', $userId)
+            ->orWhere(function ($q) use ($pupProfileIds) {
+                $q->whereIn('receiver_id', $pupProfileIds)
                     ->where('status', 'accepted');
             })
             ->get()
-            ->map(function ($f) use ($userId) {
+            ->map(function ($req) use ($userId, $favoriteIds) {
 
-                $friendId = $f->sender_id == $userId
-                    ? $f->receiver_id
-                    : $f->sender_id;
 
-                // 2) Pup profile bilgilerini çek
-                $pup = \App\Models\PupProfile::with('images')
-                    ->where('user_id', $friendId)
-                    ->first();
 
                 return [
-                    'user_id'   => $friendId,
-                    'name'      => $pup->name ?? null,
-                    'photo'     => $pup->images[0]->path ?? null,
-                    'biography' => $pup->biography ?? null,
+                    'id' => $req->id,
+                    'pup_profile_id' => $req->receiver_id,
+                    'name'        => $req->receiver->name ?? null,
+                    'status'      => $req->status,
+                    'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
+                    'vibe' => $req->receiver->vibe->map(fn($v) => [
+                        'id'   => $v->id,
+                        'name' => $v->translate('name'),
+                    ]),
+                    'user'           => [
+                        'id'       => $req->receiver->user->id,
+                        'name'     => $req->receiver->user->name
+                    ],
+                    'age_range'      => $req->receiver->ageRange?->translate('name'),
+                    'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
+                    'sex'            => $req->receiver->sex,
+                    'photo'          => $req->receiver->images[0]->path ?? null,
+                    'biography'      => $req->receiver->biography,
+                    'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+
+                    'distance_km' => $this->calculateDistance(
+                        $req->receiver->lat ?? 0,
+                        $req->receiver->long ?? 0,
+                        $req->sender->lat ?? 0, // Hedef profilin lat
+                        $req->sender->long ?? 0 // Hedef profilin long
+                    ),
+
                 ];
             });
 
@@ -119,60 +141,99 @@ class FriendshipService
 
     public function incomingRequests(int $userId)
     {
-        return Friendship::where('receiver_id', $userId)
-            ->where('status', 'pending')
-            ->with('sender')
+        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+        $favoriteIds = Favorite::where('user_id', $userId)
+            ->pluck('favorite_id')
+            ->toArray();
+
+        return Friendship::where('status', 'pending')
+            ->with('receiver', 'sender')
+            ->whereIn('receiver_id', $pupProfileIds) // 🔥 user’a ait pup'lar
             ->get()
-            ->map(function ($req) {
+            ->map(function ($req) use ($favoriteIds) {
                 return [
-                    'sender_id' => $req->sender_id,
-                    'name'      => $req->sender->name ?? null,
-                    'status'    => $req->status,
-                    'sent_at'   => $req->created_at,
+                    'id' => $req->id,
+                    'pup_profile_id' => $req->receiver_id,
+                    'name'        => $req->receiver->name ?? null,
+                    'status'      => $req->status,
+                    'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
+                    'vibe' => $req->receiver->vibe->map(fn($v) => [
+                        'id'   => $v->id,
+                        'name' => $v->translate('name'),
+                    ]),
+                    'user'           => [
+                        'id'       => $req->receiver->user->id,
+                        'name'     => $req->receiver->user->name
+                    ],
+                    'age_range'      => $req->receiver->ageRange?->translate('name'),
+                    'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
+                    'sex'            => $req->receiver->sex,
+                    'photo'          => $req->receiver->images[0]->path ?? null,
+                    'biography'      => $req->receiver->biography,
+                    'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+
+                    'distance_km' => $this->calculateDistance(
+                        $req->receiver->lat ?? 0,
+                        $req->receiver->long ?? 0,
+                        $req->sender->lat ?? 0, // Hedef profilin lat
+                        $req->sender->long ?? 0 // Hedef profilin long
+                    ),
+
                 ];
             });
     }
     public function outgoingRequests(int $userId)
     {
-        return Friendship::where('sender_id', $userId)
-            ->where('status', 'pending')
-            ->with('receiver')
+        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+        $favoriteIds = Favorite::where('user_id', $userId)
+            ->pluck('favorite_id')
+            ->toArray();
+
+        return Friendship::where('status', 'pending')
+            ->with('receiver', 'sender')
+            ->whereIn('sender_id', $pupProfileIds) // 🔥 user’a ait pup'lar
             ->get()
-            ->map(function ($req) {
+            ->map(function ($req) use ($favoriteIds) {
                 return [
-                    'receiver_id' => $req->receiver_id,
+                    'id' => $req->id,
+                    'pup_profile_id' => $req->receiver_id,
                     'name'        => $req->receiver->name ?? null,
                     'status'      => $req->status,
-                    'sent_at'     => $req->created_at,
+                    'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
+                    'vibe' => $req->receiver->vibe->map(fn($v) => [
+                        'id'   => $v->id,
+                        'name' => $v->translate('name'),
+                    ]),
+                    'user'           => [
+                        'id'       => $req->receiver->user->id,
+                        'name'     => $req->receiver->user->name
+                    ],
+                    'age_range'      => $req->receiver->ageRange?->translate('name'),
+                    'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
+                    'sex'            => $req->receiver->sex,
+                    'photo'          => $req->receiver->images[0]->path ?? null,
+                    'biography'      => $req->receiver->biography,
+                    'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+
+                    'distance_km' => $this->calculateDistance(
+                        $req->receiver->lat,
+                        $req->receiver->long,
+                        $req->sender->lat, // Hedef profilin lat
+                        $req->sender->long // Hedef profilin long
+                    ),
+
                 ];
             });
     }
-    public function unfriend(int $authUserId, int $friendId)
+
+    public function unfriend(int $userId, int $friendPupId)
     {
-        // Kendini çıkaramazsın
-        if ($authUserId == $friendId) {
-            throw new \Exception("You can't unfriend yourself.", 400);
-        }
-
-        // Arkadaşlık kaydını bul
-        $friendship = Friendship::where(function ($q) use ($authUserId, $friendId) {
-            $q->where('sender_id', $authUserId)
-                ->where('receiver_id', $friendId);
-        })
-            ->orWhere(function ($q) use ($authUserId, $friendId) {
-                $q->where('sender_id', $friendId)
-                    ->where('receiver_id', $authUserId);
-            })
-            ->where('status', 'accepted')
-            ->first();
-
-        if (!$friendship) {
-            throw new \Exception("You are not friends with this person.", 404);
-        }
-
-        // Arkadaşlığı tamamen sil
-        $friendship->delete();
-
-
+        // 1. Kullanıcının kendi pup profillerini bul (Güvenlik için)
+       Friendship::where('id', $friendPupId)->delete();
+    }
+    public function cancelFriendRequest(int $userId, int $friendPupId)
+    {
+        // 1. Kullanıcının kendi pup profillerini bul (Güvenlik için)
+       Friendship::where('id', $friendPupId)->delete();
     }
 }
