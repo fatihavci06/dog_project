@@ -255,7 +255,7 @@ class PupMatchmakingService extends BaseService
     public function matchScore(string $matchType): int
     {
         return match ($matchType) {
-            '❤️ Perfect' => 4,
+            '❤️ Pawfect' => 4,
             '💪 Strong'  => 3,
             '🙂 Good'    => 2,
             default   => 1,

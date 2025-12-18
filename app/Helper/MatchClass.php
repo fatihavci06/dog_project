@@ -45,7 +45,7 @@ class MatchClass
          * 💘 Perfect Match
          */
         if ($perfect) {
-            return '❤️ Perfect';
+            return '❤️ Pawfect';
         }
 
 
