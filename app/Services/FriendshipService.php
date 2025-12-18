@@ -172,9 +172,11 @@ class FriendshipService extends BaseService
                     ],
                     'age_range'      => $req->receiver->ageRange?->translate('name'),
                     'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
+                    'breed'          => $req->receiver->breed?->translate('name'),
                     'sex'            => $req->receiver->sex,
                     'photo'          => $req->receiver->images[0]->path ?? null,
                     'biography'      => $req->receiver->biography,
+
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
                         $req->sender->answers->toArray(),
@@ -218,6 +220,7 @@ class FriendshipService extends BaseService
                         'name'     => $req->receiver->user->name
                     ],
                     'age_range'      => $req->receiver->ageRange?->translate('name'),
+                    'breed'          => $req->receiver->breed?->translate('name'),
                     'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
                     'sex'            => $req->receiver->sex,
                     'photo'          => $req->receiver->images[0]->path ?? null,
