@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\MessageSent;
 use App\Models\Conversation;
 use App\Models\Message;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class MessageService
@@ -12,12 +13,12 @@ class MessageService
     public function getUserConversations(int $userId)
     {
 
-       return Conversation::where('user_one_id', $userId)
-        ->orWhere('user_two_id', $userId)
-        ->with(['messages' => function ($q) {
-            $q->latest();
-        }])
-        ->get();
+        return Conversation::where('user_one_id', $userId)
+            ->orWhere('user_two_id', $userId)
+            ->with(['messages' => function ($q) {
+                $q->latest();
+            }])
+            ->get();
     }
 
     /**
@@ -73,5 +74,28 @@ class MessageService
         }
 
         return $query->get()->reverse()->values();
+    }
+    public static function getLastChatDateBetweenProfiles($profileOneId,  $profileTwoId)
+    {
+
+        $conversation = Conversation::where(function ($query) use ($profileOneId, $profileTwoId) {
+            $query->where('user_one_id', $profileOneId)
+                ->where('user_two_id', $profileTwoId);
+        })->orWhere(function ($query) use ($profileOneId, $profileTwoId) {
+            $query->where('user_one_id', $profileTwoId)
+                ->where('user_two_id', $profileOneId);
+        })->first();
+
+        if (!$conversation) {
+            return null;
+        }
+
+        $lastMessage = Message::where('conversation_id', $conversation->id)
+            ->orderByDesc('created_at')
+            ->first();
+
+        return $lastMessage
+            ? Carbon::parse($lastMessage->updated_at)->format('d-m-Y H:i')
+            : null;
     }
 }

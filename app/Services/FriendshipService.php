@@ -97,6 +97,10 @@ class FriendshipService extends BaseService
                     'name'        => $req->receiver->name ?? null,
                     'status'      => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
+                    'last_chat_at' =>MessageService::getLastChatDateBetweenProfiles(
+                        $userId,
+                        $req->receiver->user->id
+                    ),
                     'vibe' => $req->receiver->vibe->map(fn($v) => [
                         'id'   => $v->id,
                         'name' => $v->translate('name'),
