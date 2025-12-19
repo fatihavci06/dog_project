@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiNotificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ApiCalendarController;
 use App\Http\Controllers\ApiChatController;
+use App\Http\Controllers\ApiDateController;
 use App\Http\Controllers\ApiFavoriteController;
 use App\Http\Controllers\ApiFriendshipController;
 use App\Http\Controllers\ApiLocationController;
@@ -37,7 +38,7 @@ Route::prefix('question')->group(function () {
 Route::get('/screen/{id}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/pup/{pupProfileId}/discover', [ApiPupMatchController::class, 'matches']);
-    Route::get('/discover/show/{id}', [ApiPupMatchController::class, 'showProfile']);//id pup profile id
+    Route::get('/discover/show/{id}', [ApiPupMatchController::class, 'showProfile']); //id pup profile id
 
     Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
     Route::post('/friend/accept', [ApiFriendshipController::class, 'accept']);
@@ -47,7 +48,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/friend/outgoing', [ApiFriendshipController::class, 'outgoing']);
     Route::post('/friend/unfriend', [ApiFriendshipController::class, 'unfriend']);
     Route::post('/friend/cancel-friend-request', [ApiFriendshipController::class, 'cancelFriendRequest']);
-     Route::get('/friend/info', [ApiFriendshipController::class, 'totalMatchAndChats']);
+    Route::get('/friend/info', [ApiFriendshipController::class, 'totalMatchAndChats']);
     // Favorites
     Route::post('/favorite/add',    [ApiFavoriteController::class, 'add']);
     Route::post('/favorite/remove', [ApiFavoriteController::class, 'remove']);
@@ -60,14 +61,24 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::put('my-profile/update', [AuthController::class, 'myProfileUpdate']);
     Route::get('/survey/{pupProfile}', [ApiPupProfileController::class, 'questionsWithAnswers']);
     Route::get('/my-pups', [ApiPupProfileController::class, 'myPups']);
-     Route::get('/my-pup/show/{id}', [ApiPupProfileController::class, 'myPupShow']);
+    Route::get('/my-pup/show/{id}', [ApiPupProfileController::class, 'myPupShow']);
     Route::get('pup/{pupId}/survey-answers', [ApiPupProfileController::class, 'getAnswers']);
     Route::put('pup/{pupId}/survey/update', [ApiPupProfileController::class, 'updateSurvey']);
     Route::delete('pup/delete/{pupId}', [ApiPupProfileController::class, 'destroy']);
     Route::post('pup/create', [ApiPupProfileController::class, 'store']);
     Route::put('pup/update/{id}', [ApiPupProfileController::class, 'update']);
 
+    Route::prefix('dates')->group(function () {
+        // Listeleme
+        Route::get('incoming', [ApiDateController::class, 'incoming']); // Bana gelenler
+        Route::get('outgoing', [ApiDateController::class, 'outgoing']); // Benim gönderdiklerim
 
+        // İşlemler
+        Route::post('send', [ApiDateController::class, 'store']);      // Yeni teklif gönder
+        Route::post('cancel', [ApiDateController::class, 'cancel']);   // İptal et (Sender)
+        Route::post('approve', [ApiDateController::class, 'approve']); // Onayla (Receiver)
+        Route::post('reject', [ApiDateController::class, 'reject']);   // Reddet (Receiver)
+    });
     Route::prefix('test')->group(function () {
         Route::get('get/{test_id}', [QuestionController::class, 'testGet']);
         Route::post('update/{test_id}', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate'])->name('test.update');
