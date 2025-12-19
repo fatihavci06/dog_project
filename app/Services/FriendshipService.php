@@ -162,26 +162,26 @@ class FriendshipService extends BaseService
             ->map(function ($req) use ($favoriteIds) {
                 return [
                     'id' => $req->id,
-                    'pup_profile_id' => $req->receiver_id,
-                    'name'        => $req->receiver->name ?? null,
+                    'pup_profile_id' => $req->sender_id,
+                    'name'        => $req->sender->name ?? null,
                     'status'      => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
-                    'vibe' => $req->receiver->vibe->map(fn($v) => [
+                    'vibe' => $req->sender->vibe->map(fn($v) => [
                         'id'   => $v->id,
                         'name' => $v->translate('name'),
                     ]),
                     'user'           => [
-                        'id'       => $req->receiver->user->id,
-                        'name'     => $req->receiver->user->name
+                        'id'       => $req->sender->user->id,
+                        'name'     => $req->sender->user->name
                     ],
-                    'age_range'      => $req->receiver->ageRange?->translate('name'),
-                    'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
-                    'breed'          => $req->receiver->breed?->translate('name'),
-                    'sex'            => $req->receiver->sex,
-                    'photo'          => $req->receiver->images[0]->path ?? null,
-                    'biography'      => $req->receiver->biography,
+                    'age_range'      => $req->sender->ageRange?->translate('name'),
+                    'travel_radius'  => $req->sender->travelRadius?->translate('name'),
+                    'breed'          => $req->sender->breed?->translate('name'),
+                    'sex'            => $req->sender->sex,
+                    'photo'          => $req->sender->images[0]->path ?? null,
+                    'biography'      => $req->sender->biography,
 
-                    'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+                    'is_favorite' => in_array($req->sender->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
                         $req->sender->answers->toArray(),
                         $req->receiver->answers->toArray()
