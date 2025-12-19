@@ -2,10 +2,31 @@ FROM php:8.2-fpm
 
 # Sistem bağımlılıkları
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev libpng-dev libonig-dev libxml2-dev libcurl4-openssl-dev zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd curl
+    git \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libcurl4-openssl-dev \
+    zip \
+    curl \
+    \
+    # 🔥 IMAGICK bağımlılıkları
+    imagemagick \
+    libmagickwand-dev \
+    \
+    && pecl install redis imagick \
+    && docker-php-ext-enable redis imagick \
+    && docker-php-ext-install \
+        pdo_mysql \
+        mbstring \
+        zip \
+        exif \
+        pcntl \
+        bcmath \
+        gd \
+        curl
 
 # PROD OPCACHE AYARLARI
 RUN cat << 'EOF' > /usr/local/etc/php/conf.d/opcache.ini
