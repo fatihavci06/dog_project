@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Log;
 
-Broadcast::channel('conversation.{conversationId}', function ($userPayload, $conversationId) {
+Broadcast::channel('users.{userId}', function ($userPayload, $conversationId) {
     Log::info('channels.php');
     $userId = $userPayload->user_id ?? null;
     if (!$userId) return false;
