@@ -154,7 +154,13 @@ class AuthService
         return [
             'access_token'  => $accessToken,
             'refresh_token' => $rawRefresh,
-
+            'user_id'       => $user->id,
+            'notification_status' => $user->notification_status,
+            'language'     => $credentials['language'] ?? 'en',
+            'pup_profiles'  => $user->pupProfiles->map(fn($p) => [
+                'id'   => $p->id,
+                'name' => $p->name,
+            ]),
         ];
     }
     protected function generateAccessToken(User $user, $language = null): string

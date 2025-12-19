@@ -34,7 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'photo_path',
         'biography',
         'photo',
-        'date_of_birth'
+        'date_of_birth',
+        'notification_status'
     ];
 
     /**
