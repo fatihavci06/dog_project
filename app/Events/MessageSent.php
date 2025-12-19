@@ -36,6 +36,10 @@ class MessageSent implements ShouldBroadcast
             new PrivateChannel('users.' . $this->message->receiver_id),
         ];
     }
+    public function broadcastAs(): string
+    {
+        return 'message.sent';
+    }
 
     /**
      * React Native tarafına gidecek veri paketi.
