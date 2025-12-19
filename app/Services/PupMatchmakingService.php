@@ -316,13 +316,14 @@ class PupMatchmakingService extends BaseService
 
         // 3) Ana profilin cevapları
         $mainAnswers = $this->getPupAnswers($pupProfileId);
+        $pupProfileIds = PupProfile::where('user_id', $authUserId)->pluck('id')->toArray();
 
         // 4) Diğer profiller
         // NOT: Eğer veritabanınızda on binlerce kayıt varsa, lat/long filtrelemesini
         // burada SQL içinde (scopeDistance gibi) yapmanız performans için daha iyi olur.
         // Şimdilik mevcut yapınızı bozmadan PHP tarafında hesaplıyoruz.
         $otherProfiles = PupProfile::with(['images', 'vibe', 'breed', 'ageRange', 'travelRadius'])
-            ->where('id', '!=', $pupProfileId)
+            ->whereNotIn('id', $pupProfileIds)
             ->where('name', '!=', null)
             ->where('user_id', '!=', $authUserId)
             ->whereNotIn('id', $friendProfileIds)

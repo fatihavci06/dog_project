@@ -69,4 +69,14 @@ class NotificationService
             'onesignal_player_id' => $data['onesignal_player_id'],
         ]);
     }
+    public function changeNotificationStatus($userId, $status)
+    {
+        $user = User::find($userId);
+        if ($user) {
+            $user->notification_status = $status;
+            $user->save();
+
+        }
+
+    }
 }

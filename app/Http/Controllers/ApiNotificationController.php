@@ -20,4 +20,14 @@ class ApiNotificationController extends ApiController
 
         return $this->notificationService->setOneSignalPlayerId($request->all());
     }
+    public function changeNotificationStatus(Request $request)
+    {
+        $request->validate([
+            'status' => 'required|boolean',
+        ]);
+
+        return $this->notificationService->changeNotificationStatus($request->user_id, $request->status);
+    }
+
+
 }
