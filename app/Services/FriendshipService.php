@@ -79,7 +79,7 @@ class FriendshipService extends BaseService
             ->toArray();
 
         $friends = Friendship::where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)
+            $q->whereIn('sender_id', $pupProfileIds)->whereIn('receiver_id', $pupProfileIds)
                 ->where('status', 'accepted');
         })
             ->orWhere(function ($q) use ($pupProfileIds) {
@@ -93,28 +93,28 @@ class FriendshipService extends BaseService
 
                 return [
                     'id' => $req->id,
-                    'pup_profile_id' => $req->receiver_id,
-                    'name'        => $req->receiver->name ?? null,
+                    'pup_profile_id' => $req->sender_id,
+                    'name'        => $req->sender->name ?? null,
                     'status'      => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
                     'last_chat_at' =>MessageService::getLastChatDateBetweenProfiles(
                         $userId,
-                        $req->receiver->user->id
+                        $req->sender->user->id
                     ),
-                    'vibe' => $req->receiver->vibe->map(fn($v) => [
+                    'vibe' => $req->sender->vibe->map(fn($v) => [
                         'id'   => $v->id,
                         'name' => $v->translate('name'),
                     ]),
                     'user'           => [
-                        'id'       => $req->receiver->user->id,
-                        'name'     => $req->receiver->user->name
+                        'id'       => $req->sender->user->id,
+                        'name'     => $req->sender->user->name
                     ],
-                    'age_range'      => $req->receiver->ageRange?->translate('name'),
-                    'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
-                    'sex'            => $req->receiver->sex,
-                    'photo'          => $req->receiver->images[0]->path ?? null,
-                    'biography'      => $req->receiver->biography,
-                    'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
+                    'age_range'      => $req->sender->ageRange?->translate('name'),
+                    'travel_radius'  => $req->sender->travelRadius?->translate('name'),
+                    'sex'            => $req->sender->sex,
+                    'photo'          => $req->sender->images[0]->path ?? null,
+                    'biography'      => $req->sender->biography,
+                    'is_favorite' => in_array($req->sender->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
                          $req->sender->answers->toArray(),
                         $req->receiver->answers->toArray()
