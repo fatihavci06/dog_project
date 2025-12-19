@@ -79,10 +79,11 @@ class FriendshipService extends BaseService
             ->toArray();
 
         $friends = Friendship::where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)->whereIn('receiver_id', $pupProfileIds)
-                ->where('status', 'accepted');
-        })->get()
-            ->map(function ($req) use ($userId, $favoriteIds) {
+            $q->whereIn('sender_id', $pupProfileIds)
+                ->orWhereIn('receiver_id', $pupProfileIds);
+        })
+            ->where('status', 'accepted')
+            ->get()->map(function ($req) use ($userId, $favoriteIds) {
 
 
 
@@ -92,7 +93,7 @@ class FriendshipService extends BaseService
                     'name'        => $req->sender->name ?? null,
                     'status'      => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
-                    'last_chat_at' =>MessageService::getLastChatDateBetweenProfiles(
+                    'last_chat_at' => MessageService::getLastChatDateBetweenProfiles(
                         $userId,
                         $req->sender->user->id
                     ),
@@ -111,7 +112,7 @@ class FriendshipService extends BaseService
                     'biography'      => $req->sender->biography,
                     'is_favorite' => in_array($req->sender->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
-                         $req->sender->answers->toArray(),
+                        $req->sender->answers->toArray(),
                         $req->receiver->answers->toArray()
                     ),
 
@@ -226,7 +227,7 @@ class FriendshipService extends BaseService
                     'biography'      => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
-                         $req->sender->answers->toArray(),
+                        $req->sender->answers->toArray(),
                         $req->receiver->answers->toArray()
                     ),
 
@@ -244,12 +245,12 @@ class FriendshipService extends BaseService
     public function unfriend(int $userId, int $friendPupId)
     {
         // 1. Kullanıcının kendi pup profillerini bul (Güvenlik için)
-       Friendship::where('id', $friendPupId)->delete();
+        Friendship::where('id', $friendPupId)->delete();
     }
     public function cancelFriendRequest(int $userId, int $friendPupId)
     {
         // 1. Kullanıcının kendi pup profillerini bul (Güvenlik için)
-       Friendship::where('id', $friendPupId)->delete();
+        Friendship::where('id', $friendPupId)->delete();
     }
     public function totalMatchAndChats(int $userId)
     {
