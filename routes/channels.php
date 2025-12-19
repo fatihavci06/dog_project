@@ -1,18 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Log;
 
-Broadcast::channel('users.{userId}', function ($userPayload, $conversationId) {
-    Log::info('channels.php');
-    $userId = $userPayload->user_id ?? null;
-    if (!$userId) return false;
+/*
+|--------------------------------------------------------------------------
+| Broadcast Channels
+|--------------------------------------------------------------------------
+|
+| Here you may register all of the event broadcasting channels that your
+| application supports. The given channel authorization callbacks are
+| used to check if an authenticated user can listen to the channel.
+|
+*/
 
-    $conv = \App\Models\Conversation::find($conversationId);
-    if (!$conv) return false;
-
-    return $conv->user_one_id === $userId || $conv->user_two_id === $userId;
+Broadcast::channel('users.{id}', function ($user, $id) {
+    // Sadece ID'si eşleşen kullanıcı bu kanalı dinleyebilir (Güvenlik)
+    return (int) $user->id === (int) $id;
 });
-
-
-
