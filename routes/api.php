@@ -12,6 +12,7 @@ use App\Http\Controllers\ApiFriendshipController;
 use App\Http\Controllers\ApiLocationController;
 use App\Http\Controllers\ApiMessageController;
 use App\Http\Controllers\ApiMobilAppRegisterInformationController;
+use App\Http\Controllers\ApiProfileShareController;
 use App\Http\Controllers\ApiPupMatchController;
 use App\Http\Controllers\ApiPupProfileController;
 use App\Http\Controllers\ApiScreenController;
@@ -67,7 +68,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::delete('pup/delete/{pupId}', [ApiPupProfileController::class, 'destroy']);
     Route::post('pup/create', [ApiPupProfileController::class, 'store']);
     Route::put('pup/update/{id}', [ApiPupProfileController::class, 'update']);
-
+    Route::get('/profile/share-qr', [ApiProfileShareController::class, 'generate']);
     Route::prefix('dates')->group(function () {
         // Listeleme
         Route::get('incoming', [ApiDateController::class, 'incoming']); // Bana gelenler
@@ -78,6 +79,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::post('cancel', [ApiDateController::class, 'cancel']);   // İptal et (Sender)
         Route::post('approve', [ApiDateController::class, 'approve']); // Onayla (Receiver)
         Route::post('reject', [ApiDateController::class, 'reject']);   // Reddet (Receiver)
+
     });
     Route::prefix('test')->group(function () {
         Route::get('get/{test_id}', [QuestionController::class, 'testGet']);
