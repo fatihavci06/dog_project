@@ -81,12 +81,7 @@ class FriendshipService extends BaseService
         $friends = Friendship::where(function ($q) use ($pupProfileIds) {
             $q->whereIn('sender_id', $pupProfileIds)->whereIn('receiver_id', $pupProfileIds)
                 ->where('status', 'accepted');
-        })
-            ->orWhere(function ($q) use ($pupProfileIds) {
-                $q->whereIn('receiver_id', $pupProfileIds)
-                    ->where('status', 'accepted');
-            })
-            ->get()
+        })->get()
             ->map(function ($req) use ($userId, $favoriteIds) {
 
 
