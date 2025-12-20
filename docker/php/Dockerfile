@@ -54,4 +54,5 @@ COPY ./docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 ENV COMPOSER_MEMORY_LIMIT=-1
 RUN composer install --no-dev --optimize-autoloader
 
-CMD ["php-fpm"]
+CMD ["php-fpm", "-F"]
+
