@@ -33,7 +33,7 @@
                                         <span class="badge bg-info text-dark">{{ $user->name }}</span>
                                     @endforeach
                                 </td>
-                                <td>{{ $notification->created_at->format('M d, Y H:i') }}</td>
+                                <td> {{ $notification->created_at?->format('M d, Y H:i') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
