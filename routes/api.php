@@ -22,6 +22,7 @@ use App\Http\Controllers\PupProfileController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ScreenController;
 use App\Http\Middleware\JwtMiddleware;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 
@@ -130,3 +131,6 @@ Route::prefix('mobile-app-informations')->group(function () {
 
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Broadcast::routes(['middleware' => [JwtMiddleware::class]]);
+
+require base_path('routes/channels.php');
