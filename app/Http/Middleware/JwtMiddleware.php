@@ -9,6 +9,7 @@ use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class JwtMiddleware
@@ -53,7 +54,7 @@ class JwtMiddleware
                 'message' => 'User not found.'
             ], 401);
         }
-
+  Auth::setUser($user);
         // Request içine ekle
         $request->merge([
             'user_id' => $user->id,
