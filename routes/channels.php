@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,5 +16,9 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('users.{id}', function ($user, $id) {
     // Sadece ID'si eşleşen kullanıcı bu kanalı dinleyebilir (Güvenlik)
+    Log::info('Broadcast Auth Kontrolü', [
+        'isteyen_user_id' => $user->id,
+        'kanal_id' => $id
+    ]);
     return (int) $user->id === (int) $id;
 });
