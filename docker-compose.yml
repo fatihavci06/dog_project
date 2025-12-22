@@ -7,10 +7,15 @@ services:
             dockerfile: docker/php/Dockerfile
         container_name: laravel-app
         env_file:
-            - .env   # 🔥 KRİTİK SATIR
+            - .env
         volumes:
-            - ./:/var/www/html:delegated   # burada değişti!
-            - /var/www/html/vendor
+            - ./:/var/www/html:delegated
+        # 👇 BU KOMUT HER ŞEYİ OTOMATİK DÜZELTECEK 👇
+        # 1. Vendor eksikse yükler.
+        # 2. İzinleri 777 yapar (500 hatasını çözer).
+        # 3. Cache'i temizler.
+        # 4. PHP'yi başlatır.
+        command: sh -c "composer install && chmod -R 777 storage bootstrap/cache && php artisan optimize:clear && php artisan view:clear && php-fpm -F"
         depends_on:
             - mysql
             - redis
@@ -53,8 +58,6 @@ services:
         command: php artisan horizon
         volumes:
             - ./:/var/www/html:delegated
-            - ./storage:/var/www/html/storage:delegated
-            - ./bootstrap/cache:/var/www/html/bootstrap/cache:delegated
         depends_on:
             - redis
             - mysql
