@@ -100,7 +100,7 @@
                             <td class="fw-bold">{{ $a->title }}</td>
                             <td>{{ Str::limit($a->content, 50) }}</td> {{-- Content snippet --}}
                             <td><span class="badge bg-info text-dark">{{ $a->role->name ?? 'All Users' }}</span></td>
-                            <td>{{ $a->created_at->format('M d, Y H:i') }}</td>
+                            <td>{{ $a->created_at?->format('M d, Y H:i') }}</td>
                             <td class="text-center">
                                 <div class="btn-group" role="group">
                                     <button class="btn btn-sm btn-warning me-1 mr-3"
