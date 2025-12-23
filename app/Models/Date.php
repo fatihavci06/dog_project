@@ -18,6 +18,7 @@ class Date extends Model
         'address',
         'latitude',
         'longitude',
+        'description',
         'status',
     ];
 

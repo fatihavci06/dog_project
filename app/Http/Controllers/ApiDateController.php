@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CancelDateRequest;
+use App\Http\Requests\GetDateByIdRequest;
 use App\Http\Requests\StoreDateRequest;
+use App\Http\Requests\UpdateOutgoingPendingDateRequest;
 use App\Services\DateService;
 use Illuminate\Http\Request;
 
@@ -58,7 +61,7 @@ class ApiDateController extends ApiController
     }
     public function list(Request $request, DateService $service)
     {
-         $page    = (int) $request->get('page', 1);
+        $page    = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
 
         return $service->getApprovedDates($request->user_id, $page, $perPage);
@@ -76,5 +79,29 @@ class ApiDateController extends ApiController
     public function reject(Request $request, DateService $service)
     {
         return $service->respondDate($request->date_id, $request->user_id, 'rejected');
+    }
+    public function delete(CancelDateRequest $request, DateService $service)
+    {
+        return $service->deleteOutgoingPendingDate(
+            $request->user_id,
+            $request->date_id
+        );
+    }
+
+    public function edit(GetDateByIdRequest $request, DateService $service)
+    {
+        return $service->getOutgoingPendingDateForEdit(
+            $request->user_id,
+            $request->date_id
+        );
+    }
+
+    public function update(UpdateOutgoingPendingDateRequest $request, DateService $service)
+    {
+        return $service->updateOutgoingPendingDate(
+            $request->user_id,
+            $request->date_id,
+            $request->validated()
+        );
     }
 }

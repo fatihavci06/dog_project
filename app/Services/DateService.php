@@ -40,10 +40,10 @@ class DateService
                     ->orWhere('receiver_id', $userId);
             })
             ->first();
-            if(empty($date)){
+        if (empty($date)) {
 
-                 throw new Exception('Not found.', 404);
-            }
+            throw new Exception('Not found.', 404);
+        }
 
         return [
             'id'           => $date->id,
@@ -180,6 +180,53 @@ class DateService
 
         $date->update(['status' => $status]);
 
+        return $date;
+    }
+    public function deleteOutgoingPendingDate(int $userId, int $dateId): void
+    {
+        $date = Date::where('id', $dateId)
+            ->where('status', 'pending')
+            ->where('sender_id', $userId)
+            ->first();
+
+        if (!$date) {
+            throw new Exception('Not found or unauthorized.', 404);
+        }
+
+        $date->delete();
+    }
+    public function getOutgoingPendingDateForEdit(int $userId, int $dateId)
+    {
+        $date = Date::with('receiver')
+            ->where('id', $dateId)
+            ->where('status', 'pending')
+            ->where('sender_id', $userId)
+            ->first();
+
+        if (!$date) {
+            throw new Exception('Pending Request Not Found ', 404);
+        }
+
+        return $date;
+    }
+    public function updateOutgoingPendingDate(
+        int $userId,
+        int $dateId,
+        array $data
+    ) {
+        $date = Date::where('id', $dateId)
+            ->where('status', 'pending')
+            ->where('sender_id', $userId)
+            ->first();
+
+        $date->update([
+            'meeting_date' => Carbon::parse($data['meeting_date']),
+            'is_flexible'  => $data['is_flexible'],
+            'address'      => $data['address'],
+            'latitude'     => $data['latitude'],
+            'longitude'    => $data['longitude'],
+            'description'=>$data['description']
+        ]);
         return $date;
     }
 }

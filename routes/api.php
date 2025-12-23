@@ -82,6 +82,11 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::post('approve', [ApiDateController::class, 'approve']); // Onayla (Receiver)
         Route::post('reject', [ApiDateController::class, 'reject']);   // Reddet (Receiver)
 
+        Route::get('/edit', [ApiDateController::class, 'edit']);
+
+        Route::put('/update', [ApiDateController::class, 'update']);
+
+        Route::delete('/delete', [ApiDateController::class, 'delete']);
     });
     Route::prefix('test')->group(function () {
         Route::get('get/{test_id}', [QuestionController::class, 'testGet']);
@@ -132,4 +137,3 @@ Route::prefix('mobile-app-informations')->group(function () {
 
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-
