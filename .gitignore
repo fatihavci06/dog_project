@@ -1,24 +1,44 @@
+# Logs
 *.log
+
+# OS / Editor
 .DS_Store
+Thumbs.db
+/.fleet
+/.idea
+/.vscode
+/.zed
+/.nova
+
+# Environment
 .env
 .env.backup
 .env.production
+/auth.json
+
+# PHP / Laravel
+/vendor
 .phpactor.json
 .phpunit.result.cache
-/.fleet
-/.idea
-/.nova
 /.phpunit.cache
-/.vscode
-/.zed
-/auth.json
+
+# Node
 /node_modules
+
+# Laravel build & runtime
 /public/build
 /public/hot
 /public/storage
+
+/storage/*
+!/storage/.gitignore
+!/storage/**/.gitignore
 /storage/*.key
 /storage/pail
-/vendor
+
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+# Homestead
 Homestead.json
 Homestead.yaml
-Thumbs.db
