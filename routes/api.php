@@ -75,6 +75,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::get('incoming', [ApiDateController::class, 'incoming']); // Bana gelenler
         Route::get('outgoing', [ApiDateController::class, 'outgoing']); // Benim gönderdiklerim
         Route::get('approved-list', [ApiDateController::class, 'list']); // Benim gönderdiklerim
+        Route::get('approved-detail', [ApiDateController::class, 'getApprovedDateById']);
         // İşlemler
         Route::post('send', [ApiDateController::class, 'store']);      // Yeni teklif gönder
         Route::post('cancel', [ApiDateController::class, 'cancel']);   // İptal et (Sender)

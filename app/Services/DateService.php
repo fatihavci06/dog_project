@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Date;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -29,6 +30,30 @@ class DateService
             'data'         => $paginator->items(),
         ];
     }
+    public function getApprovedDateById(int $userId, int $dateId): array
+    {
+        $date = Date::with(['sender', 'receiver'])
+            ->where('id', $dateId)
+            ->where('status', 'accepted')
+            ->where(function ($query) use ($userId) {
+                $query->where('sender_id', $userId)
+                    ->orWhere('receiver_id', $userId);
+            })
+            ->first();
+            if(empty($date)){
+
+                 throw new Exception('Not found.', 404);
+            }
+
+        return [
+            'id'           => $date->id,
+            'meeting_date' => $date->meeting_date, // accessor varsa otomatik formatlı
+            'status'       => $date->status,
+            'sender'       => $date->sender,
+            'receiver'     => $date->receiver,
+        ];
+    }
+
     public function getApprovedDates(int $userId, int $page = 1, int $perPage = 10): array
     {
         $paginator = Date::with(['sender', 'receiver'])
