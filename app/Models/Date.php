@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,6 +27,13 @@ class Date extends Model
         'latitude'     => 'float',
         'longitude'    => 'float',
     ];
+
+    public function getMeetingDateAttribute($value): ?string
+    {
+        return $value
+            ? Carbon::parse($value)->format('d-m-y H:i')
+            : null;
+    }
 
     public function sender()
     {

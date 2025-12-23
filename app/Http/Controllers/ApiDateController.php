@@ -56,6 +56,13 @@ class ApiDateController extends ApiController
     {
         return $service->respondDate($request->date_id, $request->user_id, 'accepted');
     }
+    public function list(Request $request, DateService $service)
+    {
+         $page    = (int) $request->get('page', 1);
+        $perPage = (int) $request->get('per_page', 10);
+
+        return $service->getApprovedDates($request->user_id, $page, $perPage);
+    }
 
     /**
      * Alıcı kişi isteği reddeder.
