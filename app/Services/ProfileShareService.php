@@ -13,31 +13,38 @@ class ProfileShareService
      */
     public function generateProfileQr(PupProfile $pup): array
     {
-        // 1. QR Payload: Mobil uygulamanın okuyacağı veri yapısı
+        // 1. QR Payload
         $payload = [
-            'app'    => 'pup_app',         // Uygulama imzası (Güvenlik/Kontrol için)
-            'type'   => 'profile_share',   // QR'ın türü (Buluşma mı? Profil mi? Ödeme mi?)
+            'app'    => 'pup_app',
+            'type'   => 'profile_share',
             'data'   => [
-                'id'       => $pup->id,
-                'name' => $pup->name, // İstersen ekranda hemen göstermek için adını da ekleyebilirsin
+                'id'   => $pup->id,
+                'name' => $pup->name,
             ]
         ];
 
-        // 2. QR Görselini Oluştur (PNG formatında)
-        // size(300): 300px genişlik
-        // margin(2): Kenar boşluğu
+        // Köpek logosunun yolu (Örnek: public klasöründe 'images/pup-logo.png' olduğunu varsayalım)
+        // Eğer görsel bir URL ise veya storage'da ise ona göre path verilmeli.
+        $logoPath = public_path('pup-logo.png');
+
+        // 2. QR Görselini Oluştur
         $qrImage = QrCode::format('png')
-                         ->size(300)
-                         ->margin(2)
-                         ->errorCorrection('H') // Yüksek hata düzeltme (Logo koyacaksan gerekli)
-                         ->generate(json_encode($payload));
+            ->size(300)
+            ->margin(2)
+            ->errorCorrection('H') // Logo olduğu için H (High) şart
+            // MERGE KISMI BURASI:
+            // 1. parametre: Resim yolu
+            // 2. parametre: Logonun kaplayacağı alan oranı (.3 = %30)
+            // 3. parametre: Absolute path kullanımı (genelde true daha sağlıklı çalışır)
+            ->merge($logoPath, 0.3, true)
+            ->generate(json_encode($payload));
 
         // 3. Base64'e çevir
         $base64 = 'data:image/png;base64,' . base64_encode($qrImage);
 
         return [
             'qr_image' => $base64,
-            'payload'  => $payload // Test ederken ne veri gittiğini görmen için
+            'payload'  => $payload
         ];
     }
 }
