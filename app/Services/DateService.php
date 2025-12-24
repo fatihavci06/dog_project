@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Conversation;
 use App\Models\Date;
 use Carbon\Carbon;
 use Exception;
@@ -16,20 +17,49 @@ class DateService
      */
     public function getIncomingRequests(int $userId, int $page = 1, int $perPage = 10): array
     {
-        $paginator = Date::with('sender')
+        $paginator = Date::query()
             ->where('receiver_id', $userId)
             ->where('status', 'pending')
+            ->with('sender')
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
+
+        $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
+
+            $conversationId = Conversation::query()
+                ->where(function ($q) use ($userId, $date) {
+                    $q->where('user_one_id', $userId)
+                        ->where('user_two_id', $date->sender_id);
+                })
+                ->orWhere(function ($q) use ($userId, $date) {
+                    $q->where('user_one_id', $date->sender_id)
+                        ->where('user_two_id', $userId);
+                })
+                ->value('id'); // 🔥 sadece id
+
+            return [
+                'id'           => $date->id,
+                'meeting_date' => $date->meeting_date,
+                'status'       => $date->status,
+                'is_flexible'  => $date->is_flexible,
+                'address'      => $date->address,
+                'description'  => $date->description,
+
+                'sender' => $date->sender,
+
+                'conversation_id' => $conversationId,
+            ];
+        })->values();
 
         return [
             'current_page' => $paginator->currentPage(),
             'per_page'     => $paginator->perPage(),
             'total'        => $paginator->total(),
             'last_page'    => $paginator->lastPage(),
-            'data'         => $paginator->items(),
+            'data'         => $data,
         ];
     }
+
     public function getApprovedDateById(int $userId, int $dateId): array
     {
         $date = Date::with(['sender', 'receiver'])
@@ -56,23 +86,52 @@ class DateService
 
     public function getApprovedDates(int $userId, int $page = 1, int $perPage = 10): array
     {
-        $paginator = Date::with(['sender', 'receiver'])
+        $paginator = Date::query()
+            ->with(['sender', 'receiver'])
             ->where('status', 'accepted')
-            ->where(function ($query) use ($userId) {
-                $query->where('sender_id', $userId)
+            ->where(function ($q) use ($userId) {
+                $q->where('sender_id', $userId)
                     ->orWhere('receiver_id', $userId);
             })
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
+
+        $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
+
+            // 🔥 Karşı taraf user_id
+            $otherUserId = $date->sender_id === $userId
+                ? $date->receiver_id
+                : $date->sender_id;
+
+            // 🔥 conversation_id bul
+            $conversationId = Conversation::query()
+                ->where(function ($q) use ($userId, $otherUserId) {
+                    $q->where('user_one_id', $userId)
+                        ->where('user_two_id', $otherUserId);
+                })
+                ->orWhere(function ($q) use ($userId, $otherUserId) {
+                    $q->where('user_one_id', $otherUserId)
+                        ->where('user_two_id', $userId);
+                })
+                ->value('id');
+
+            // 🔥 Modeli bozmadan sadece alan ekle
+            $dateArray = $date->toArray();
+            $dateArray['conversation_id'] = $conversationId;
+
+            return $dateArray;
+        })->values();
 
         return [
             'current_page' => $paginator->currentPage(),
             'per_page'     => $paginator->perPage(),
             'total'        => $paginator->total(),
             'last_page'    => $paginator->lastPage(),
-            'data'         => $paginator->items(),
+            'data'         => $data,
         ];
     }
+
+
 
 
     /**
@@ -81,19 +140,48 @@ class DateService
      */
     public function getOutgoingRequests(int $userId, int $page = 1, int $perPage = 10): array
     {
-        $paginator = Date::with('receiver')
+        $paginator = Date::query()
             ->where('sender_id', $userId)
-            ->orderBy('created_at', 'desc')
+            ->with('receiver')
+            ->orderByDesc('created_at')
             ->paginate($perPage, ['*'], 'page', $page);
+
+        $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
+
+            $conversationId = Conversation::query()
+                ->where(function ($q) use ($userId, $date) {
+                    $q->where('user_one_id', $userId)
+                        ->where('user_two_id', $date->receiver_id);
+                })
+                ->orWhere(function ($q) use ($userId, $date) {
+                    $q->where('user_one_id', $date->receiver_id)
+                        ->where('user_two_id', $userId);
+                })
+                ->value('id'); // 🔥 sadece id
+
+            return [
+                'id'           => $date->id,
+                'meeting_date' => $date->meeting_date,
+                'status'       => $date->status,
+                'is_flexible'  => $date->is_flexible,
+                'address'      => $date->address,
+                'description'  => $date->description,
+
+                'receiver' => $date->receiver,
+
+                'conversation_id' => $conversationId,
+            ];
+        })->values();
 
         return [
             'current_page' => $paginator->currentPage(),
             'per_page'     => $paginator->perPage(),
             'total'        => $paginator->total(),
             'last_page'    => $paginator->lastPage(),
-            'data'         => $paginator->items(),
+            'data'         => $data,
         ];
     }
+
 
     /**
      * Yeni bir Date isteği oluşturur.
@@ -225,7 +313,7 @@ class DateService
             'address'      => $data['address'],
             'latitude'     => $data['latitude'],
             'longitude'    => $data['longitude'],
-            'description'=>$data['description']
+            'description' => $data['description']
         ]);
         return $date;
     }

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Helper\MatchClass;
+use App\Models\Conversation;
+use App\Models\Date;
 use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
@@ -72,85 +74,154 @@ class FriendshipService extends BaseService
 
     public function listFriends(int $userId, int $page = 1, int $perPage = 10)
     {
+        // 1. Gerekli Temel ID'leri Hazırla
         $myProfileIds = PupProfile::where('user_id', $userId)->pluck('id')->toArray();
 
+        // Favorileri önbelleğe al (loop içinde sorgu atmamak için)
         $favoriteIds = Favorite::where('user_id', $userId)
             ->pluck('favorite_id')
             ->toArray();
 
-        $friends = Friendship::where(function ($q) use ($myProfileIds) {
-            $q->whereIn('sender_id', $myProfileIds)
-                ->orWhereIn('receiver_id', $myProfileIds);
+        // 2. Arkadaşlıkları Çek (Paginate ile - Ana Sorgu)
+        $friendships = Friendship::query()
+            ->where(function ($q) use ($myProfileIds) {
+                $q->whereIn('sender_id', $myProfileIds)
+                    ->orWhereIn('receiver_id', $myProfileIds);
+            })
+            ->where('status', 'accepted')
+            // Eager Loading: İlişkili tüm tabloları tek seferde çekiyoruz
+            ->with([
+                'sender.user',
+                'sender.vibe',
+                'sender.images',
+                'sender.answers',
+                'sender.breed',
+                'sender.ageRange',
+                'sender.travelRadius',
+
+                'receiver.user',
+                'receiver.vibe',
+                'receiver.images',
+                'receiver.answers',
+                'receiver.breed',
+                'receiver.ageRange',
+                'receiver.travelRadius'
+            ])
+            ->orderByDesc('created_at') // Genelde yeni arkadaşlar üstte olur
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // --- OPTİMİZASYON BÖLÜMÜ (Batch Loading / Toplu Yükleme) ---
+
+        // Bu sayfada listelenen kullanıcıların User ID'lerini topla
+        $userIdsOnPage = collect();
+        foreach ($friendships as $f) {
+            if ($f->sender && $f->sender->user) $userIdsOnPage->push($f->sender->user->id);
+            if ($f->receiver && $f->receiver->user) $userIdsOnPage->push($f->receiver->user->id);
+        }
+        // Tekrar edenleri sil ve array yap
+        $uniqueUserIds = $userIdsOnPage->unique()->values()->toArray();
+
+        // A. Tüm Randevuları TEK sorguda çek (Memory'ye al)
+        $allDates = Date::where(function ($q) use ($uniqueUserIds) {
+            $q->whereIn('sender_id', $uniqueUserIds)
+                ->whereIn('receiver_id', $uniqueUserIds);
         })
             ->where('status', 'accepted')
-            ->with(['sender.user', 'receiver.user', 'sender.vibe', 'sender.images', 'sender.answers', 'receiver.answers'])
-            ->get()
-            ->map(function ($req) use ($myProfileIds, $favoriteIds) {
+            ->orderBy('meeting_date', 'desc') // En yeni tarih en üstte gelsin
+            ->get();
 
-                // 🔥 KARŞI TARAFI BUL
-                $friend = in_array($req->sender_id, $myProfileIds)
-                    ? $req->receiver
-                    : $req->sender;
+        // B. Tüm Konuşmaları TEK sorguda çek (Memory'ye al)
+        $allConversations = Conversation::where(function ($q) use ($uniqueUserIds) {
+            $q->whereIn('user_one_id', $uniqueUserIds)
+                ->whereIn('user_two_id', $uniqueUserIds);
+        })->get();
 
-                $me = in_array($req->sender_id, $myProfileIds)
-                    ? $req->sender
-                    : $req->receiver;
+        // --- VERİ DÖNÜŞTÜRME (Mapping) ---
 
-                return [
-                    'id'              => $req->id,
-                    'pup_profile_id'  => $friend->id,
-                    'name'            => $friend->name,
-                    'status'          => $req->status,
-                    'sent_at'         => optional($req->created_at)->format('d-m-Y H:i'),
+        $data = $friendships->getCollection()->map(function ($req) use ($myProfileIds, $favoriteIds, $userId, $allDates, $allConversations) {
 
-                    'last_chat_at' => MessageService::getLastChatDateBetweenProfiles(
-                        $me->id,
-                        $friend->id
-                    ),
+            // Kim gönderen, kim alıcı belirle
+            $isSenderMe = in_array($req->sender_id, $myProfileIds);
 
-                    'vibe' => $friend->vibe->map(fn($v) => [
-                        'id'   => $v->id,
-                        'name' => $v->translate('name'),
-                    ]),
+            $friend = $isSenderMe ? $req->receiver : $req->sender; // Karşı Taraf
+            $me     = $isSenderMe ? $req->sender : $req->receiver; // Ben
 
-                    'user' => [
-                        'id'   => $friend->user->id,
-                        'name' => $friend->user->name,
-                    ],
+            // User ID'leri (Eşleştirme için)
+            $friendUserId = $friend->user->id;
+            $meUserId     = $me->user->id;
 
-                    'age_range'     => $friend->ageRange?->translate('name'),
-                    'travel_radius' => $friend->travelRadius?->translate('name'),
-                    'sex'           => $friend->sex,
-                    'photo'         => $friend->images[0]->path ?? null,
-                    'biography'     => $friend->biography,
-
-                    'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
-
-                    'match_type' => MatchClass::getMatchType(
-                        $me->answers->toArray(),
-                        $friend->answers->toArray()
-                    ),
-
-                    'distance_km' => $this->calculateDistance(
-                        $me->lat ?? 0,
-                        $me->long ?? 0,
-                        $friend->lat ?? 0,
-                        $friend->long ?? 0
-                    ),
-                ];
+            // 1. Randevu Bulma (Memory Filter)
+            // Listemiz tarihe göre sıralı olduğu için bulduğu ilk kayıt "En Son" olandır.
+            $lastDate = $allDates->first(function ($date) use ($meUserId, $friendUserId) {
+                return ($date->sender_id == $meUserId && $date->receiver_id == $friendUserId) ||
+                    ($date->sender_id == $friendUserId && $date->receiver_id == $meUserId);
             });
 
-        // Pagination
-        $total    = $friends->count();
-        $lastPage = (int) ceil($total / $perPage);
-        $offset   = ($page - 1) * $perPage;
+            // 2. Konuşma Bulma (Memory Filter)
+            $conversation = $allConversations->first(function ($c) use ($meUserId, $friendUserId) {
+                return ($c->user_one_id == $meUserId && $c->user_two_id == $friendUserId) ||
+                    ($c->user_one_id == $friendUserId && $c->user_two_id == $meUserId);
+            });
+
+            // Veriyi Hazırla
+            return [
+                'id'             => $req->id, // Arkadaşlık ID
+                'pup_profile_id' => $friend->id,
+                'name'           => $friend->name,
+                'status'         => $req->status,
+                'sent_at'        => optional($req->created_at)->format('d-m-Y H:i'),
+
+                'last_chat_at' => MessageService::getLastChatDateBetweenProfiles(
+                    $userId,
+                    $friend->user->id
+                ),
+
+                'vibe' => $friend->vibe->map(fn($v) => [
+                    'id'   => $v->id,
+                    'name' => $v->translate('name'), // Translate varsa
+                ]),
+
+                'user' => [
+                    'id'   => $friend->user->id,
+                    'name' => $friend->user->name,
+                ],
+
+                // Detay Alanları (Null check ile güvenli erişim)
+                'breed'         => $friend->breed?->translate('name'),
+                'age_range'     => $friend->ageRange?->translate('name'),
+                'travel_radius' => $friend->travelRadius?->translate('name'),
+                'sex'           => $friend->sex,
+                'photo'         => $friend->images->first()->path ?? null,
+                'biography'     => $friend->biography,
+
+                'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
+
+                'match_type' => MatchClass::getMatchType(
+                    $me->answers->toArray(),
+                    $friend->answers->toArray()
+                ),
+
+                'distance_km' => $this->calculateDistance(
+                    $me->lat ?? 0,
+                    $me->long ?? 0,
+                    $friend->lat ?? 0,
+                    $friend->long ?? 0
+                ),
+
+                // Tek Obje olarak Date (veya null)
+                'date' => $lastDate,
+
+                // Varsa ID, yoksa null
+                'conversation_id' => $conversation ? $conversation->id : null
+            ];
+        });
 
         return [
-            'current_page' => $page,
-            'per_page'     => $perPage,
-            'total'        => $total,
-            'last_page'    => $lastPage,
-            'data'         => $friends->slice($offset, $perPage)->values(),
+            'current_page' => $friendships->currentPage(),
+            'per_page'     => $friendships->perPage(),
+            'total'        => $friendships->total(),
+            'last_page'    => $friendships->lastPage(),
+            'data'         => $data,
         ];
     }
 

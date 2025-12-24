@@ -205,12 +205,16 @@ class AuthService
         ]);
 
         $accessToken = $this->generateAccessToken($record->user);
+       $user= User::with('pupProfiles')->find($record->user_id);
 
         return [
             'access_token'  => $accessToken,
             'refresh_token' => $newRaw,
             'token_type'    => 'bearer',
             'expires_in'    => 15 * 60,
+            'user'=>$user
+
+
         ];
     }
     public function decodeToken(string $token)
