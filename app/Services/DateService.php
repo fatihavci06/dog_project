@@ -287,7 +287,6 @@ class DateService
     {
         $date = Date::with('receiver')
             ->where('id', $dateId)
-            ->where('status', 'pending')
             ->where('sender_id', $userId)
             ->first();
 

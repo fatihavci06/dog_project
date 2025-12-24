@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Helper\MatchClass;
+use App\Models\Conversation;
+use App\Models\Date;
 use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
@@ -113,7 +115,7 @@ class PupMatchmakingService extends BaseService
             'is_match'    => $isMatch,
             'distance_km' => $distanceKm, // Null veya float döner (örn: 12.5)
             'match_type' => MatchClass::getMatchType(
-                 $this->getPupAnswers($authProfile->id ?? 0),
+                $this->getPupAnswers($authProfile->id ?? 0),
                 $this->getPupAnswers($profile->id)
             ),
         ];
@@ -276,124 +278,150 @@ class PupMatchmakingService extends BaseService
      * Kendi user'a ait PupProfile'lar HARİÇ!
      */
     public function getMatchesPaginated(
-        int $pupProfileId,
-        int $authUserId,
-        int $page = 1,
-        int $perPage = 10
-    ): array {
+    int $pupProfileId,
+    int $authUserId,
+    int $page = 1,
+    int $perPage = 10
+): array {
 
-        // 1) Profil verisini çek (Sadece varlık kontrolü değil, lat/long verisi için objeyi alıyoruz)
-        $currentProfile = PupProfile::where('id', $pupProfileId)
-            ->where('user_id', $authUserId)
-            ->first();
+    $currentProfile = PupProfile::where('id', $pupProfileId)
+        ->where('user_id', $authUserId)
+        ->first();
 
-        if (!$currentProfile) {
-            throw new Exception('Not found', 404);
-        }
+    if (!$currentProfile) {
+        throw new Exception('Not found', 404);
+    }
 
-        // 2) Kullanıcının arkadaş ID’lerini çek (accepted)
-        $friendIds = Friendship::where(function ($q) use ($authUserId) {
+    // 1️⃣ Arkadaş user_id’leri
+    $friendUserIds = Friendship::where('status', 'accepted')
+        ->where(function ($q) use ($authUserId) {
             $q->where('sender_id', $authUserId)
-                ->where('status', 'accepted');
+              ->orWhere('receiver_id', $authUserId);
         })
-            ->orWhere(function ($q) use ($authUserId) {
-                $q->where('receiver_id', $authUserId)
-                    ->where('status', 'accepted');
+        ->get()
+        ->map(fn ($f) =>
+            $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id
+        )
+        ->toArray();
+
+    // Arkadaş pup_profile_id’leri
+    $friendProfileIds = PupProfile::whereIn('user_id', $friendUserIds)
+        ->pluck('id')
+        ->toArray();
+
+    // Favoriler
+    $favoriteProfileIds = Favorite::where('user_id', $authUserId)
+        ->pluck('favorite_id')
+        ->toArray();
+
+    // Ana cevaplar
+    $mainAnswers = $this->getPupAnswers($pupProfileId);
+
+    // Kullanıcının kendi profilleri
+    $myProfileIds = PupProfile::where('user_id', $authUserId)->pluck('id')->toArray();
+
+    // 2️⃣ Diğer profiller
+    $otherProfiles = PupProfile::with([
+            'images',
+            'vibe',
+            'breed',
+            'ageRange',
+            'travelRadius',
+            'user'
+        ])
+        ->whereNotIn('id', $myProfileIds)
+        ->whereNotIn('id', $friendProfileIds)
+        ->whereNotNull('name')
+        ->get();
+
+    $result = [];
+
+    foreach ($otherProfiles as $profile) {
+
+        $otherAnswers = $this->getPupAnswers($profile->id);
+        $matchType    = MatchClass::getMatchType($mainAnswers, $otherAnswers);
+        $score        = $this->matchScore($matchType);
+
+        $distanceKm = $this->calculateDistance(
+            $currentProfile->lat,
+            $currentProfile->long,
+            $profile->lat,
+            $profile->long
+        );
+
+        // 🔥 conversation_id
+        $conversationId = Conversation::where(function ($q) use ($authUserId, $profile) {
+                $q->where('user_one_id', $authUserId)
+                  ->where('user_two_id', $profile->user_id);
             })
-            ->get()
-            ->map(fn($f) => $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id)
-            ->toArray();
+            ->orWhere(function ($q) use ($authUserId, $profile) {
+                $q->where('user_one_id', $profile->user_id)
+                  ->where('user_two_id', $authUserId);
+            })
+            ->value('id');
 
-        // Arkadaşların pup profile ID’leri
-        $friendProfileIds = PupProfile::whereIn('user_id', $friendIds)
-            ->pluck('id')
-            ->toArray();
+        // 🔥 date_id (pending / accepted varsa)
+        $date = Date::whereIn('status', ['pending', 'accepted'])
+            ->where(function ($q) use ($authUserId, $profile) {
+                $q->where('sender_id', $authUserId)
+                  ->where('receiver_id', $profile->user_id);
+            })
+            ->orWhere(function ($q) use ($authUserId, $profile) {
+                $q->where('sender_id', $profile->user_id)
+                  ->where('receiver_id', $authUserId);
+            })
+            ->orderByDesc('created_at')->first();
 
-        // Kullanıcının FAVORİ pup profile ID’leri
-        $favoriteProfileIds = Favorite::where('user_id', $authUserId)
-            ->pluck('favorite_id')
-            ->toArray();
+        $result[] = [
+            'pup_profile_id' => $profile->id,
+            'name'           => $profile->name,
+            'photo'          => $profile->images[0]->path ?? null,
 
-        // 3) Ana profilin cevapları
-        $mainAnswers = $this->getPupAnswers($pupProfileId);
-        $pupProfileIds = PupProfile::where('user_id', $authUserId)->pluck('id')->toArray();
+            'user' => [
+                'id'   => $profile->user->id,
+                'name' => $profile->user->name,
+            ],
 
-        // 4) Diğer profiller
-        // NOT: Eğer veritabanınızda on binlerce kayıt varsa, lat/long filtrelemesini
-        // burada SQL içinde (scopeDistance gibi) yapmanız performans için daha iyi olur.
-        // Şimdilik mevcut yapınızı bozmadan PHP tarafında hesaplıyoruz.
-        $otherProfiles = PupProfile::with(['images', 'vibe', 'breed', 'ageRange', 'travelRadius'])
-            ->whereNotIn('id', $pupProfileIds)
-            ->where('name', '!=', null)
-            ->where('user_id', '!=', $authUserId)
-            ->whereNotIn('id', $friendProfileIds)
-            ->get();
+            'biography' => $profile->biography,
 
-        $result = [];
+            'vibe' => $profile->vibe->map(fn ($v) => [
+                'id'   => $v->id,
+                'name' => $v->translate('name'),
+            ]),
 
-        // 5) Eşleşmeleri ve Mesafeyi hesapla
-        foreach ($otherProfiles as $profile) {
+            'sex'           => $profile->sex,
+            'breed'         => $profile->breed->translate('name'),
+            'age'           => $profile->ageRange->translate('name'),
+            'travel_radius' => $profile->travelRadius->translate('name'),
 
-            $otherAnswers = $this->getPupAnswers($profile->id);
-            $matchType = MatchClass::getMatchType($mainAnswers, $otherAnswers);
-            $score     = $this->matchScore($matchType);
+            'is_favorite' => in_array($profile->id, $favoriteProfileIds),
+            'is_match'    => in_array($profile->id, $friendProfileIds),
 
-            // 🔥 MESAFE HESAPLAMA ÇAĞRISI
-            // Veritabanında sütun adlarınızın 'lat' ve 'long' (veya 'lng') olduğundan emin olun.
-            $distanceKm = $this->calculateDistance(
-                $currentProfile->lat,
-                $currentProfile->long,
-                $profile->lat,
-                $profile->long
-            );
+            'match_type'  => $matchType,
+            'match_score' => $score,
+            'distance_km' => $distanceKm,
 
-            $result[] = [
-                'pup_profile_id' => $profile->id,
-                'name'           => $profile->name,
-                'photo'          => $profile->images[0]->path ?? null,
-                'user' => [
-                    'id'   => $profile->user->id,
-                    'name' => $profile->user->name,
-                ],
-                'biography'      => $profile->biography,
-
-                'vibe' => $profile->vibe->map(fn($v) => [
-                    'id'   => $v->id,
-                    'name' => $v->translate('name'),
-                ]),
-
-                'sex'           => $profile->sex,
-                'breed'         => $profile->breed->translate('name'),
-                'age'           => $profile->ageRange->translate('name'),
-                'travel_radius' => $profile->travelRadius->translate('name'),
-
-                'is_favorite'   => in_array($profile->id, $favoriteProfileIds),
-                'is_match'      => in_array($profile->id, $friendProfileIds),
-
-                'match_type'    => $matchType,
-                'match_score'   => $score,
-
-                // 🔥 YENİ EKLENEN MESAFE ALANI
-                'distance_km'   => $distanceKm,
-            ];
-        }
-
-        // 6) Score’a göre sırala (İsterseniz mesafeye göre de ikincil sıralama yapabilirsiniz)
-        $sorted = collect($result)->sortByDesc('match_score')->values();
-
-        // 7) Pagination
-        $total    = $sorted->count();
-        $lastPage = (int) ceil($total / $perPage);
-        $offset   = ($page - 1) * $perPage;
-
-        $paged = $sorted->slice($offset, $perPage)->values()->toArray();
-
-        return [
-            'current_page' => $page,
-            'per_page'     => $perPage,
-            'total'        => $total,
-            'last_page'    => $lastPage,
-            'data'         => $paged,
+            // ✅ YENİ EKLENENLER
+            'conversation_id' => $conversationId,
+            'date'         => $date,
         ];
     }
+
+    // 3️⃣ Skora göre sırala
+    $sorted = collect($result)->sortByDesc('match_score')->values();
+
+    // 4️⃣ Pagination
+    $total    = $sorted->count();
+    $lastPage = (int) ceil($total / $perPage);
+    $offset   = ($page - 1) * $perPage;
+
+    return [
+        'current_page' => $page,
+        'per_page'     => $perPage,
+        'total'        => $total,
+        'last_page'    => $lastPage,
+        'data'         => $sorted->slice($offset, $perPage)->values()->toArray(),
+    ];
+}
+
 }
