@@ -18,7 +18,11 @@ class PupMatchmakingService extends BaseService
     int $authUserId
 ): array {
 
-    // 1) Hedef Profili ve Sahibini (User) Çek
+    /*
+    |--------------------------------------------------------------------------
+    | 1️⃣ Hedef Pup Profile
+    |--------------------------------------------------------------------------
+    */
     $profile = PupProfile::with([
         'user',
         'images',
@@ -26,18 +30,27 @@ class PupMatchmakingService extends BaseService
         'breed',
         'ageRange',
         'travelRadius',
-        'lookingFor',           // İlişkilerde tanımlı olduğunu varsayıyorum
-        'availabilityForMeetup' // İlişkilerde tanımlı olduğunu varsayıyorum
+        'lookingFor',
+        'availabilityForMeetup',
+
     ])->find($pupProfileId);
 
     if (!$profile) {
-        throw new \Exception('Profile not found', 404);
+        throw new Exception('Profile not found', 404);
     }
 
-    // 2) Giriş Yapan Kullanıcının Profilini Çek
+    /*
+    |--------------------------------------------------------------------------
+    | 2️⃣ Auth kullanıcının pup profile’ı
+    |--------------------------------------------------------------------------
+    */
     $authProfile = PupProfile::where('user_id', $authUserId)->first();
 
-    // 3) Mesafe Hesaplama
+    /*
+    |--------------------------------------------------------------------------
+    | 3️⃣ Mesafe
+    |--------------------------------------------------------------------------
+    */
     $distanceKm = null;
     if ($authProfile) {
         $distanceKm = $this->calculateDistance(
@@ -48,56 +61,77 @@ class PupMatchmakingService extends BaseService
         );
     }
 
-    /* ============================
-        FRIEND (MATCH) KONTROLÜ
-       ============================ */
-    $isMatch = Friendship::where('status', 'accepted')
-        ->where(function ($q) use ($authUserId, $profile) {
-            $q->where('sender_id', $authUserId)
-                ->where('receiver_id', $profile->user_id);
-        })
-        ->orWhere(function ($q) use ($authUserId, $profile) {
-            $q->where('sender_id', $profile->user_id)
-                ->where('receiver_id', $authUserId);
-        })
-        ->exists();
+    /*
+    |--------------------------------------------------------------------------
+    | 4️⃣ MATCH (Friendship) – pup_profile_id bazlı
+    |--------------------------------------------------------------------------
+    */
+    $isMatch = false;
 
-    /* ============================
-        FAVORİ KONTROLÜ
-       ============================ */
+    if ($authProfile) {
+        $isMatch = Friendship::where('status', 'accepted')
+            ->where(function ($q) use ($authProfile, $profile) {
+                $q->where('sender_id', $authProfile->id)
+                  ->where('receiver_id', $profile->id);
+            })
+            ->orWhere(function ($q) use ($authProfile, $profile) {
+                $q->where('sender_id', $profile->id)
+                  ->where('receiver_id', $authProfile->id);
+            })
+            ->exists();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 5️⃣ FAVORİ
+    |--------------------------------------------------------------------------
+    */
     $isFavorite = Favorite::where('user_id', $authUserId)
         ->where('favorite_id', $profile->id)
         ->exists();
 
-    /* ============================
-        🔥 YENİ: CONVERSATION ID
-       ============================ */
-    $conversationId = Conversation::where(function ($q) use ($authUserId, $profile) {
+    /*
+    |--------------------------------------------------------------------------
+    | 6️⃣ CONVERSATION (user_id bazlı – DOĞRU)
+    |--------------------------------------------------------------------------
+    */
+    $conversationId = Conversation::query()
+        ->where(function ($q) use ($authUserId, $profile) {
             $q->where('user_one_id', $authUserId)
-              ->where('user_two_id', $profile->user_id);
+              ->where('user_two_id', $profile->user->id);
         })
         ->orWhere(function ($q) use ($authUserId, $profile) {
-            $q->where('user_one_id', $profile->user_id)
+            $q->where('user_one_id', $profile->user->id)
               ->where('user_two_id', $authUserId);
         })
         ->value('id');
 
-    /* ============================
-        🔥 YENİ: DATE (BULUŞMA) DURUMU
-       ============================ */
-    // Bekleyen veya kabul edilmiş son buluşma isteği
-    $date = Date::whereIn('status', ['pending', 'accepted'])
-        ->where(function ($q) use ($authUserId, $profile) {
-            $q->where('sender_id', $authUserId)
-              ->where('receiver_id', $profile->user_id);
-        })
-        ->orWhere(function ($q) use ($authUserId, $profile) {
-            $q->where('sender_id', $profile->user_id)
-              ->where('receiver_id', $authUserId);
-        })
-        ->orderByDesc('created_at')
-        ->first();
+    /*
+    |--------------------------------------------------------------------------
+    | 7️⃣ DATE (pending / accepted) – pup_profile_id bazlı
+    |--------------------------------------------------------------------------
+    */
+    $date = null;
 
+    if ($authProfile) {
+        $date = Date::whereIn('status', ['pending', 'accepted'])
+            ->where(function ($q) use ($authProfile, $profile) {
+                $q->where('sender_id', $authProfile->id)
+                  ->where('receiver_id', $profile->id);
+            })
+            ->orWhere(function ($q) use ($authProfile, $profile) {
+                $q->where('sender_id', $profile->id)
+                  ->where('receiver_id', $authProfile->id);
+            })
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | 8️⃣ RESPONSE
+    |--------------------------------------------------------------------------
+    */
     return [
         'pup_profile_id' => $profile->id,
         'name'           => $profile->name,
@@ -109,32 +143,31 @@ class PupMatchmakingService extends BaseService
             'name' => $profile->user->name,
         ],
 
-        'breed'         => $profile->breed->translate('name'),
-        'age'           => $profile->ageRange->translate('name'),
-        'travel_radius' => $profile->travelRadius->translate('name'),
+        'breed'         => $profile->breed?->translate('name'),
+        'age'           => $profile->ageRange?->translate('name'),
+        'travel_radius' => $profile->travelRadius?->translate('name'),
 
-        'images' => $profile->images->map(fn($img) => [
+        'images' => $profile->images->map(fn ($img) => [
             'id'   => $img->id,
             'path' => $img->path,
         ]),
 
-        'vibe' => $profile->vibe->map(fn($v) => [
+        'vibe' => $profile->vibe->map(fn ($v) => [
             'id'        => $v->id,
             'name'      => $v->translate('name'),
             'icon_path' => $v->icon_path,
         ]),
 
-        'looking_for' => $profile->lookingFor->map(fn($v) => [
+        'looking_for' => $profile->lookingFor->map(fn ($v) => [
             'id'   => $v->id,
             'name' => $v->translate('name'),
         ]),
 
-        'availability_for_meetup' => $profile->availabilityForMeetup->map(fn($v) => [
+        'availability_for_meetup' => $profile->availabilityForMeetup->map(fn ($v) => [
             'id'   => $v->id,
             'name' => $v->translate('name'),
         ]),
 
-        // FLAGS & MESAFE
         'city'        => $profile->city,
         'district'    => $profile->district,
         'is_favorite' => $isFavorite,
@@ -146,11 +179,12 @@ class PupMatchmakingService extends BaseService
             $this->getPupAnswers($profile->id)
         ),
 
-        // ✅ İSTENEN YENİ ALANLAR
+        // 🔥 YENİ ALANLAR
         'conversation_id' => $conversationId,
         'date'            => $date,
     ];
 }
+
 
     /**
      * PupProfile'ın tüm cevaplarını getirir.
@@ -392,16 +426,7 @@ class PupMatchmakingService extends BaseService
             ->value('id');
 
         // 🔥 date_id (pending / accepted varsa)
-        $date = Date::whereIn('status', ['pending', 'accepted'])
-            ->where(function ($q) use ($authUserId, $profile) {
-                $q->where('sender_id', $authUserId)
-                  ->where('receiver_id', $profile->user_id);
-            })
-            ->orWhere(function ($q) use ($authUserId, $profile) {
-                $q->where('sender_id', $profile->user_id)
-                  ->where('receiver_id', $authUserId);
-            })
-            ->orderByDesc('created_at')->first();
+
 
         $result[] = [
             'pup_profile_id' => $profile->id,
@@ -434,7 +459,7 @@ class PupMatchmakingService extends BaseService
 
             // ✅ YENİ EKLENENLER
             'conversation_id' => $conversationId,
-            'date'         => $date,
+
         ];
     }
 
