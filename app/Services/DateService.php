@@ -288,6 +288,7 @@ class DateService
         $date = Date::with('receiver')
             ->where('id', $dateId)
             ->where('sender_id', $userId)
+            ->orWhere('receiver_id', $userId)
             ->first();
 
         if (!$date) {
