@@ -16,6 +16,8 @@ class UpdateOutgoingPendingDateRequest extends BaseRequest
 {
     return [
         'date_id'       => ['required', 'integer', 'exists:dates,id'],
+        'my_pup_profile_id'     => 'required|exists:pup_profiles,id',
+            'target_pup_profile_id' => 'required|exists:pup_profiles,id|different:my_pup_profile_id',
         'meeting_date'  => ['required', 'date'],
         'is_flexible'   => ['required', 'boolean'],
         'address'       => ['required', 'string', 'max:255'],

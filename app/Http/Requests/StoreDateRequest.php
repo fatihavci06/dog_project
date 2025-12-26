@@ -16,16 +16,29 @@ class StoreDateRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'receiver_id' => 'required|exists:users,id',
+            // Gönderen ve hedef pup profilleri
+            'my_pup_profile_id'     => 'required|exists:pup_profiles,id',
+            'target_pup_profile_id' => 'required|exists:pup_profiles,id|different:my_pup_profile_id',
 
-            // UI'da tarih ve saat ayrı olduğu için ayrı validasyon yapıyoruz
-            'date'        => 'required|date_format:Y-m-d', // Örn: 2024-08-15
-            'time'        => 'required|date_format:H:i',   // Örn: 14:00
+            // Tarih & Saat (UI ayrı gönderiyor)
+            'date' => [
+                'required',
+                'date_format:Y-m-d',
+                'after_or_equal:today', // geçmiş tarih engeli (opsiyonel ama önerilir)
+            ],
 
-            'is_flexible' => 'boolean',                    // Checkbox
-            'address'     => 'nullable|string|max:255',    // Manuel Adres
-            'latitude'    => 'nullable|numeric',           // Harita verisi
-            'longitude'   => 'nullable|numeric',           // Harita verisi
+            'time' => 'required|date_format:H:i',
+
+            // Esnek zaman
+            'is_flexible' => 'boolean',
+
+            // Konum bilgileri
+            'address'   => 'nullable|string|max:255',
+            'latitude'  => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+
+            // Opsiyonel açıklama
+            'description' => 'nullable|string|max:500',
         ];
     }
 }

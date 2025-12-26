@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Conversation;
 use App\Models\Date;
+use App\Models\PupProfile;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -17,25 +18,33 @@ class DateService
      */
     public function getIncomingRequests(int $userId, int $page = 1, int $perPage = 10): array
     {
+        // 1️⃣ Kullanıcının pup profile id’leri
+        $pupProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
+
+        // 2️⃣ Incoming: sender karşı taraf, receiver benim profillerim
         $paginator = Date::query()
-            ->where('receiver_id', $userId)
-            ->where('status', 'pending')
-            ->with('sender')
-            ->orderBy('meeting_date', 'asc')
+            ->whereIn('receiver_id', $pupProfileIds)
+            ->with([
+                'sender.user'
+            ])
+            ->orderByDesc('created_at')
             ->paginate($perPage, ['*'], 'page', $page);
 
+        // 3️⃣ Response mapping
         $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
 
             $conversationId = Conversation::query()
                 ->where(function ($q) use ($userId, $date) {
                     $q->where('user_one_id', $userId)
-                        ->where('user_two_id', $date->sender_id);
+                        ->where('user_two_id', $date->sender->user->id);
                 })
                 ->orWhere(function ($q) use ($userId, $date) {
-                    $q->where('user_one_id', $date->sender_id)
+                    $q->where('user_one_id', $date->sender->user->id)
                         ->where('user_two_id', $userId);
                 })
-                ->value('id'); // 🔥 sadece id
+                ->value('id');
 
             return [
                 'id'           => $date->id,
@@ -45,6 +54,7 @@ class DateService
                 'address'      => $date->address,
                 'description'  => $date->description,
 
+                // 🔥 Incoming olduğu için sender dönüyoruz
                 'sender' => $date->sender,
 
                 'conversation_id' => $conversationId,
@@ -59,6 +69,7 @@ class DateService
             'data'         => $data,
         ];
     }
+
 
     public function getApprovedDateById(int $userId, int $dateId): array
     {
@@ -86,40 +97,64 @@ class DateService
 
     public function getApprovedDates(int $userId, int $page = 1, int $perPage = 10): array
     {
+        // 1️⃣ Kullanıcının pup profile id’leri
+        $pupProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
+
+        // 2️⃣ Accepted date’ler (sender veya receiver benim profillerim)
         $paginator = Date::query()
-            ->with(['sender', 'receiver'])
             ->where('status', 'accepted')
-            ->where(function ($q) use ($userId) {
-                $q->where('sender_id', $userId)
-                    ->orWhere('receiver_id', $userId);
+            ->where(function ($q) use ($pupProfileIds) {
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
             })
+            ->with([
+                'sender.user',
+                'receiver.user',
+            ])
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
+        // 3️⃣ Response mapping
+        $data = collect($paginator->items())->map(function (Date $date) use ($pupProfileIds, $userId) {
+
+            // 🔥 Karşı taraf pup profile
+            $otherProfile = in_array($date->sender_id, $pupProfileIds)
+                ? $date->receiver
+                : $date->sender;
 
             // 🔥 Karşı taraf user_id
-            $otherUserId = $date->sender_id === $userId
-                ? $date->receiver_id
-                : $date->sender_id;
+            $otherUserId = $otherProfile->user->id ?? null;
 
-            // 🔥 conversation_id bul
-            $conversationId = Conversation::query()
-                ->where(function ($q) use ($userId, $otherUserId) {
-                    $q->where('user_one_id', $userId)
-                        ->where('user_two_id', $otherUserId);
-                })
-                ->orWhere(function ($q) use ($userId, $otherUserId) {
-                    $q->where('user_one_id', $otherUserId)
-                        ->where('user_two_id', $userId);
-                })
-                ->value('id');
+            // 🔥 conversation_id
+            $conversationId = null;
+            if ($otherUserId) {
+                $conversationId = Conversation::query()
+                    ->where(function ($q) use ($userId, $otherUserId) {
+                        $q->where('user_one_id', $userId)
+                            ->where('user_two_id', $otherUserId);
+                    })
+                    ->orWhere(function ($q) use ($userId, $otherUserId) {
+                        $q->where('user_one_id', $otherUserId)
+                            ->where('user_two_id', $userId);
+                    })
+                    ->value('id');
+            }
 
-            // 🔥 Modeli bozmadan sadece alan ekle
-            $dateArray = $date->toArray();
-            $dateArray['conversation_id'] = $conversationId;
+            return [
+                'id'           => $date->id,
+                'meeting_date' => $date->meeting_date,
+                'status'       => $date->status,
+                'is_flexible'  => $date->is_flexible,
+                'address'      => $date->address,
+                'description'  => $date->description,
 
-            return $dateArray;
+                // 🔥 Benim dışımdaki taraf
+                'other' => $otherProfile,
+
+                'conversation_id' => $conversationId,
+            ];
         })->values();
 
         return [
@@ -134,15 +169,25 @@ class DateService
 
 
 
+
     /**
      * Kullanıcının gönderdiği istekleri listeler (Sayfalı).
      * Bekleyen, onaylanan veya reddedilen tüm geçmişi görür.
      */
     public function getOutgoingRequests(int $userId, int $page = 1, int $perPage = 10): array
     {
+        $pupProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
+
         $paginator = Date::query()
-            ->where('sender_id', $userId)
-            ->with('receiver')
+            ->where(function ($q) use ($pupProfileIds) {
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
+            ->with([
+                'receiver.user'
+            ])
             ->orderByDesc('created_at')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -151,10 +196,10 @@ class DateService
             $conversationId = Conversation::query()
                 ->where(function ($q) use ($userId, $date) {
                     $q->where('user_one_id', $userId)
-                        ->where('user_two_id', $date->receiver_id);
+                        ->where('user_two_id', $date->receiver->user->id);
                 })
                 ->orWhere(function ($q) use ($userId, $date) {
-                    $q->where('user_one_id', $date->receiver_id)
+                    $q->where('user_one_id', $date->receiver->user->id)
                         ->where('user_two_id', $userId);
                 })
                 ->value('id'); // 🔥 sadece id
@@ -204,21 +249,12 @@ class DateService
             throw new HttpException(400, 'You cannot select a past date and time.');
         }
 
-        // 3. Spam/Mükerrer Kayıt Kontrolü:
-        // Bu kişiye zaten bekleyen bir isteğin var mı?
-        $exists = Date::where('sender_id', $senderId)
-            ->where('receiver_id', $data['receiver_id'])
-            ->where('status', 'pending')
-            ->exists();
 
-        if ($exists) {
-            throw new HttpException(400, 'You already have a pending request for this user.');
-        }
 
         // 4. Kayıt Oluşturma
         return Date::create([
-            'sender_id'    => $senderId,
-            'receiver_id'  => $data['receiver_id'],
+            'sender_id'    => $data['my_pup_profile_id'],
+            'receiver_id'  => $data['target_pup_profile_id'],
             'meeting_date' => $meetingDateTime,      // Birleştirilmiş datetime
             'is_flexible'  => $data['is_flexible'] ?? false,
             'address'      => $data['address'] ?? null,
@@ -283,38 +319,66 @@ class DateService
 
         $date->delete();
     }
-    public function getOutgoingPendingDateForEdit(int $userId, int $dateId)
-    {
-        $date = Date::with('receiver')
-            ->where('id', $dateId)
-            ->where('sender_id', $userId)
-            ->orWhere('receiver_id', $userId)
-            ->first();
+    public function getOutgoingPendingDateForEdit(int $userId, int $dateId): Date
+{
+    // 1️⃣ Kullanıcının pup profile id’leri
+    $pupProfileIds = PupProfile::where('user_id', $userId)
+        ->pluck('id')
+        ->toArray();
 
-        if (!$date) {
-            throw new Exception('Pending Request Not Found ', 404);
-        }
+    // 2️⃣ Date kontrolü
+    $date = Date::query()
+        ->where('id', $dateId)
+        ->where('status', 'pending') // 🔥 edit sadece pending için mantıklı
+        ->where(function ($q) use ($pupProfileIds) {
+            $q->whereIn('sender_id', $pupProfileIds)
+              ->orWhereIn('receiver_id', $pupProfileIds);
+        })
+        ->with([
+            'sender.user',
+            'receiver.user',
+        ])
+        ->first();
 
-        return $date;
+    if (!$date) {
+        throw new Exception('Pending Request Not Found', 404);
     }
+
+    return $date;
+}
+
     public function updateOutgoingPendingDate(
-        int $userId,
-        int $dateId,
-        array $data
-    ) {
-        $date = Date::where('id', $dateId)
-            ->where('status', 'pending')
-            ->where('sender_id', $userId)
-            ->first();
+    int $userId,
+    int $dateId,
+    array $data
+): Date {
+    // 1️⃣ Kullanıcının pup profile id’leri
+    $pupProfileIds = PupProfile::where('user_id', $userId)
+        ->pluck('id')
+        ->toArray();
 
-        $date->update([
-            'meeting_date' => Carbon::parse($data['meeting_date']),
-            'is_flexible'  => $data['is_flexible'],
-            'address'      => $data['address'],
-            'latitude'     => $data['latitude'],
-            'longitude'    => $data['longitude'],
-            'description' => $data['description']
-        ]);
-        return $date;
+    // 2️⃣ Sadece bana ait + pending + outgoing olan date
+    $date = Date::query()
+        ->where('id', $dateId)
+        ->where('status', 'pending')
+        ->whereIn('sender_id', $pupProfileIds) // 🔥 outgoing
+        ->first();
+
+    if (!$date) {
+        throw new Exception('Pending Date Not Found or Unauthorized', 404);
     }
+
+    // 3️⃣ Update
+    $date->update([
+        'meeting_date' => Carbon::parse($data['meeting_date']),
+        'is_flexible'  => (bool) $data['is_flexible'],
+        'address'      => $data['address'] ?? null,
+        'latitude'     => $data['latitude'] ?? null,
+        'longitude'    => $data['longitude'] ?? null,
+        'description' => $data['description'] ?? null,
+    ]);
+
+    return $date;
+}
+
 }
