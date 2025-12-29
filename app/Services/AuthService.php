@@ -321,7 +321,7 @@ class AuthService
            BASIC USER UPDATE (FULLNAME!)
         ---------------------------------- */
             $user->update([
-                'name'      => $data['fullname'] ?? $user->fullname,
+                'name' => $data['fullname'] ?? $user->name,
                 'date_of_birth' => $data['date_of_birth'] ?? $user->date_of_birth,
                 'gender'        => $data['gender'] ?? $user->gender,
                 'country'       => $data['country'] ?? $user->country,
