@@ -90,6 +90,7 @@ class ChatService
             ->with(['messages' => function ($q) {
                 $q->latest()->limit(1);
             }])
+              ->orderByDesc('created_at')
             ->get()
             ->map(function ($conv) use ($user) {
                 $otherUserId = $conv->user_one_id === $user->id ? $conv->user_two_id : $conv->user_one_id;

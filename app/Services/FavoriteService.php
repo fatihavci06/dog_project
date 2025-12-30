@@ -56,6 +56,7 @@ class FavoriteService extends BaseService
                 $q->where('sender_id', $userId)
                     ->orWhere('receiver_id', $userId);
             })
+              ->orderByDesc('created_at')
             ->get()
             ->map(fn($f) => $f->sender_id == $userId ? $f->receiver_id : $f->sender_id)
             ->unique()

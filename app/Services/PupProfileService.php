@@ -97,6 +97,7 @@ class PupProfileService
             'answers.question'
         ])
             ->where('user_id', $userId)
+              ->orderByDesc('created_at')
             ->get();
 
         return $pups->map(function ($p) {
