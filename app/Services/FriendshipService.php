@@ -392,6 +392,7 @@ class FriendshipService extends BaseService
     }
     public function totalMatchAndChats(int $userId)
     {
+
         $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
 
         $totalMatches = Friendship::where(function ($q) use ($pupProfileIds) {
@@ -405,9 +406,9 @@ class FriendshipService extends BaseService
             ->count();
 
         // Toplam chat sayısını hesapla
-        $totalChats = \App\Models\Conversation::where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('user_one_id', $pupProfileIds)
-                ->orWhereIn('user_two_id', $pupProfileIds);
+        $totalChats = \App\Models\Conversation::where(function ($q) use ($userId) {
+            $q->where('user_one_id', $userId)
+                ->orWhere('user_two_id', $userId);
         })->count();
 
         return [
