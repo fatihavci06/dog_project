@@ -35,16 +35,7 @@ class WebAuthController extends Controller
                 ->exists();
 
             if ($isAdmin) {
-                $activeUsersCount = User::where('status', 'active')->count();
-
-                // Aktif köpek sayısı (status = 'active')
-                $activeDogsCount = UserDog::count();
-                $dogOwnersCount = User::where('role_id', 3)->where('status', 'active')->count();
-
-                // Dog Adoption Seekers (role_id = 4)
-                $adoptionSeekersCount = User::where('role_id', 4)->where('status', 'active')->count();
-
-                return view('dashboard', compact('activeUsersCount', 'activeDogsCount', 'dogOwnersCount', 'adoptionSeekersCount'));
+               return redirect()->route('dashboard');
             }
 
             // admin değilse çıkış yap
