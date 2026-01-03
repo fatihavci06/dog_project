@@ -56,7 +56,10 @@ class DateService
 
                 // 🔥 Incoming olduğu için sender dönüyoruz
                 'sender' => $date->sender,
-
+                 'pup_profile_photo' => $date->receiver
+                ->images()
+                ->select('path')
+                ->value('path'),
                 'conversation_id' => $conversationId,
             ];
         })->values();
@@ -152,6 +155,10 @@ class DateService
 
                 // 🔥 Benim dışımdaki taraf
                 'other' => $otherProfile,
+                'pup_profile_photo' => $otherProfile
+                ->images()
+                ->select('path')
+                ->value('path'),
 
                 'conversation_id' => $conversationId,
             ];
@@ -213,7 +220,10 @@ class DateService
                 'description'  => $date->description,
 
                 'receiver' => $date->receiver,
-
+                 'pup_profile_photo' => $date->receiver
+                ->images()
+                ->select('path')
+                ->value('path'),
                 'conversation_id' => $conversationId,
             ];
         })->values();
@@ -343,6 +353,13 @@ class DateService
     if (!$date) {
         throw new Exception('Pending Request Not Found', 404);
     }
+    $date->sender_pup_profile_photo = $date->sender
+        ? $date->sender->images()->select('path')->value('path')
+        : null;
+
+    $date->receiver_pup_profile_photo = $date->receiver
+        ? $date->receiver->images()->select('path')->value('path')
+        : null;
 
     return $date;
 }
