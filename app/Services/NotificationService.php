@@ -5,50 +5,59 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\User;
 use App\Models\Role;
-use Berkayk\OneSignal\OneSignalFacade;
+use Berkayk\OneSignal\OneSignalClient;
 
 class NotificationService
 {
+    protected $oneSignal;
+
+    public function __construct()
+    {
+        // Paylaştığınız sınıfın constructor yapısına göre:
+        // __construct($appId, $restApiKey, $userAuthKey, ...)
+        $this->oneSignal = new OneSignalClient(
+            env('ONESIGNAL_APP_ID'),
+            env('ONESIGNAL_API_KEY'),
+            env('ONESIGNAL_USER_AUTH_KEY')
+        );
+    }
+
     public function sendNotification(array $data)
     {
-        // 1️⃣ Bildirim oluştur
+        // 1️⃣ Bildirim veritabanı kaydı
         $notification = Notification::create([
-            'title'   => $data['title'],
+            'title' => $data['title'],
             'message' => $data['message'],
-            'url'     => $data['url'] ?? null,
+            'url' => $data['url'] ?? null,
         ]);
 
         $userIds = $data['user_ids'] ?? [];
         $roleIds = $data['role_ids'] ?? [];
 
-        // 2️⃣ Role bazlı kullanıcıları tek sorguda al (Optimization)
+        // 2️⃣ Role bazlı kullanıcıları çekme (SQL hatası düzeltilmiş hali)
         if (!empty($roleIds)) {
-            // whereHas ile role sahip user id'lerini direkt çekiyoruz
             $roleUserIds = User::whereHas('roles', function($q) use ($roleIds) {
-                $q->whereIn('id', $roleIds);
-            })->pluck('id')->toArray();
+                $q->whereIn('roles.id', $roleIds);
+            })->pluck('users.id')->toArray();
 
             $userIds = array_unique(array_merge($userIds, $roleUserIds));
         }
 
-        if (empty($userIds)) {
-            return $notification;
+        // 3️⃣ Pivot tabloya kaydetme
+        if (!empty($userIds)) {
+            $notification->users()->syncWithPivotValues($userIds, ['sent_at' => now()]);
         }
 
-        // 3️⃣ notification_user tablosuna TEK SEFERDE kaydet (Bulk Insert)
-        // Döngü yerine syncWithoutDetaching veya attach kullanabiliriz.
-        $notification->users()->syncWithPivotValues($userIds, ['sent_at' => now()]);
-
-        // 4️⃣ OneSignal push gönder
-        // Sadece OneSignal ID'si olanları filtrele
+        // 4️⃣ OneSignal Gönderimi (DÜZELTİLEN KISIM)
         $players = User::whereIn('id', $userIds)
                        ->whereNotNull('onesignal_player_id')
                        ->pluck('onesignal_player_id')
                        ->toArray();
 
         if (!empty($players)) {
-            // Berkayk kütüphanesinin doğru metod kullanımı:
-            OneSignalFacade::sendNotificationCustom([
+            // "notifications->add" YERİNE "sendNotificationCustom" kullanıyoruz.
+            // Paylaştığınız sınıfın 324. satırındaki metod.
+            $this->oneSignal->sendNotificationCustom([
                 'include_player_ids' => $players,
                 'headings'           => ['en' => $data['title']],
                 'contents'           => ['en' => $data['message']],
@@ -61,7 +70,6 @@ class NotificationService
 
     public function setOneSignalPlayerId(array $data)
     {
-        // Null check eklenmesi iyi olur
         $user = User::find($data['user_id']);
         if ($user) {
             $user->update([
