@@ -261,7 +261,11 @@ class DateService
         })->exists();
 
        if (!$hasConversation) {
-   throw new Exception('You can only send a date request to users you have previously messaged.', 403);
+ throw new Exception(
+    __('errors.no_conversation'),
+    403
+);
+
 }
 
         try {
