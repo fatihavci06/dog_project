@@ -119,6 +119,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
 
     Route::post('onesignal-playerid/set', [ApiNotificationController::class, 'setOneSignalPlayerId']);
+    Route::get('notification/list', [ApiNotificationController::class, 'notificationsList']);
     Route::post('notification-status/change', [ApiNotificationController::class, 'changeNotificationStatus']);
 });
 

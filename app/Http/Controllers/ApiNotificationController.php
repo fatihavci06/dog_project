@@ -28,6 +28,17 @@ class ApiNotificationController extends ApiController
 
         return $this->notificationService->changeNotificationStatus($request->user_id, $request->status);
     }
+    public function notificationsList(Request $request)
+{
+    return $this->notificationService
+        ->getUserNotifications(
+            $request->user_id,
+            $request->page ?? 1,
+            $request->per_page ?? 15
+
+        );
+}
+
 
 
 }
