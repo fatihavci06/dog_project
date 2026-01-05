@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Conversation;
 use App\Models\Date;
+use App\Models\Message;
 use App\Models\PupProfile;
 use Carbon\Carbon;
 use Exception;
@@ -56,10 +57,10 @@ class DateService
 
                 // 🔥 Incoming olduğu için sender dönüyoruz
                 'sender' => $date->sender,
-                 'pup_profile_photo' => $date->receiver
-                ->images()
-                ->select('path')
-                ->value('path'),
+                'pup_profile_photo' => $date->receiver
+                    ->images()
+                    ->select('path')
+                    ->value('path'),
                 'conversation_id' => $conversationId,
             ];
         })->values();
@@ -156,9 +157,9 @@ class DateService
                 // 🔥 Benim dışımdaki taraf
                 'other' => $otherProfile,
                 'pup_profile_photo' => $otherProfile
-                ->images()
-                ->select('path')
-                ->value('path'),
+                    ->images()
+                    ->select('path')
+                    ->value('path'),
 
                 'conversation_id' => $conversationId,
             ];
@@ -220,10 +221,10 @@ class DateService
                 'description'  => $date->description,
 
                 'receiver' => $date->receiver,
-                 'pup_profile_photo' => $date->receiver
-                ->images()
-                ->select('path')
-                ->value('path'),
+                'pup_profile_photo' => $date->receiver
+                    ->images()
+                    ->select('path')
+                    ->value('path'),
                 'conversation_id' => $conversationId,
             ];
         })->values();
@@ -242,9 +243,27 @@ class DateService
      * Yeni bir Date isteği oluşturur.
      * UI'dan tarih ve saat ayrı gelir, burada birleştirilip kaydedilir.
      */
-    public function createDate(int $senderId, array $data): Date
+    public function createDate(int $senderId, array $data)
     {
+        $myProfile = PupProfile::find($data['my_pup_profile_id']);
+    $targetProfile = PupProfile::find($data['target_pup_profile_id']);
         // 1. Frontend'den gelen 'date' (Y-m-d) ve 'time' (H:i) bilgisini birleştir
+        $myUserId = $myProfile->user_id;
+        $targetUserId = $targetProfile->user_id;
+
+        // 2️⃣ Daha önce mesajlaşma var mı kontrol et
+        $hasConversation = Message::where(function ($q) use ($myUserId, $targetUserId) {
+            $q->where('sender_id', $myUserId)
+                ->where('receiver_id', $targetUserId);
+        })->orWhere(function ($q) use ($myUserId, $targetUserId) {
+            $q->where('sender_id', $targetUserId)
+                ->where('receiver_id', $myUserId);
+        })->exists();
+
+       if (!$hasConversation) {
+   throw new Exception('You can only send a date request to users you have previously messaged.', 403);
+}
+
         try {
             $meetingDateTime = Carbon::createFromFormat(
                 'Y-m-d H:i',
@@ -330,72 +349,71 @@ class DateService
         $date->delete();
     }
     public function getOutgoingPendingDateForEdit(int $userId, int $dateId): Date
-{
-    // 1️⃣ Kullanıcının pup profile id’leri
-    $pupProfileIds = PupProfile::where('user_id', $userId)
-        ->pluck('id')
-        ->toArray();
+    {
+        // 1️⃣ Kullanıcının pup profile id’leri
+        $pupProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
 
-    // 2️⃣ Date kontrolü
-    $date = Date::query()
-        ->where('id', $dateId)
-        ->where('status', 'pending') // 🔥 edit sadece pending için mantıklı
-        ->where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)
-              ->orWhereIn('receiver_id', $pupProfileIds);
-        })
-        ->with([
-            'sender.user',
-            'receiver.user',
-        ])
-        ->first();
+        // 2️⃣ Date kontrolü
+        $date = Date::query()
+            ->where('id', $dateId)
+            ->where('status', 'pending') // 🔥 edit sadece pending için mantıklı
+            ->where(function ($q) use ($pupProfileIds) {
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
+            ->with([
+                'sender.user',
+                'receiver.user',
+            ])
+            ->first();
 
-    if (!$date) {
-        throw new Exception('Pending Request Not Found', 404);
+        if (!$date) {
+            throw new Exception('Pending Request Not Found', 404);
+        }
+        $date->sender_pup_profile_photo = $date->sender
+            ? $date->sender->images()->select('path')->value('path')
+            : null;
+
+        $date->receiver_pup_profile_photo = $date->receiver
+            ? $date->receiver->images()->select('path')->value('path')
+            : null;
+
+        return $date;
     }
-    $date->sender_pup_profile_photo = $date->sender
-        ? $date->sender->images()->select('path')->value('path')
-        : null;
-
-    $date->receiver_pup_profile_photo = $date->receiver
-        ? $date->receiver->images()->select('path')->value('path')
-        : null;
-
-    return $date;
-}
 
     public function updateOutgoingPendingDate(
-    int $userId,
-    int $dateId,
-    array $data
-): Date {
-    // 1️⃣ Kullanıcının pup profile id’leri
-    $pupProfileIds = PupProfile::where('user_id', $userId)
-        ->pluck('id')
-        ->toArray();
+        int $userId,
+        int $dateId,
+        array $data
+    ): Date {
+        // 1️⃣ Kullanıcının pup profile id’leri
+        $pupProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
 
-    // 2️⃣ Sadece bana ait + pending + outgoing olan date
-    $date = Date::query()
-        ->where('id', $dateId)
-        ->where('status', 'pending')
-        ->whereIn('sender_id', $pupProfileIds) // 🔥 outgoing
-        ->first();
+        // 2️⃣ Sadece bana ait + pending + outgoing olan date
+        $date = Date::query()
+            ->where('id', $dateId)
+            ->where('status', 'pending')
+            ->whereIn('sender_id', $pupProfileIds) // 🔥 outgoing
+            ->first();
 
-    if (!$date) {
-        throw new Exception('Pending Date Not Found or Unauthorized', 404);
+        if (!$date) {
+            throw new Exception('Pending Date Not Found or Unauthorized', 404);
+        }
+
+        // 3️⃣ Update
+        $date->update([
+            'meeting_date' => Carbon::parse($data['meeting_date']),
+            'is_flexible'  => (bool) $data['is_flexible'],
+            'address'      => $data['address'] ?? null,
+            'latitude'     => $data['latitude'] ?? null,
+            'longitude'    => $data['longitude'] ?? null,
+            'description' => $data['description'] ?? null,
+        ]);
+
+        return $date;
     }
-
-    // 3️⃣ Update
-    $date->update([
-        'meeting_date' => Carbon::parse($data['meeting_date']),
-        'is_flexible'  => (bool) $data['is_flexible'],
-        'address'      => $data['address'] ?? null,
-        'latitude'     => $data['latitude'] ?? null,
-        'longitude'    => $data['longitude'] ?? null,
-        'description' => $data['description'] ?? null,
-    ]);
-
-    return $date;
-}
-
 }
