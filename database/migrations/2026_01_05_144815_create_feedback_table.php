@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('feedbacks', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+
+            $table->string('category'); // bug / öneri / içerik / şikayet / diğer
+            $table->string('subject');
+            $table->text('message');
+
+            $table->unsignedTinyInteger('rating')->nullable(); // 1–5
+            $table->string('priority')->nullable(); // low / medium / high
+
+            $table->string('image')->nullable();
+
+            // contact
+            $table->boolean('allow_contact')->default(false);
+            $table->string('contact_full_name')->nullable();
+            $table->string('contact_email')->nullable();
+
+            $table->timestamps();
+
+            $table->index(['category', 'priority']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('feedback');
+    }
+};

@@ -19,4 +19,10 @@ return [
     'incorrect_credentials' => 'The provided credentials are incorrect.',
     'current_password_incorrect' => 'The current password is incorrect.',
     'password_same' => 'The new password cannot be the same as the old password.',
+    'feedback' => [
+        'category_invalid' => 'Invalid category selected.',
+        'rating_max'       => 'Rating cannot be greater than :max.',
+        'image_invalid'    => 'Image must be a valid base64 encoded image.',
+    ],
+
 ];

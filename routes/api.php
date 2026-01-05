@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\ApiFeedBackController;
 use App\Http\Controllers\ApiAnnouncmentController;
 use App\Http\Controllers\ApiNotificationController;
 use App\Http\Controllers\AuthController;
@@ -39,6 +39,8 @@ Route::prefix('question')->group(function () {
 });
 Route::get('/screen/{id}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
+     Route::post('/feedback/send', [ApiFeedBackController::class, 'store']);
+      Route::get('/feedback/list', [ApiFeedBackController::class, 'index']);
     Route::get('/pup/{pupProfileId}/discover', [ApiPupMatchController::class, 'matches']);
     Route::get('/discover/show/{id}', [ApiPupMatchController::class, 'showProfile']); //id pup profile id
 

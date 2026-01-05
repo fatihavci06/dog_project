@@ -19,5 +19,10 @@ return [
     'incorrect_credentials' => 'Gönderilen bilgiler yanlış.',
     'current_password_incorrect' => 'Mevcut şifre yanlış.',
     'password_same' => 'Yeni şifre, eski şifre ile aynı olamaz.',
+    'feedback' => [
+        'category_invalid' => 'Geçersiz kategori seçildi.',
+        'rating_max'       => 'Puan en fazla :max olabilir.',
+        'image_invalid'    => 'Görsel base64 formatında ve geçerli bir resim olmalıdır.',
+    ],
 
 ];
