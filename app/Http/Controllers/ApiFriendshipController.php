@@ -52,12 +52,11 @@ class ApiFriendshipController extends ApiController
     }
     public function cancelFriendRequest(Request $request, FriendshipService $service)
     {
-         Log::debug('Cancel Friend Request', ['request' => $request->all()]);
-        return $request->all();
+
         $request->validate([
             'friend_id' => 'required|integer|exists:friendships,id'
         ]);
-
+        Log::info('Cancel Friend Request', ['user_id' => $request->user_id, 'friend_id' => $request->friend_id]);
         return $service->cancelFriendRequest($request->user_id, $request->friend_id);
     }
     public function totalMatchAndChats(Request $request, FriendshipService $service)
