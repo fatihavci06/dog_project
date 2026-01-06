@@ -6,6 +6,7 @@ use App\Http\Requests\FriendSendRequest;
 use App\Http\Requests\FriendActionRequest;
 use App\Services\FriendshipService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ApiFriendshipController extends ApiController
 {
@@ -51,6 +52,8 @@ class ApiFriendshipController extends ApiController
     }
     public function cancelFriendRequest(Request $request, FriendshipService $service)
     {
+         Log::debug('Cancel Friend Request', ['request' => $request->all()]);
+        return $request->all();
         $request->validate([
             'friend_id' => 'required|integer|exists:friendships,id'
         ]);
