@@ -5,6 +5,10 @@ namespace App\Services;
 use App\Http\Resources\UserProfileResource;
 use App\Mail\ResetPasswordMail;
 use App\Mail\VerifyEmailMail;
+use App\Models\Date;
+use App\Models\Favorite;
+use App\Models\Friendship;
+use App\Models\PupProfile;
 use App\Models\RefreshToken;
 use App\Models\User;
 use App\Support\Jwt as SupportJwt;
@@ -205,14 +209,29 @@ class AuthService
         ]);
 
         $accessToken = $this->generateAccessToken($record->user);
-       $user= User::with('pupProfiles')->find($record->user_id);
+        $user = User::with('pupProfiles')->find($record->user_id);
+        $pupProfileIds = PupProfile::where('user_id', $record->user_id)
+            ->pluck('id');
 
+        $friendshipCount = Friendship::where('status', 'accepted')
+            ->where(function ($q) use ($pupProfileIds) {
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
+            ->count();
         return [
             'access_token'  => $accessToken,
             'refresh_token' => $newRaw,
+            'dog_count'    => $user->pupProfiles->count(),
+            'match_count'  => $friendshipCount,
+            'favorite_count' => Favorite::where('user_id', $user->id)->count(),
+            'date_count'   => Date::where('sender_id', $user->id)
+                ->orWhere('receiver_id', $user->id)
+                ->count(),
+
             'token_type'    => 'bearer',
             'expires_in'    => 15 * 60,
-            'user'=>$user
+            'user' => $user
 
 
         ];
