@@ -107,58 +107,57 @@ class NotificationService
         }
     }
     public function getUserNotifications(
-    int $userId,
-    int $page = 1,
-    int $perPage = 10,
-    bool $onlyUnread = false
-): array {
+        int $userId,
+        int $page = 1,
+        int $perPage = 10,
+        bool $onlyUnread = false
+    ): array {
 
-    $userRoleIds = DB::table('role_user')
-        ->where('user_id', $userId)
-        ->pluck('role_id');
+        $userRoleIds = DB::table('role_user')
+            ->where('user_id', $userId)
+            ->pluck('role_id');
 
-    $query = Notification::query()
-        ->leftJoin('notification_user as nu', function ($join) use ($userId) {
-            $join->on('nu.notification_id', '=', 'notifications.id')
-                 ->where('nu.user_id', '=', $userId);
-        })
-        ->leftJoin('notification_role as nr', function ($join) use ($userRoleIds) {
-            $join->on('nr.notification_id', '=', 'notifications.id')
-                 ->whereIn('nr.role_id', $userRoleIds);
-        })
-        ->where(function ($q) {
-            // GLOBAL
-            $q->whereNull('nu.notification_id')
-              ->whereNull('nr.notification_id');
-        })
-        ->orWhereNotNull('nu.notification_id') // USER
-        ->orWhereNotNull('nr.notification_id') // ROLE
-        ->select([
-            'notifications.id',
-            'notifications.title',
-            'notifications.message',
-            'notifications.url',
-            'notifications.created_at',
-            'nu.sent_at',
-            'nu.is_read',
-        ])
-        ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'));
+        $query = Notification::query()
+            ->leftJoin('notification_user as nu', function ($join) use ($userId) {
+                $join->on('nu.notification_id', '=', 'notifications.id')
+                    ->where('nu.user_id', '=', $userId);
+            })
+            ->leftJoin('notification_role as nr', function ($join) use ($userRoleIds) {
+                $join->on('nr.notification_id', '=', 'notifications.id')
+                    ->whereIn('nr.role_id', $userRoleIds);
+            })
+            ->where(function ($q) {
+                // GLOBAL
+                $q->whereNull('nu.notification_id')
+                    ->whereNull('nr.notification_id');
+            })
+            ->orWhereNotNull('nu.notification_id') // USER
+            ->orWhereNotNull('nr.notification_id') // ROLE
+            ->select([
+                'notifications.id',
+                'notifications.title',
+                'notifications.message',
+                'notifications.url',
+                'notifications.created_at',
+                'nu.sent_at',
+                'nu.is_read',
+            ])
+            ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'));
 
-    if ($onlyUnread) {
-        $query->where(function ($q) {
-            $q->whereNull('nu.is_read')->orWhere('nu.is_read', false);
-        });
+        if ($onlyUnread) {
+            $query->where(function ($q) {
+                $q->whereNull('nu.is_read')->orWhere('nu.is_read', false);
+            });
+        }
+
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'current_page' => $paginator->currentPage(),
+            'per_page'     => $paginator->perPage(),
+            'total'        => $paginator->total(),
+            'last_page'    => $paginator->lastPage(),
+            'data'         => $paginator->items(),
+        ];
     }
-
-    $paginator = $query->paginate($perPage, ['*'], 'page', $page);
-
-    return [
-        'current_page' => $paginator->currentPage(),
-        'per_page'     => $paginator->perPage(),
-        'total'        => $paginator->total(),
-        'last_page'    => $paginator->lastPage(),
-        'data'         => $paginator->items(),
-    ];
-}
-
 }
