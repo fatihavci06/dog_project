@@ -34,7 +34,7 @@ class SendOneSignalNotification implements ShouldQueue
         $client = new Client();
         $res = $client->post('https://onesignal.com/api/v1/notifications', [
             'headers' => [
-                'Authorization' => 'Basic ' . env('ONESIGNAL_REST_KEY'),
+                'Authorization' => 'Basic ' . env('ONESIGNAL_API_KEY'),
                 'Content-Type' => 'application/json'
             ],
             'json' => [
