@@ -67,12 +67,12 @@ class ChatService
         if (!empty($player)) {
             dispatch(new SendOneSignalNotification(
                 $player,
-                "Yeni mesaj",
-                mb_strimwidth($message->body ?? 'Yeni mesaj', 0, 100),
+                "Yeni Mesaj",
+                mb_strimwidth($body, 0, 100),
                 [
                     'conversation_id' => $conv->id,
-                    'sender_id' => $user->id,
-                    'type' => 'message'
+                    'type' => 'message',
+                    'url' => "https://pupcrawl.app/chat/{$conv->id}" // Dinamik link
                 ]
             ));
         }
@@ -90,7 +90,7 @@ class ChatService
             ->with(['messages' => function ($q) {
                 $q->latest()->limit(1);
             }])
-              ->orderByDesc('created_at')
+            ->orderByDesc('created_at')
             ->get()
             ->map(function ($conv) use ($user) {
                 $otherUserId = $conv->user_one_id === $user->id ? $conv->user_two_id : $conv->user_one_id;

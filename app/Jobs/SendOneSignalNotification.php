@@ -31,22 +31,38 @@ class SendOneSignalNotification implements ShouldQueue
     {
         if (empty($this->playerIds)) return;
 
-        $client = new Client();
-        $res = $client->post('https://onesignal.com/api/v1/notifications', [
+        $appId = config('services.onesignal.app_id') ?? env('ONESIGNAL_APP_ID');
+        $apiKey = config('services.onesignal.api_key') ?? env('ONESIGNAL_API_KEY');
+
+        // Deep Link URL'ini data içinden alıyoruz
+        $targetUrl = $this->data['url'] ?? null;
+
+        $client = new \GuzzleHttp\Client();
+
+        $client->post('https://onesignal.com/api/v1/notifications', [
             'headers' => [
-                'Authorization' => 'Basic ' . env('ONESIGNAL_API_KEY'),
+                'Authorization' => 'Basic ' . $apiKey,
                 'Content-Type' => 'application/json'
             ],
             'json' => [
-                'app_id' => env('ONESIGNAL_APP_ID'),
+                'app_id' => $appId,
                 'include_player_ids' => $this->playerIds,
                 'headings' => ['en' => $this->title],
                 'contents' => ['en' => $this->body],
-                'data' => $this->data,
-                'android_channel_id' => null
+
+                // 1. Yöntem: Standart uygulama açma URL'i
+                'app_url' => $targetUrl,
+
+                // 2. Yöntem: Uygulama içinden okumak için data objesi
+                'data' => array_merge($this->data, [
+                    'click_action' => 'FLUTTER_NOTIFICATION_CLICK', // Eğer Flutter kullanıyorsan gerekebilir
+                    'url' => $targetUrl
+                ]),
+
+                'android_channel_id' => null,
+                'ios_attachments' => null, // Gerekirse görsel eklenebilir
             ],
             'timeout' => 10
         ]);
-        // isteğe bağlı: dönüşü logla
     }
 }
