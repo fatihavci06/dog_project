@@ -72,7 +72,7 @@ class ChatService
                 [
                     'conversation_id' => $conv->id,
                     'type' => 'message',
-                    'url' => "https://pupcrawl.app/chat/{$conv->id}" // Dinamik link
+                    'url' => "pupcrawl.app/chat/{$conv->id}" // Dinamik link
                 ]
             ));
         }
