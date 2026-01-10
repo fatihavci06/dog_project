@@ -84,6 +84,26 @@ class FriendshipService extends BaseService
         }
 
         $req->update(['status' => 'accepted']);
+        $senderProfile = \App\Models\PupProfile::find($req->sender_id);
+        $targetUser = $senderProfile ? $senderProfile->user : null;
+
+        // Kabul eden kişi (şu anki kullanıcı): receiver_id
+        $acceptorProfile = \App\Models\PupProfile::find($req->receiver_id);
+        $acceptorName = $acceptorProfile ? $acceptorProfile->name : 'Bir kullanıcı';
+
+        if ($targetUser && !empty($targetUser->onesignal_player_id)) {
+            dispatch(new \App\Jobs\SendOneSignalNotification(
+                [$targetUser->onesignal_player_id],
+                "Arkadaşlık İsteği Kabul Edildi! ✨",
+                "{$acceptorName} arkadaşlık isteğini kabul etti. Artık patişebilirsiniz!",
+                [
+                    'friendship_id' => $req->id,
+                    'type'          => 'friend_accepted',
+                    'url'           => "pupcrawl://profile/{$req->receiver_id}" // Kabul edenin profiline git
+                ]
+            ));
+        }
+
         return $req;
     }
 
