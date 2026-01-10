@@ -356,6 +356,41 @@ class DateService
         }
 
         $date->update(['status' => $status]);
+        $senderProfile = \App\Models\PupProfile::find($date->sender_id);
+        $targetUser = $senderProfile ? $senderProfile->user : null;
+
+        // Yanıt veren kişinin profil adını alalım (Bildirimde kimin kabul ettiğini göstermek için)
+        $responderProfile = \App\Models\PupProfile::find($date->receiver_id);
+        $responderName = $responderProfile ? $responderProfile->name : 'Bir kullanıcı';
+
+        if ($targetUser && !empty($targetUser->onesignal_player_id)) {
+
+            $locale = $targetUser->language ?? config('app.locale');
+
+
+            $titleKey = $status === 'accepted'
+                ? 'notifications.date_accepted_title'
+                : 'notifications.date_rejected_title';
+
+            $bodyKey = $status === 'accepted'
+                ? 'notifications.date_accepted_body'
+                : 'notifications.date_rejected_body';
+
+            dispatch(new \App\Jobs\SendOneSignalNotification(
+                [$targetUser->onesignal_player_id],
+                __($titleKey),
+                __($bodyKey, [
+                    'name' => $responderName
+                ]),
+                [
+                    'date_id' => $date->id,
+                    'type'    => 'date_response',
+                    'status'  => $status,
+                    'url'     => "pupcrawl://date/{$date->id}"
+                ]
+            ));
+        }
+
 
         return $date;
     }
