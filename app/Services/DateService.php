@@ -246,7 +246,7 @@ class DateService
     public function createDate(int $senderId, array $data)
     {
         $myProfile = PupProfile::find($data['my_pup_profile_id']);
-    $targetProfile = PupProfile::find($data['target_pup_profile_id']);
+        $targetProfile = PupProfile::find($data['target_pup_profile_id']);
         // 1. Frontend'den gelen 'date' (Y-m-d) ve 'time' (H:i) bilgisini birleştir
         $myUserId = $myProfile->user_id;
         $targetUserId = $targetProfile->user_id;
@@ -260,13 +260,12 @@ class DateService
                 ->where('receiver_id', $myUserId);
         })->exists();
 
-       if (!$hasConversation) {
- throw new Exception(
-    __('errors.no_conversation'),
-    403
-);
-
-}
+        if (!$hasConversation) {
+            throw new Exception(
+                __('errors.no_conversation'),
+                403
+            );
+        }
 
         try {
             $meetingDateTime = Carbon::createFromFormat(
@@ -285,7 +284,7 @@ class DateService
 
 
         // 4. Kayıt Oluşturma
-        return Date::create([
+        $newDate = Date::create([
             'sender_id'    => $data['my_pup_profile_id'],
             'receiver_id'  => $data['target_pup_profile_id'],
             'meeting_date' => $meetingDateTime,      // Birleştirilmiş datetime
@@ -296,6 +295,27 @@ class DateService
             'description'  => $data['description'] ?? null, // Opsiyonel not alanı
             'status'       => 'pending'
         ]);
+        $targetUser = $targetProfile->user;
+        if ($targetUser && !empty($targetUser->onesignal_player_id)) {
+
+
+
+            dispatch(new \App\Jobs\SendOneSignalNotification(
+                [$targetUser->onesignal_player_id],
+                __('notifications.date_request_title'),
+                __('notifications.date_request_body', [
+                    'name' => $myProfile->name
+                ]),
+                [
+                    'date_id' => $newDate->id,
+                    'type'    => 'date_request',
+                    'url'     => "pupcrawl://dates/{$newDate->id}"
+                ]
+            ));
+        }
+
+
+        return $newDate;
     }
 
     /**
