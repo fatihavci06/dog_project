@@ -345,7 +345,12 @@ class DateService
      */
     public function respondDate(int $dateId, int $userId, string $status): Date
     {
-        $date = Date::where('id', $dateId)->where('receiver_id', $userId)->first();
+        $myPupProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
+        $date = Date::where('id', $dateId)
+            ->whereIn('receiver_id', $myPupProfileIds)
+            ->first();
 
         if (!$date) {
             throw new HttpException(404, 'Date request not found.');
