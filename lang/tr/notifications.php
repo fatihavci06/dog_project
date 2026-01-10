@@ -9,4 +9,6 @@ return [
 
     'date_accepted_body' => ':name randevu isteğinizi kabul etti! 🎉',
     'date_rejected_body' => ':name randevu isteğinizi üzülerek reddetti. 🐾',
+     'friend_request_title' => 'Yeni Patili Arkadaş İsteği! 🐾',
+    'friend_request_body'  => ':name sana arkadaşlık isteği gönderdi.',
 ];

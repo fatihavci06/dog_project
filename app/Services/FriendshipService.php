@@ -33,11 +33,43 @@ class FriendshipService extends BaseService
             throw new Exception("A relationship with this person already exists.", 400);
         }
 
-        return Friendship::create([
+        $friendship = Friendship::create([
             'sender_id' => $myPupProfileId,
             'receiver_id' => $targetPupProfileId,
             'status' => 'pending'
         ]);
+
+        // 2. --- BİLDİRİM GÖNDERME ---
+
+        // İstek atan ve alan profilleri çekelim
+        $senderProfile = \App\Models\PupProfile::find($myPupProfileId);
+        $targetProfile = \App\Models\PupProfile::find($targetPupProfileId);
+
+        // Alıcı kullanıcının User modeline ulaşalım
+        $targetUser = $targetProfile ? $targetProfile->user : null;
+
+        if ($targetUser && !empty($targetUser->onesignal_player_id)) {
+
+
+
+
+            dispatch(new \App\Jobs\SendOneSignalNotification(
+                [$targetUser->onesignal_player_id],
+                __('notifications.friend_request_title'),
+                __('notifications.friend_request_body', [
+                    'name' => $senderProfile->name
+                ]),
+                [
+                    'friendship_id' => $friendship->id,
+                    'sender_id'     => $myPupProfileId,
+                    'type'          => 'friend_request',
+                    'url'           => "pupcrawl://profile/{$myPupProfileId}"
+                ]
+            ));
+        }
+
+
+        return $friendship;
     }
 
 
@@ -73,210 +105,210 @@ class FriendshipService extends BaseService
 
 
     public function listFriends(int $userId, int $page = 1, int $perPage = 10): array
-{
-    /*
+    {
+        /*
     |--------------------------------------------------------------------------
     | 1️⃣ Kullanıcının Pup Profile ID'leri
     |--------------------------------------------------------------------------
     */
-    $myProfileIds = PupProfile::where('user_id', $userId)
-        ->pluck('id')
-        ->toArray();
+        $myProfileIds = PupProfile::where('user_id', $userId)
+            ->pluck('id')
+            ->toArray();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 2️⃣ Favoriler (tek sorgu)
     |--------------------------------------------------------------------------
     */
-    $favoriteIds = Favorite::where('user_id', $userId)
-        ->pluck('favorite_id')
-        ->toArray();
+        $favoriteIds = Favorite::where('user_id', $userId)
+            ->pluck('favorite_id')
+            ->toArray();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 3️⃣ Arkadaşlıklar (paginate + eager loading)
     |--------------------------------------------------------------------------
     */
-    $friendships = Friendship::query()
-        ->where('status', 'accepted')
-        ->where(function ($q) use ($myProfileIds) {
-            $q->whereIn('sender_id', $myProfileIds)
-              ->orWhereIn('receiver_id', $myProfileIds);
-        })
-        ->with([
-            'sender.user',
-            'sender.vibe',
-            'sender.images',
-            'sender.answers',
-            'sender.breed',
-            'sender.ageRange',
-            'sender.travelRadius',
+        $friendships = Friendship::query()
+            ->where('status', 'accepted')
+            ->where(function ($q) use ($myProfileIds) {
+                $q->whereIn('sender_id', $myProfileIds)
+                    ->orWhereIn('receiver_id', $myProfileIds);
+            })
+            ->with([
+                'sender.user',
+                'sender.vibe',
+                'sender.images',
+                'sender.answers',
+                'sender.breed',
+                'sender.ageRange',
+                'sender.travelRadius',
 
-            'receiver.user',
-            'receiver.vibe',
-            'receiver.images',
-            'receiver.answers',
-            'receiver.breed',
-            'receiver.ageRange',
-            'receiver.travelRadius',
-        ])
-        ->orderByDesc('created_at')
-        ->paginate($perPage, ['*'], 'page', $page);
+                'receiver.user',
+                'receiver.vibe',
+                'receiver.images',
+                'receiver.answers',
+                'receiver.breed',
+                'receiver.ageRange',
+                'receiver.travelRadius',
+            ])
+            ->orderByDesc('created_at')
+            ->paginate($perPage, ['*'], 'page', $page);
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 4️⃣ Bu sayfadaki TÜM Pup Profile ID'leri
     |--------------------------------------------------------------------------
     */
-    $profileIdsOnPage = collect();
+        $profileIdsOnPage = collect();
 
-    foreach ($friendships as $f) {
-        if ($f->sender)   $profileIdsOnPage->push($f->sender->id);
-        if ($f->receiver) $profileIdsOnPage->push($f->receiver->id);
-    }
+        foreach ($friendships as $f) {
+            if ($f->sender)   $profileIdsOnPage->push($f->sender->id);
+            if ($f->receiver) $profileIdsOnPage->push($f->receiver->id);
+        }
 
-    $uniqueProfileIds = $profileIdsOnPage->unique()->values()->toArray();
+        $uniqueProfileIds = $profileIdsOnPage->unique()->values()->toArray();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 5️⃣ Accepted Date'leri TEK sorguda çek (pup_profile_id bazlı)
     |--------------------------------------------------------------------------
     */
-    $allDates = Date::query()
-        ->where('status', 'accepted')
-        ->where(function ($q) use ($uniqueProfileIds) {
-            $q->whereIn('sender_id', $uniqueProfileIds)
-              ->orWhereIn('receiver_id', $uniqueProfileIds);
-        })
-        ->orderByDesc('meeting_date')
-        ->get();
+        $allDates = Date::query()
+            ->where('status', 'accepted')
+            ->where(function ($q) use ($uniqueProfileIds) {
+                $q->whereIn('sender_id', $uniqueProfileIds)
+                    ->orWhereIn('receiver_id', $uniqueProfileIds);
+            })
+            ->orderByDesc('meeting_date')
+            ->get();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 6️⃣ Conversation'ları TEK sorguda çek (user_id bazlı)
     |--------------------------------------------------------------------------
     */
-    $allConversations = Conversation::query()
-        ->where(function ($q) {
-            $q->whereColumn('user_one_id', '<>', 'user_two_id');
-        })
-        ->get();
+        $allConversations = Conversation::query()
+            ->where(function ($q) {
+                $q->whereColumn('user_one_id', '<>', 'user_two_id');
+            })
+            ->get();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 7️⃣ DATA MAPPING
     |--------------------------------------------------------------------------
     */
-    $data = $friendships->getCollection()->map(function ($req) use (
-        $myProfileIds,
-        $favoriteIds,
-        $userId,
-        $allDates,
-        $allConversations
-    ) {
+        $data = $friendships->getCollection()->map(function ($req) use (
+            $myProfileIds,
+            $favoriteIds,
+            $userId,
+            $allDates,
+            $allConversations
+        ) {
 
-        // Ben gönderici miyim?
-        $isSenderMe = in_array($req->sender_id, $myProfileIds);
+            // Ben gönderici miyim?
+            $isSenderMe = in_array($req->sender_id, $myProfileIds);
 
-        $friend = $isSenderMe ? $req->receiver : $req->sender;
-        $me     = $isSenderMe ? $req->sender   : $req->receiver;
+            $friend = $isSenderMe ? $req->receiver : $req->sender;
+            $me     = $isSenderMe ? $req->sender   : $req->receiver;
 
-        // Pup Profile ID'ler
-        $friendProfileId = $friend->id;
-        $meProfileId     = $me->id;
+            // Pup Profile ID'ler
+            $friendProfileId = $friend->id;
+            $meProfileId     = $me->id;
 
-        // User ID'ler (chat & conversation)
-        $friendUserId = $friend->user->id;
-        $meUserId     = $me->user->id;
+            // User ID'ler (chat & conversation)
+            $friendUserId = $friend->user->id;
+            $meUserId     = $me->user->id;
 
-        /*
+            /*
         |--------------------------------------------------------------------------
         | Son Accepted Date (pup_profile_id bazlı)
         |--------------------------------------------------------------------------
         */
-        $lastDate = $allDates->first(function ($date) use ($meProfileId, $friendProfileId) {
-            return (
-                ($date->sender_id == $meProfileId && $date->receiver_id == $friendProfileId) ||
-                ($date->sender_id == $friendProfileId && $date->receiver_id == $meProfileId)
-            );
-        });
+            $lastDate = $allDates->first(function ($date) use ($meProfileId, $friendProfileId) {
+                return (
+                    ($date->sender_id == $meProfileId && $date->receiver_id == $friendProfileId) ||
+                    ($date->sender_id == $friendProfileId && $date->receiver_id == $meProfileId)
+                );
+            });
 
-        /*
+            /*
         |--------------------------------------------------------------------------
         | Conversation (user_id bazlı)
         |--------------------------------------------------------------------------
         */
-        $conversation = $allConversations->first(function ($c) use ($meUserId, $friendUserId) {
-            return (
-                ($c->user_one_id == $meUserId && $c->user_two_id == $friendUserId) ||
-                ($c->user_one_id == $friendUserId && $c->user_two_id == $meUserId)
-            );
+            $conversation = $allConversations->first(function ($c) use ($meUserId, $friendUserId) {
+                return (
+                    ($c->user_one_id == $meUserId && $c->user_two_id == $friendUserId) ||
+                    ($c->user_one_id == $friendUserId && $c->user_two_id == $meUserId)
+                );
+            });
+
+            return [
+                'id'             => $req->id,
+                'pup_profile_id' => $friend->id,
+                'name'           => $friend->name,
+                'status'         => $req->status,
+                'sent_at'        => optional($req->created_at)->format('d-m-Y H:i'),
+
+                'last_chat_at' => MessageService::getLastChatDateBetweenProfiles(
+                    $userId,
+                    $friendUserId
+                ),
+
+                'vibe' => $friend->vibe->map(fn($v) => [
+                    'id'   => $v->id,
+                    'name' => $v->translate('name'),
+                ]),
+
+                'user' => [
+                    'id'   => $friendUserId,
+                    'name' => $friend->user->name,
+                ],
+
+                'breed'         => $friend->breed?->translate('name'),
+                'age_range'     => $friend->ageRange?->translate('name'),
+                'travel_radius' => $friend->travelRadius?->translate('name'),
+                'sex'           => $friend->sex,
+                'photo'         => $friend->images->first()->path ?? null,
+                'biography'     => $friend->biography,
+
+                'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
+
+                'match_type' => MatchClass::getMatchType(
+                    $me->answers->toArray(),
+                    $friend->answers->toArray()
+                ),
+
+                'distance_km' => $this->calculateDistance(
+                    $me->lat ?? 0,
+                    $me->long ?? 0,
+                    $friend->lat ?? 0,
+                    $friend->long ?? 0
+                ),
+
+                // Pup profile bazlı date
+                'date' => $lastDate,
+
+                // User bazlı chat
+                'conversation_id' => $conversation?->id,
+            ];
         });
 
-        return [
-            'id'             => $req->id,
-            'pup_profile_id' => $friend->id,
-            'name'           => $friend->name,
-            'status'         => $req->status,
-            'sent_at'        => optional($req->created_at)->format('d-m-Y H:i'),
-
-            'last_chat_at' => MessageService::getLastChatDateBetweenProfiles(
-                $userId,
-                $friendUserId
-            ),
-
-            'vibe' => $friend->vibe->map(fn ($v) => [
-                'id'   => $v->id,
-                'name' => $v->translate('name'),
-            ]),
-
-            'user' => [
-                'id'   => $friendUserId,
-                'name' => $friend->user->name,
-            ],
-
-            'breed'         => $friend->breed?->translate('name'),
-            'age_range'     => $friend->ageRange?->translate('name'),
-            'travel_radius' => $friend->travelRadius?->translate('name'),
-            'sex'           => $friend->sex,
-            'photo'         => $friend->images->first()->path ?? null,
-            'biography'     => $friend->biography,
-
-            'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
-
-            'match_type' => MatchClass::getMatchType(
-                $me->answers->toArray(),
-                $friend->answers->toArray()
-            ),
-
-            'distance_km' => $this->calculateDistance(
-                $me->lat ?? 0,
-                $me->long ?? 0,
-                $friend->lat ?? 0,
-                $friend->long ?? 0
-            ),
-
-            // Pup profile bazlı date
-            'date' => $lastDate,
-
-            // User bazlı chat
-            'conversation_id' => $conversation?->id,
-        ];
-    });
-
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 8️⃣ Pagination Response
     |--------------------------------------------------------------------------
     */
-    return [
-        'current_page' => $friendships->currentPage(),
-        'per_page'     => $friendships->perPage(),
-        'total'        => $friendships->total(),
-        'last_page'    => $friendships->lastPage(),
-        'data'         => $data,
-    ];
-}
+        return [
+            'current_page' => $friendships->currentPage(),
+            'per_page'     => $friendships->perPage(),
+            'total'        => $friendships->total(),
+            'last_page'    => $friendships->lastPage(),
+            'data'         => $data,
+        ];
+    }
 
 
 

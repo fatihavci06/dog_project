@@ -10,4 +10,6 @@ return [
 
     'date_accepted_body' => ':name accepted your date request! 🎉',
     'date_rejected_body' => ':name unfortunately declined your date request. 🐾',
+     'friend_request_title' => 'New Paw Friend Request! 🐾',
+    'friend_request_body'  => ':name sent you a friend request.',
 ];
