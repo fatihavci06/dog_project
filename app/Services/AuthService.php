@@ -228,7 +228,6 @@ class AuthService
         $user->match_count = $friendshipCount;
         $user->favorite_count = Favorite::where('user_id', $user->id)->count();
         $user->notification_status = $user->notification_status;
-        $user->language = $user->preferred_language;
         $user->date_count = Date::where('sender_id', $user->id)
             ->orWhere('receiver_id', $user->id)
             ->count();
