@@ -2,6 +2,9 @@
 
 namespace App\Jobs;
 
+use App\Models\Notification;
+use App\Models\NotificationUser;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -47,6 +50,16 @@ class SendOneSignalNotification implements ShouldQueue
             ],
             'timeout' => 10
         ]);
-        // isteğe bağlı: dönüşü logla
+      Notification::create([
+          'title' => $this->title,
+          'message' => $this->body,
+          'url' => $this->data['url'] ?? null,
+      ]);
+      NotificationUser::create([
+          'notification_id' => Notification::latest()->first()->id,
+          'user_id' => User::where('onesignal_player_id', $this->playerIds[0])->first()->id,
+          'is_read' => false,
+          'sent_at' => now(),
+      ]);
     }
 }
