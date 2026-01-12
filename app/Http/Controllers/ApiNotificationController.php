@@ -28,17 +28,25 @@ class ApiNotificationController extends ApiController
 
         return $this->notificationService->changeNotificationStatus($request->user_id, $request->status);
     }
+    public function markAsRead(Request $request, int $id)
+    {
+        // Mevcut kullanıcının ID'sini al
+        $userId = $request->user_id;
+
+        return $this->notificationService->markAsRead($userId, $id);
+
+
+    }
     public function notificationsList(Request $request)
-{
-    return $this->notificationService
-        ->getUserNotifications(
-            $request->user_id,
-            $request->page ?? 1,
-            $request->per_page ?? 15
+    {
+        return $this->notificationService
+            ->getUserNotifications(
+                $request->user_id,
+                $request->role_id,
+                $request->is_read,
+                $request->page ?? 1,
+                $request->per_page ?? 15
 
-        );
-}
-
-
-
+            );
+    }
 }

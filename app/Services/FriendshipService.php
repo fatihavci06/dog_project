@@ -66,7 +66,8 @@ class FriendshipService extends BaseService
                     'friendship_id' => $friendship->id,
                     'sender_id'     => $myPupProfileId,
                     'type'          => 'friend_request',
-                    'url'           => "pupcrawl://profile/{$myPupProfileId}"
+                    'url'           => "pupcrawl://profile/{$myPupProfileId}",
+
                 ]
             ));
         }

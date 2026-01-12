@@ -39,8 +39,8 @@ Route::prefix('question')->group(function () {
 });
 Route::get('/screen/{id}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
-     Route::post('/feedback/send', [ApiFeedBackController::class, 'store']);
-      Route::get('/feedback/list', [ApiFeedBackController::class, 'index']);
+    Route::post('/feedback/send', [ApiFeedBackController::class, 'store']);
+    Route::get('/feedback/list', [ApiFeedBackController::class, 'index']);
     Route::get('/pup/{pupProfileId}/discover', [ApiPupMatchController::class, 'matches']);
     Route::get('/discover/show/{id}', [ApiPupMatchController::class, 'showProfile']); //id pup profile id
 
@@ -124,8 +124,8 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('onesignal-playerid/set', [ApiNotificationController::class, 'setOneSignalPlayerId']);
     Route::get('notification/list', [ApiNotificationController::class, 'notificationsList']);
     Route::post('notification-status/change', [ApiNotificationController::class, 'changeNotificationStatus']);
-
-      Route::post('language/change', [ApiLanguageController::class, 'changeLanguageStatus']);
+    Route::post('/notifications/{id}/read', [ApiNotificationController::class, 'markAsRead']);
+    Route::post('language/change', [ApiLanguageController::class, 'changeLanguageStatus']);
 });
 
 

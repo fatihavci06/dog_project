@@ -53,6 +53,7 @@ class SendOneSignalNotification implements ShouldQueue
         Notification::create([
             'title' => $this->title,
             'message' => $this->body,
+            'type' => $this->data['type'] ?? 'info',
             'url' => $this->data['url'] ?? null,
         ]);
         NotificationUser::create([
