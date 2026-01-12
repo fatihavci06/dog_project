@@ -75,6 +75,7 @@ class AuthService
                 'password'       => bcrypt($data['password']),
                 'role_id'        => $data['role'],
                 'status'         => 'active',
+                'preferred_language' => $data['language'] ?? 'en',
                 'privacy_policy' => $data['privacy_policy'],
                 'newlestter'     => $data['newlestter'] ?? 0,
             ]);
