@@ -50,7 +50,12 @@ class FriendshipService extends BaseService
 
         // Alıcı kullanıcının User modeline ulaşalım
         $targetUser = $targetProfile ? $targetProfile->user : null;
+        $currentLocale = app()->getLocale();
 
+        // Hedef kullanıcının tercih ettiği dili set et
+        if (!empty($targetUser->preferred_language)) {
+            app()->setLocale($targetUser->preferred_language);
+        }
         if ($targetUser && !empty($targetUser->onesignal_player_id)) {
 
 
@@ -71,7 +76,7 @@ class FriendshipService extends BaseService
                 ]
             ));
         }
-
+        app()->setLocale($currentLocale);
 
         return $friendship;
     }
