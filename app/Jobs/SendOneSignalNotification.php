@@ -30,7 +30,7 @@ class SendOneSignalNotification implements ShouldQueue
         $this->data = $data;
     }
 
-     public function handle()
+    public function handle()
     {
         if (empty($this->playerIds)) return;
 
@@ -50,16 +50,16 @@ class SendOneSignalNotification implements ShouldQueue
             ],
             'timeout' => 10
         ]);
-      Notification::create([
-          'title' => $this->title,
-          'message' => $this->body,
-          'url' => $this->data['url'] ?? null,
-      ]);
-      NotificationUser::create([
-          'notification_id' => Notification::latest()->first()->id,
-          'user_id' => User::where('onesignal_player_id', $this->playerIds[0])->first()->id,
-          'is_read' => false,
-          'sent_at' => now(),
-      ]);
+        Notification::create([
+            'title' => $this->title,
+            'message' => $this->body,
+            'url' => $this->data['url'] ?? null,
+        ]);
+        NotificationUser::create([
+            'notification_id' => Notification::latest()->first()->id,
+            'user_id' => User::where('onesignal_player_id', $this->playerIds[0])->first()->id,
+            'is_read' => false,
+            'sent_at' => now(),
+        ]);
     }
 }
