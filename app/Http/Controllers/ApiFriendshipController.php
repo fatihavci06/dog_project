@@ -62,6 +62,7 @@ class ApiFriendshipController extends ApiController
     }
     public function totalMatchAndChats(Request $request, FriendshipService $service)
     {
-        return $service->totalMatchAndChats($request->user_id);
+        $pupProfileId = $request->get('pup_profile_id');
+        return $service->totalMatchAndChats($request->user_id, $pupProfileId);
     }
 }

@@ -424,7 +424,7 @@ class FriendshipService extends BaseService
     }
     public function outgoingRequests(int $userId, int $pupProfileId = null)
     {
-         if ($pupProfileId) {
+        if ($pupProfileId) {
 
             // Güvenlik: Bu pup profile kullanıcıya mı ait?
             $ownsProfile = PupProfile::where('id', $pupProfileId)
@@ -496,30 +496,30 @@ class FriendshipService extends BaseService
         // 1. Kullanıcının kendi pup profillerini bul (Güvenlik için)
         Friendship::where('id', $friendPupId)->delete();
     }
-    public function totalMatchAndChats(int $userId)
-    {
+    public function totalMatchAndChats(int $userId, int $pupProfileId = null)
+{
+    $pupProfileIds = $pupProfileId
+        ? [$pupProfileId]
+        : PupProfile::where('user_id', $userId)->pluck('id')->toArray();
 
-        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
-
-        $totalMatches = Friendship::where(function ($q) use ($pupProfileIds) {
+    // ✅ MATCH
+    $totalMatches = Friendship::where('status', 'accepted')
+        ->where(function ($q) use ($pupProfileIds) {
             $q->whereIn('sender_id', $pupProfileIds)
-                ->where('status', 'accepted');
+              ->orWhereIn('receiver_id', $pupProfileIds);
         })
-            ->orWhere(function ($q) use ($pupProfileIds) {
-                $q->whereIn('receiver_id', $pupProfileIds)
-                    ->where('status', 'accepted');
-            })
-            ->count();
+        ->count();
 
-        // Toplam chat sayısını hesapla
-        $totalChats = \App\Models\Conversation::where(function ($q) use ($userId) {
-            $q->where('user_one_id', $userId)
-                ->orWhere('user_two_id', $userId);
-        })->count();
+    // ⚠️ CHAT (user bazlıysa)
+    $totalChats = Conversation::where(function ($q) use ($userId) {
+        $q->where('user_one_id', $userId)
+          ->orWhere('user_two_id', $userId);
+    })->count();
 
-        return [
-            'total_matches' => $totalMatches,
-            'total_chats'   => $totalChats,
-        ];
-    }
+    return [
+        'total_matches' => $totalMatches,
+        'total_chats'   => $totalChats,
+    ];
+}
+
 }
