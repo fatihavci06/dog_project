@@ -148,9 +148,7 @@ class FriendshipService extends BaseService
                 ->where('user_id', $userId)
                 ->exists();
 
-            if (!$ownsProfile) {
-                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
-            }
+
 
             $myProfileIds = [$pupProfileId];
         } else {
