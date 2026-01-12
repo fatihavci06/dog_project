@@ -10,7 +10,7 @@ use App\Http\Controllers\ApiDateController;
 use App\Http\Controllers\ApiFavoriteController;
 use App\Http\Controllers\ApiFriendshipController;
 use App\Http\Controllers\ApiLocationController;
-use App\Http\Controllers\ApiMessageController;
+use App\Http\Controllers\ApiLanguageController;
 use App\Http\Controllers\ApiMobilAppRegisterInformationController;
 use App\Http\Controllers\ApiProfileShareController;
 use App\Http\Controllers\ApiPupMatchController;
@@ -124,6 +124,8 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('onesignal-playerid/set', [ApiNotificationController::class, 'setOneSignalPlayerId']);
     Route::get('notification/list', [ApiNotificationController::class, 'notificationsList']);
     Route::post('notification-status/change', [ApiNotificationController::class, 'changeNotificationStatus']);
+
+      Route::post('language/change', [ApiLanguageController::class, 'changeLanguageStatus']);
 });
 
 

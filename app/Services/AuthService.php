@@ -220,19 +220,21 @@ class AuthService
             })
             ->count();
         $user->dog_count = $user->pupProfiles->count();
-$user->match_count = $friendshipCount;
-$user->favorite_count = Favorite::where('user_id', $user->id)->count();
-$user->date_count = Date::where('sender_id', $user->id)
-    ->orWhere('receiver_id', $user->id)
-    ->count();
+        $user->match_count = $friendshipCount;
+        $user->favorite_count = Favorite::where('user_id', $user->id)->count();
+         $user->notification_status = $user->notification_status;
+         $user->preferred_language = $user->preferred_language;
+        $user->date_count = Date::where('sender_id', $user->id)
+            ->orWhere('receiver_id', $user->id)
+            ->count();
 
-return [
-    'access_token'  => $accessToken,
-    'refresh_token' => $newRaw,
-    'token_type'    => 'bearer',
-    'expires_in'    => 15 * 60,
-    'user'          => $user,
-];
+        return [
+            'access_token'  => $accessToken,
+            'refresh_token' => $newRaw,
+            'token_type'    => 'bearer',
+            'expires_in'    => 15 * 60,
+            'user'          => $user,
+        ];
     }
     public function decodeToken(string $token)
     {
