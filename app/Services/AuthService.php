@@ -143,6 +143,8 @@ class AuthService
         }
 
         // Access token üret
+
+
         $accessToken = $this->generateAccessToken($user, $credentials['language'] ?? null);
 
         // Refresh token üret
@@ -160,7 +162,7 @@ class AuthService
             'refresh_token' => $rawRefresh,
             'user_id'       => $user->id,
             'notification_status' => $user->notification_status,
-            'language'     => $credentials['language'] ?? 'en',
+            'language'     => $user->preferred_language,
             'pup_profiles'  => $user->pupProfiles->map(fn($p) => [
                 'id'   => $p->id,
                 'name' => $p->name,
@@ -181,7 +183,10 @@ class AuthService
             'jti' => (string) Str::uuid(),
             // 'scope' => 'user' // opsiyonel
         ];
+        $language = $language ?? User::find($user->id)->preferred_language;
 
+        app()->setLocale($language);
+        User::where('id', $user->id)->update(['preferred_language' => $language]);
 
         return JWT::encode($payload, SupportJwt::secret(), SupportJwt::algo());
     }
@@ -222,8 +227,8 @@ class AuthService
         $user->dog_count = $user->pupProfiles->count();
         $user->match_count = $friendshipCount;
         $user->favorite_count = Favorite::where('user_id', $user->id)->count();
-         $user->notification_status = $user->notification_status;
-         $user->preferred_language = $user->preferred_language;
+        $user->notification_status = $user->notification_status;
+        $user->preferred_language = $user->preferred_language;
         $user->date_count = Date::where('sender_id', $user->id)
             ->orWhere('receiver_id', $user->id)
             ->count();
