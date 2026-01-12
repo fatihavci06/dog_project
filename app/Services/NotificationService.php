@@ -164,6 +164,7 @@ class NotificationService
         $paginator = $query->select([
             'notifications.id',
             'notifications.title',
+            'notifications.type',
             'notifications.message',
             'notifications.url',
             'notifications.created_at',
