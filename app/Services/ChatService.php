@@ -65,6 +65,10 @@ class ChatService
         // OneSignal push
         $player = !empty($to->onesignal_player_id) ? [$to->onesignal_player_id] : [];
         if (!empty($player)) {
+            $currentLocale = app()->getLocale();
+
+            // alıcı kullanıcının dili
+            app()->setLocale($to->preferred_language ?? config('app.locale'));
             dispatch(new SendOneSignalNotification(
                 $player,
                 "Yeni Mesaj",
@@ -77,7 +81,7 @@ class ChatService
             ));
         }
 
-
+        app()->setLocale($currentLocale);
         return $message;
     }
 
@@ -285,67 +289,66 @@ class ChatService
             ->values();
     }
     public function getUserPupProfileList(int $userId, int $page = 1, int $perPage = 10)
-{
-    $chatUserIds = Message::where(function ($q) use ($userId) {
-        $q->where('sender_id', $userId)
-          ->orWhere('receiver_id', $userId);
-    })
-        ->get()
-        ->map(function ($message) use ($userId) {
-            return $message->sender_id == $userId
-                ? $message->receiver_id
-                : $message->sender_id;
+    {
+        $chatUserIds = Message::where(function ($q) use ($userId) {
+            $q->where('sender_id', $userId)
+                ->orWhere('receiver_id', $userId);
         })
-        ->unique()
-        ->values();
+            ->get()
+            ->map(function ($message) use ($userId) {
+                return $message->sender_id == $userId
+                    ? $message->receiver_id
+                    : $message->sender_id;
+            })
+            ->unique()
+            ->values();
 
-    $mapped = User::with([
-        'pupProfiles' => function ($q) use ($userId) {
-            $q->select('id', 'user_id', 'name')
-              ->where('user_id', '!=', $userId) // 🔥 KENDİ PUP PROFİLE’LARINI DIŞLA
-              ->with([
-                  'images' => function ($q) {
-                      $q->select('id', 'pup_profile_id', 'path');
-                  }
-              ]);
-        }
-    ])
-        ->whereIn('id', $chatUserIds)
-        ->select('id', 'name', 'photo')
-        ->get()
-        // 🔥 pupProfiles boş kalan user’ları da atalım
-        ->filter(fn ($user) => $user->pupProfiles->isNotEmpty())
-        ->map(function ($user) {
+        $mapped = User::with([
+            'pupProfiles' => function ($q) use ($userId) {
+                $q->select('id', 'user_id', 'name')
+                    ->where('user_id', '!=', $userId) // 🔥 KENDİ PUP PROFİLE’LARINI DIŞLA
+                    ->with([
+                        'images' => function ($q) {
+                            $q->select('id', 'pup_profile_id', 'path');
+                        }
+                    ]);
+            }
+        ])
+            ->whereIn('id', $chatUserIds)
+            ->select('id', 'name', 'photo')
+            ->get()
+            // 🔥 pupProfiles boş kalan user’ları da atalım
+            ->filter(fn($user) => $user->pupProfiles->isNotEmpty())
+            ->map(function ($user) {
 
-            $user->user_id = $user->id;
-            $user->makeHidden('photo');
+                $user->user_id = $user->id;
+                $user->makeHidden('photo');
 
-            $user->pupProfiles->each(function ($pup) {
-                $pup->makeHidden('user_id');
+                $user->pupProfiles->each(function ($pup) {
+                    $pup->makeHidden('user_id');
 
-                $pup->images->each(function ($image) {
-                    $image->makeHidden(['id', 'pup_profile_id']);
+                    $pup->images->each(function ($image) {
+                        $image->makeHidden(['id', 'pup_profile_id']);
+                    });
                 });
-            });
 
-            return $user;
-        })
-        ->values();
+                return $user;
+            })
+            ->values();
 
-    // 🔹 MANUEL PAGINATION
-    $total    = $mapped->count();
-    $lastPage = (int) ceil($total / $perPage);
-    $offset   = ($page - 1) * $perPage;
+        // 🔹 MANUEL PAGINATION
+        $total    = $mapped->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $offset   = ($page - 1) * $perPage;
 
-    $paged = $mapped->slice($offset, $perPage)->values();
+        $paged = $mapped->slice($offset, $perPage)->values();
 
-    return [
-        'current_page' => $page,
-        'per_page'     => $perPage,
-        'total'        => $total,
-        'last_page'    => $lastPage,
-        'data'         => $paged,
-    ];
-}
-
+        return [
+            'current_page' => $page,
+            'per_page'     => $perPage,
+            'total'        => $total,
+            'last_page'    => $lastPage,
+            'data'         => $paged,
+        ];
+    }
 }

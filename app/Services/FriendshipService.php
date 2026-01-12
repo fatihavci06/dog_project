@@ -99,11 +99,16 @@ class FriendshipService extends BaseService
         // Kabul eden kişi (şu anki kullanıcı): receiver_id
         $acceptorProfile = \App\Models\PupProfile::find($req->receiver_id);
         $acceptorName = $acceptorProfile ? $acceptorProfile->name : __('notifications.unknown_user');
+$currentLocale = app()->getLocale();
 
+        // Hedef kullanıcının tercih ettiği dili set et
+        if (!empty($targetUser->preferred_language)) {
+            app()->setLocale($targetUser->preferred_language);
+        }
         if ($targetUser && !empty($targetUser->onesignal_player_id)) {
 
-            $locale = $targetUser->language ?? config('app.locale');
-            app()->setLocale($locale);
+
+
 
             dispatch(new \App\Jobs\SendOneSignalNotification(
                 [$targetUser->onesignal_player_id],
@@ -118,6 +123,7 @@ class FriendshipService extends BaseService
                 ]
             ));
         }
+        app()->setLocale($currentLocale);
 
 
         return $req;

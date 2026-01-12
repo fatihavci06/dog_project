@@ -348,6 +348,12 @@ class DateService
             'status'       => 'pending'
         ]);
         $targetUser = $targetProfile->user;
+        $currentLocale = app()->getLocale();
+
+        // Hedef kullanıcının tercih ettiği dili set et
+        if (!empty($targetUser->preferred_language)) {
+            app()->setLocale($targetUser->preferred_language);
+        }
         if ($targetUser && !empty($targetUser->onesignal_player_id)) {
 
 
@@ -366,7 +372,7 @@ class DateService
             ));
         }
 
-
+        app()->setLocale($currentLocale);
         return $newDate;
     }
 
@@ -419,10 +425,16 @@ class DateService
         // Yanıt veren kişinin profil adını alalım (Bildirimde kimin kabul ettiğini göstermek için)
         $responderProfile = \App\Models\PupProfile::find($date->receiver_id);
         $responderName = $responderProfile ? $responderProfile->name : 'Bir kullanıcı';
+        $currentLocale = app()->getLocale();
+
+        // Hedef kullanıcının tercih ettiği dili set et
+        if (!empty($targetUser->preferred_language)) {
+            app()->setLocale($targetUser->preferred_language);
+        }
 
         if ($targetUser && !empty($targetUser->onesignal_player_id)) {
 
-            $locale = $targetUser->language ?? config('app.locale');
+
 
 
             $titleKey = $status === 'accepted'
@@ -447,7 +459,7 @@ class DateService
                 ]
             ));
         }
-
+        app()->setLocale($currentLocale);
 
         return $date;
     }
