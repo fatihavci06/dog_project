@@ -287,9 +287,9 @@ class ChatService
     public function getUserPupProfileList(int $userId, int $page = 1, int $perPage = 10)
 {
     $chatUserIds = Message::where(function ($q) use ($userId) {
-            $q->where('sender_id', $userId)
-              ->orWhere('receiver_id', $userId);
-        })
+        $q->where('sender_id', $userId)
+          ->orWhere('receiver_id', $userId);
+    })
         ->get()
         ->map(function ($message) use ($userId) {
             return $message->sender_id == $userId
@@ -300,39 +300,37 @@ class ChatService
         ->values();
 
     $mapped = User::with([
-            'pupProfiles' => function ($q) {
-                $q->select('id', 'user_id', 'name')
-                  ->with([
-                      'images' => function ($q) {
-                          $q->select('id', 'pup_profile_id', 'path');
-                      }
-                  ]);
-            }
-        ])
+        'pupProfiles' => function ($q) use ($userId) {
+            $q->select('id', 'user_id', 'name')
+              ->where('user_id', '!=', $userId) // 🔥 KENDİ PUP PROFİLE’LARINI DIŞLA
+              ->with([
+                  'images' => function ($q) {
+                      $q->select('id', 'pup_profile_id', 'path');
+                  }
+              ]);
+        }
+    ])
         ->whereIn('id', $chatUserIds)
         ->select('id', 'name', 'photo')
         ->get()
+        // 🔥 pupProfiles boş kalan user’ları da atalım
+        ->filter(fn ($user) => $user->pupProfiles->isNotEmpty())
         ->map(function ($user) {
 
-            // user_id dışa al
             $user->user_id = $user->id;
-
-            // photo kaldır
             $user->makeHidden('photo');
 
             $user->pupProfiles->each(function ($pup) {
-
-                // pup_profiles.user_id kaldır
                 $pup->makeHidden('user_id');
 
-                // images sadeleştir
                 $pup->images->each(function ($image) {
                     $image->makeHidden(['id', 'pup_profile_id']);
                 });
             });
 
             return $user;
-        });
+        })
+        ->values();
 
     // 🔹 MANUEL PAGINATION
     $total    = $mapped->count();

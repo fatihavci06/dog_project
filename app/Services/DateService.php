@@ -17,12 +17,28 @@ class DateService
      * Kullanıcıya gelen buluşma isteklerini listeler (Sayfalı).
      * Sadece 'pending' (bekleyen) istekler gösterilir.
      */
-    public function getIncomingRequests(int $userId, int $page = 1, int $perPage = 10): array
+    public function getIncomingRequests(int $userId, int $page = 1, int $perPage = 10, int $pupProfileId = null): array
     {
         // 1️⃣ Kullanıcının pup profile id’leri
-        $pupProfileIds = PupProfile::where('user_id', $userId)
-            ->pluck('id')
-            ->toArray();
+
+     if ($pupProfileId) {
+
+            // Güvenlik: Bu pup profile kullanıcıya mı ait?
+            $ownsProfile = PupProfile::where('id', $pupProfileId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (!$ownsProfile) {
+                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            }
+
+            $pupProfileIds = [$pupProfileId];
+        } else {
+            // Aksi halde kullanıcının tüm pup profilleri
+            $pupProfileIds = PupProfile::where('user_id', $userId)
+                ->pluck('id')
+                ->toArray();
+        }
 
         // 2️⃣ Incoming: sender karşı taraf, receiver benim profillerim
         $paginator = Date::query()
@@ -99,12 +115,27 @@ class DateService
         ];
     }
 
-    public function getApprovedDates(int $userId, int $page = 1, int $perPage = 10): array
+    public function getApprovedDates(int $userId, int $page = 1, int $perPage = 10, int $pupProfileId = null): array
     {
         // 1️⃣ Kullanıcının pup profile id’leri
-        $pupProfileIds = PupProfile::where('user_id', $userId)
-            ->pluck('id')
-            ->toArray();
+        if ($pupProfileId) {
+
+            // Güvenlik: Bu pup profile kullanıcıya mı ait?
+            $ownsProfile = PupProfile::where('id', $pupProfileId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (!$ownsProfile) {
+                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            }
+
+            $pupProfileIds = [$pupProfileId];
+        } else {
+            // Aksi halde kullanıcının tüm pup profilleri
+            $pupProfileIds = PupProfile::where('user_id', $userId)
+                ->pluck('id')
+                ->toArray();
+        }
 
         // 2️⃣ Accepted date’ler (sender veya receiver benim profillerim)
         $paginator = Date::query()
@@ -182,11 +213,26 @@ class DateService
      * Kullanıcının gönderdiği istekleri listeler (Sayfalı).
      * Bekleyen, onaylanan veya reddedilen tüm geçmişi görür.
      */
-    public function getOutgoingRequests(int $userId, int $page = 1, int $perPage = 10): array
+    public function getOutgoingRequests(int $userId, int $page = 1, int $perPage = 10, int $pupProfileId = null): array
     {
-        $pupProfileIds = PupProfile::where('user_id', $userId)
-            ->pluck('id')
-            ->toArray();
+        if ($pupProfileId) {
+
+            // Güvenlik: Bu pup profile kullanıcıya mı ait?
+            $ownsProfile = PupProfile::where('id', $pupProfileId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (!$ownsProfile) {
+                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            }
+
+            $pupProfileIds = [$pupProfileId];
+        } else {
+            // Aksi halde kullanıcının tüm pup profilleri
+            $pupProfileIds = PupProfile::where('user_id', $userId)
+                ->pluck('id')
+                ->toArray();
+        }
 
         $paginator = Date::query()
             ->where(function ($q) use ($pupProfileIds) {
@@ -248,6 +294,12 @@ class DateService
         $myProfile = PupProfile::find($data['my_pup_profile_id']);
         $targetProfile = PupProfile::find($data['target_pup_profile_id']);
         // 1. Frontend'den gelen 'date' (Y-m-d) ve 'time' (H:i) bilgisini birleştir
+        if ($myProfile->user_id === $targetProfile->user_id) {
+            throw new HttpException(
+                403,
+                __('errors.cannot_date_own_profile')
+            );
+        }
         $myUserId = $myProfile->user_id;
         $targetUserId = $targetProfile->user_id;
 

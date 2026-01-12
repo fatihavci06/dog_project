@@ -29,8 +29,9 @@ class ApiFriendshipController extends ApiController
     {
         $page     = (int) $request->get('page', 1);
         $perPage  = (int) $request->get('per_page', 10);
+        $pupProfileId = $request->get('pup_profile_id');
 
-        return $service->listFriends($request->user_id, $page, $perPage);
+        return $service->listFriends($request->user_id, $page, $perPage, $pupProfileId);
     }
 
     public function incoming(FriendshipService $service)

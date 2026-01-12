@@ -52,6 +52,13 @@ class ApiChatController extends ApiController
     }
     public function userPupProfileList(Request $request)
     {
-        return $this->chatService->getUserPupProfileList($request->user_id);
+        $page = (int) $request->input('page', 1);
+        $perPage = (int) $request->input('per_page', 10);
+
+        return $this->chatService->getUserPupProfileList(
+            $request->user_id,
+            $page,
+            $perPage
+        );
     }
 }

@@ -27,8 +27,9 @@ class ApiDateController extends ApiController
     {
         $page    = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
+        $pupProfileId = (int) $request->get('pup_profile_id');
 
-        return $service->getOutgoingRequests($request->user_id, $page, $perPage);
+        return $service->getOutgoingRequests($request->user_id, $page, $perPage, $pupProfileId);
     }
 
     /**
@@ -38,8 +39,9 @@ class ApiDateController extends ApiController
     {
         $page    = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
+        $pupProfileId = (int) $request->get('pup_profile_id');
 
-        return $service->getIncomingRequests($request->user_id, $page, $perPage);
+        return $service->getIncomingRequests($request->user_id, $page, $perPage, $pupProfileId);
     }
 
     /**
@@ -63,8 +65,9 @@ class ApiDateController extends ApiController
     {
         $page    = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
+        $pupProfileId = (int) $request->get('pup_profile_id');
 
-        return $service->getApprovedDates($request->user_id, $page, $perPage);
+        return $service->getApprovedDates($request->user_id, $page, $perPage, $pupProfileId);
     }
     public function getApprovedDateById(Request $request, DateService $service)
     {

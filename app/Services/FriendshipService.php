@@ -14,10 +14,13 @@ class FriendshipService extends BaseService
 {
     public function send(int $myPupProfileId, int $targetPupProfileId)
     {
-        if ($myPupProfileId == $targetPupProfileId) {
-            throw new Exception("You cannot send requests to yourself.", 400);
-        }
+        $myProfile     = PupProfile::findOrFail($myPupProfileId);
+    $targetProfile = PupProfile::findOrFail($targetPupProfileId);
 
+    // 🚫 Kendi pup profile’larından birine istek atamaz
+    if ($myProfile->user_id === $targetProfile->user_id) {
+         throw new Exception( __('errors.cannot_send_request_to_self'), 400);
+    }
         // Zaten ilişki var mı?
         $exists = Friendship::where(function ($q) use ($myPupProfileId, $targetPupProfileId) {
             $q->where('sender_id', $myPupProfileId)
@@ -131,16 +134,31 @@ if ($targetUser && !empty($targetUser->onesignal_player_id)) {
     }
 
 
-    public function listFriends(int $userId, int $page = 1, int $perPage = 10): array
+    public function listFriends(int $userId, int $page = 1, int $perPage = 10, int $pupProfileId = null): array
     {
         /*
     |--------------------------------------------------------------------------
     | 1️⃣ Kullanıcının Pup Profile ID'leri
     |--------------------------------------------------------------------------
     */
+        if ($pupProfileId) {
+
+        // Güvenlik: Bu pup profile kullanıcıya mı ait?
+        $ownsProfile = PupProfile::where('id', $pupProfileId)
+            ->where('user_id', $userId)
+            ->exists();
+
+        if (!$ownsProfile) {
+            throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+        }
+
+        $myProfileIds = [$pupProfileId];
+    } else {
+        // Aksi halde kullanıcının tüm pup profilleri
         $myProfileIds = PupProfile::where('user_id', $userId)
             ->pluck('id')
             ->toArray();
+    }
 
         /*
     |--------------------------------------------------------------------------
