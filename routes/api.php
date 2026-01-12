@@ -115,6 +115,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::post('messages/send', [ApiChatController::class, 'send']);
         Route::post('conversations/{id}/mark-read', [ApiChatController::class, 'markRead'])->name('chat.markRead');
         Route::get('/inbox', [ApiChatController::class, 'inbox']);
+        Route::get('user-pup-profile/list', [ApiChatController::class, 'userPupProfileList']);
     });
 
 

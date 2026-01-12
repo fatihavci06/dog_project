@@ -284,4 +284,70 @@ class ChatService
             ->reverse() // eski mesajları başa ekle
             ->values();
     }
+    public function getUserPupProfileList(int $userId, int $page = 1, int $perPage = 10)
+{
+    $chatUserIds = Message::where(function ($q) use ($userId) {
+            $q->where('sender_id', $userId)
+              ->orWhere('receiver_id', $userId);
+        })
+        ->get()
+        ->map(function ($message) use ($userId) {
+            return $message->sender_id == $userId
+                ? $message->receiver_id
+                : $message->sender_id;
+        })
+        ->unique()
+        ->values();
+
+    $mapped = User::with([
+            'pupProfiles' => function ($q) {
+                $q->select('id', 'user_id', 'name')
+                  ->with([
+                      'images' => function ($q) {
+                          $q->select('id', 'pup_profile_id', 'path');
+                      }
+                  ]);
+            }
+        ])
+        ->whereIn('id', $chatUserIds)
+        ->select('id', 'name', 'photo')
+        ->get()
+        ->map(function ($user) {
+
+            // user_id dışa al
+            $user->user_id = $user->id;
+
+            // photo kaldır
+            $user->makeHidden('photo');
+
+            $user->pupProfiles->each(function ($pup) {
+
+                // pup_profiles.user_id kaldır
+                $pup->makeHidden('user_id');
+
+                // images sadeleştir
+                $pup->images->each(function ($image) {
+                    $image->makeHidden(['id', 'pup_profile_id']);
+                });
+            });
+
+            return $user;
+        });
+
+    // 🔹 MANUEL PAGINATION
+    $total    = $mapped->count();
+    $lastPage = (int) ceil($total / $perPage);
+    $offset   = ($page - 1) * $perPage;
+
+    $paged = $mapped->slice($offset, $perPage)->values();
+
+    return [
+        'current_page' => $page,
+        'per_page'     => $perPage,
+        'total'        => $total,
+        'last_page'    => $lastPage,
+        'data'         => $paged,
+    ];
+}
+
 }

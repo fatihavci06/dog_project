@@ -50,4 +50,8 @@ class ApiChatController extends ApiController
 
         return $this->chatService->getAllMessages($conversationId, $request->user_id, $perPage, $page);
     }
+    public function userPupProfileList(Request $request)
+    {
+        return $this->chatService->getUserPupProfileList($request->user_id);
+    }
 }
