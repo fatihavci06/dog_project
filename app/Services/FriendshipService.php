@@ -15,12 +15,12 @@ class FriendshipService extends BaseService
     public function send(int $myPupProfileId, int $targetPupProfileId)
     {
         $myProfile     = PupProfile::findOrFail($myPupProfileId);
-    $targetProfile = PupProfile::findOrFail($targetPupProfileId);
+        $targetProfile = PupProfile::findOrFail($targetPupProfileId);
 
-    // 🚫 Kendi pup profile’larından birine istek atamaz
-    if ($myProfile->user_id === $targetProfile->user_id) {
-         throw new Exception( __('errors.cannot_send_request_to_self'), 400);
-    }
+        // 🚫 Kendi pup profile’larından birine istek atamaz
+        if ($myProfile->user_id === $targetProfile->user_id) {
+            throw new Exception(__('errors.cannot_send_request_to_self'), 400);
+        }
         // Zaten ilişki var mı?
         $exists = Friendship::where(function ($q) use ($myPupProfileId, $targetPupProfileId) {
             $q->where('sender_id', $myPupProfileId)
@@ -92,26 +92,26 @@ class FriendshipService extends BaseService
 
         // Kabul eden kişi (şu anki kullanıcı): receiver_id
         $acceptorProfile = \App\Models\PupProfile::find($req->receiver_id);
-$acceptorName = $acceptorProfile ? $acceptorProfile->name : __('notifications.unknown_user');
+        $acceptorName = $acceptorProfile ? $acceptorProfile->name : __('notifications.unknown_user');
 
-if ($targetUser && !empty($targetUser->onesignal_player_id)) {
+        if ($targetUser && !empty($targetUser->onesignal_player_id)) {
 
-    $locale = $targetUser->language ?? config('app.locale');
-    app()->setLocale($locale);
+            $locale = $targetUser->language ?? config('app.locale');
+            app()->setLocale($locale);
 
-    dispatch(new \App\Jobs\SendOneSignalNotification(
-        [$targetUser->onesignal_player_id],
-        __('notifications.friend_accepted_title'),
-        __('notifications.friend_accepted_body', [
-            'name' => $acceptorName
-        ]),
-        [
-            'friendship_id' => $req->id,
-            'type'          => 'friend_accepted',
-            'url'           => "pupcrawl://profile/{$req->receiver_id}"
-        ]
-    ));
-}
+            dispatch(new \App\Jobs\SendOneSignalNotification(
+                [$targetUser->onesignal_player_id],
+                __('notifications.friend_accepted_title'),
+                __('notifications.friend_accepted_body', [
+                    'name' => $acceptorName
+                ]),
+                [
+                    'friendship_id' => $req->id,
+                    'type'          => 'friend_accepted',
+                    'url'           => "pupcrawl://profile/{$req->receiver_id}"
+                ]
+            ));
+        }
 
 
         return $req;
@@ -143,22 +143,22 @@ if ($targetUser && !empty($targetUser->onesignal_player_id)) {
     */
         if ($pupProfileId) {
 
-        // Güvenlik: Bu pup profile kullanıcıya mı ait?
-        $ownsProfile = PupProfile::where('id', $pupProfileId)
-            ->where('user_id', $userId)
-            ->exists();
+            // Güvenlik: Bu pup profile kullanıcıya mı ait?
+            $ownsProfile = PupProfile::where('id', $pupProfileId)
+                ->where('user_id', $userId)
+                ->exists();
 
-        if (!$ownsProfile) {
-            throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            if (!$ownsProfile) {
+                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            }
+
+            $myProfileIds = [$pupProfileId];
+        } else {
+            // Aksi halde kullanıcının tüm pup profilleri
+            $myProfileIds = PupProfile::where('user_id', $userId)
+                ->pluck('id')
+                ->toArray();
         }
-
-        $myProfileIds = [$pupProfileId];
-    } else {
-        // Aksi halde kullanıcının tüm pup profilleri
-        $myProfileIds = PupProfile::where('user_id', $userId)
-            ->pluck('id')
-            ->toArray();
-    }
 
         /*
     |--------------------------------------------------------------------------
@@ -359,9 +359,26 @@ if ($targetUser && !empty($targetUser->onesignal_player_id)) {
 
 
 
-    public function incomingRequests(int $userId)
+    public function incomingRequests(int $userId, int $pupProfileId = null)
     {
-        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+        if ($pupProfileId) {
+
+            // Güvenlik: Bu pup profile kullanıcıya mı ait?
+            $ownsProfile = PupProfile::where('id', $pupProfileId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (!$ownsProfile) {
+                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            }
+
+            $pupProfileIds = [$pupProfileId];
+        } else {
+            // Aksi halde kullanıcının tüm pup profilleri
+            $pupProfileIds = PupProfile::where('user_id', $userId)
+                ->pluck('id')
+                ->toArray();
+        }
         $favoriteIds = Favorite::where('user_id', $userId)
             ->pluck('favorite_id')
             ->toArray();
@@ -408,9 +425,26 @@ if ($targetUser && !empty($targetUser->onesignal_player_id)) {
                 ];
             });
     }
-    public function outgoingRequests(int $userId)
+    public function outgoingRequests(int $userId, int $pupProfileId = null)
     {
-        $pupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+         if ($pupProfileId) {
+
+            // Güvenlik: Bu pup profile kullanıcıya mı ait?
+            $ownsProfile = PupProfile::where('id', $pupProfileId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (!$ownsProfile) {
+                throw new Exception(__('errors.cannot_access_pup_profile'), 403);
+            }
+
+            $pupProfileIds = [$pupProfileId];
+        } else {
+            // Aksi halde kullanıcının tüm pup profilleri
+            $pupProfileIds = PupProfile::where('user_id', $userId)
+                ->pluck('id')
+                ->toArray();
+        }
         $favoriteIds = Favorite::where('user_id', $userId)
             ->pluck('favorite_id')
             ->toArray();

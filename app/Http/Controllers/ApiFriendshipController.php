@@ -34,14 +34,15 @@ class ApiFriendshipController extends ApiController
         return $service->listFriends($request->user_id, $page, $perPage, $pupProfileId);
     }
 
-    public function incoming(FriendshipService $service)
+    public function incoming(FriendshipService $service,Request $request)
     {
-        return $service->incomingRequests(request()->user_id);
+        $pupProfileId = $request->get('pup_profile_id');
+        return $service->incomingRequests(request()->user_id, $pupProfileId);
     }
 
-    public function outgoing(FriendshipService $service)
+    public function outgoing(FriendshipService $service,Request $request)
     {
-        return $service->outgoingRequests(request()->user_id);
+        return $service->outgoingRequests(request()->user_id, $request->get('pup_profile_id'));
     }
     public function unfriend(Request $request, FriendshipService $service)
     {
