@@ -422,7 +422,6 @@ class DateService
         // 2️⃣ Date kontrolü
         $date = Date::query()
             ->where('id', $dateId)
-            ->where('status', 'pending') // 🔥 edit sadece pending için mantıklı
             ->where(function ($q) use ($pupProfileIds) {
                 $q->whereIn('sender_id', $pupProfileIds)
                     ->orWhereIn('receiver_id', $pupProfileIds);
@@ -434,7 +433,7 @@ class DateService
             ->first();
 
         if (!$date) {
-            throw new Exception('Pending Request Not Found', 404);
+            throw new Exception(' Request Not Found', 404);
         }
         $date->sender_pup_profile_photo = $date->sender
             ? $date->sender->images()->select('path')->value('path')
