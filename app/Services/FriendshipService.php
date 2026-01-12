@@ -379,6 +379,8 @@ class FriendshipService extends BaseService
             ->toArray();
 
         return Friendship::where('status', 'pending')
+            ->has('sender')
+            ->has('receiver')
             ->with('receiver', 'sender')
             ->whereIn('receiver_id', $pupProfileIds) // 🔥 user’a ait pup'lar
             ->get()
@@ -495,29 +497,28 @@ class FriendshipService extends BaseService
         Friendship::where('id', $friendPupId)->delete();
     }
     public function totalMatchAndChats(int $userId, int $pupProfileId = null)
-{
-    $pupProfileIds = $pupProfileId
-        ? [$pupProfileId]
-        : PupProfile::where('user_id', $userId)->pluck('id')->toArray();
+    {
+        $pupProfileIds = $pupProfileId
+            ? [$pupProfileId]
+            : PupProfile::where('user_id', $userId)->pluck('id')->toArray();
 
-    // ✅ MATCH
-    $totalMatches = Friendship::where('status', 'accepted')
-        ->where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)
-              ->orWhereIn('receiver_id', $pupProfileIds);
-        })
-        ->count();
+        // ✅ MATCH
+        $totalMatches = Friendship::where('status', 'accepted')
+            ->where(function ($q) use ($pupProfileIds) {
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
+            ->count();
 
-    // ⚠️ CHAT (user bazlıysa)
-    $totalChats = Conversation::where(function ($q) use ($userId) {
-        $q->where('user_one_id', $userId)
-          ->orWhere('user_two_id', $userId);
-    })->count();
+        // ⚠️ CHAT (user bazlıysa)
+        $totalChats = Conversation::where(function ($q) use ($userId) {
+            $q->where('user_one_id', $userId)
+                ->orWhere('user_two_id', $userId);
+        })->count();
 
-    return [
-        'total_matches' => $totalMatches,
-        'total_chats'   => $totalChats,
-    ];
-}
-
+        return [
+            'total_matches' => $totalMatches,
+            'total_chats'   => $totalChats,
+        ];
+    }
 }
