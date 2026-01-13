@@ -323,20 +323,52 @@ class AuthService
         });
     }
 
-    public function myProfile($userId)
-    {
-        $user = User::find($userId);
-        return [
-            'id'            => $user->id,
-            'fullname'      => $user->name,
-            'email'         => $user->email,
-            'date_of_birth' => $user->date_of_birth,
-            'gender'        => $user->gender,
-            'country'       => $user->country,
-            'photo_url'     => $user->photo_url,
 
+    public function myProfile(int $userId): array
+    {
+        $user = User::with('pupProfiles')->findOrFail($userId);
+
+        $pupProfileIds = $user->pupProfiles->pluck('id');
+
+        $friendshipCount = Friendship::where('status', 'accepted')
+            ->where(function ($q) use ($pupProfileIds) {
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
+            ->count();
+
+        return [
+            'user' => [
+                'id'                    => $user->id,
+                'role_id'               => $user->role_id,
+                'onesignal_player_id'   => $user->onesignal_player_id,
+                'biography'             => $user->biography,
+                'name'                  => $user->name,
+                'email'                 => $user->email,
+                'date_of_birth'         => $user->date_of_birth,
+                'gender'                => $user->gender,
+                'country'               => $user->country,
+                'status'                => $user->status,
+                'newlestter'            => $user->newlestter,
+                'privacy_policy'        => $user->privacy_policy,
+                'email_verified_at'     => $user->email_verified_at,
+                'notification_status'   => $user->notification_status,
+                'preferred_language'    => $user->preferred_language,
+
+                // computed alanlar
+                'dog_count'             => $user->pupProfiles->count(),
+                'match_count'           => $friendshipCount,
+                'favorite_count'        => Favorite::where('user_id', $user->id)->count(),
+                'date_count'            => Date::where('sender_id', $user->id)
+                    ->orWhere('receiver_id', $user->id)
+                    ->count(),
+
+                'photo_url'             => $user->photo_url,
+                'pup_profiles'          => $user->pupProfiles,
+            ]
         ];
     }
+
     public function updateProfile($user, array $data)
     {
         return DB::transaction(function () use ($user, $data) {

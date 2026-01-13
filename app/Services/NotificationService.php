@@ -107,72 +107,72 @@ class NotificationService
         }
     }
     public function getUserNotifications(
-    int $userId,
-    int $roleId,
-    ?bool $isRead = null,
-    int $page = 1,
-    int $perPage = 10,
-    bool $onlyUnread = false
-): array {
+        int $userId,
+        int $roleId,
+        ?bool $isRead = null,
+        int $page = 1,
+        int $perPage = 10,
+        bool $onlyUnread = false
+    ): array {
 
-    $userCreatedAt = User::where('id', $userId)->value('created_at');
+        $userCreatedAt = User::where('id', $userId)->value('created_at');
 
-    $query = Notification::query()
-        ->where('notifications.created_at', '>=', $userCreatedAt)
-        ->leftJoin('notification_user as nu', function ($join) use ($userId) {
-            $join->on('nu.notification_id', '=', 'notifications.id')
-                ->where('nu.user_id', $userId);
-        })
-
-        // 🔥 ASIL FİLTRE BURASI
-        ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
-
-            // User’a atanmışsa → her zaman göster
-            $q->whereExists(function ($sub) use ($userId) {
-                $sub->selectRaw(1)
-                    ->from('notification_user')
-                    ->whereColumn('notification_user.notification_id', 'notifications.id')
-                    ->where('notification_user.user_id', $userId);
+        $query = Notification::query()
+            ->where('notifications.created_at', '>=', $userCreatedAt)
+            ->leftJoin('notification_user as nu', function ($join) use ($userId) {
+                $join->on('nu.notification_id', '=', 'notifications.id')
+                    ->where('nu.user_id', $userId);
             })
 
-            // Role atanmışsa → kayıt tarihinden sonra
-            ->orWhere(function ($sub) use ($roleId, $userCreatedAt) {
-                $sub->whereExists(function ($r) use ($roleId) {
-                    $r->selectRaw(1)
-                        ->from('notification_role')
-                        ->whereColumn('notification_role.notification_id', 'notifications.id')
-                        ->where('notification_role.role_id', $roleId);
-                })
-                ->where('notifications.created_at', '>=', $userCreatedAt);
-            })
+            // 🔥 ASIL FİLTRE BURASI
+            ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
 
-            // Genel → kayıt tarihinden sonra
-            ->orWhere(function ($sub) use ($userCreatedAt) {
-                $sub->whereNotExists(function ($n) {
-                    $n->selectRaw(1)
+                // User’a atanmışsa → her zaman göster
+                $q->whereExists(function ($sub) use ($userId) {
+                    $sub->selectRaw(1)
                         ->from('notification_user')
-                        ->whereColumn('notification_user.notification_id', 'notifications.id');
+                        ->whereColumn('notification_user.notification_id', 'notifications.id')
+                        ->where('notification_user.user_id', $userId);
                 })
-                ->whereNotExists(function ($n) {
-                    $n->selectRaw(1)
-                        ->from('notification_role')
-                        ->whereColumn('notification_role.notification_id', 'notifications.id');
-                })
-                ->where('notifications.created_at', '>=', $userCreatedAt);
+
+                    // Role atanmışsa → kayıt tarihinden sonra
+                    ->orWhere(function ($sub) use ($roleId, $userCreatedAt) {
+                        $sub->whereExists(function ($r) use ($roleId) {
+                            $r->selectRaw(1)
+                                ->from('notification_role')
+                                ->whereColumn('notification_role.notification_id', 'notifications.id')
+                                ->where('notification_role.role_id', $roleId);
+                        })
+                            ->where('notifications.created_at', '>=', $userCreatedAt);
+                    })
+
+                    // Genel → kayıt tarihinden sonra
+                    ->orWhere(function ($sub) use ($userCreatedAt) {
+                        $sub->whereNotExists(function ($n) {
+                            $n->selectRaw(1)
+                                ->from('notification_user')
+                                ->whereColumn('notification_user.notification_id', 'notifications.id');
+                        })
+                            ->whereNotExists(function ($n) {
+                                $n->selectRaw(1)
+                                    ->from('notification_role')
+                                    ->whereColumn('notification_role.notification_id', 'notifications.id');
+                            })
+                            ->where('notifications.created_at', '>=', $userCreatedAt);
+                    });
             });
-        });
 
-    // 🔹 Okunma filtresi
-    if ($onlyUnread || $isRead === false) {
-        $query->where(function ($q) {
-            $q->whereNull('nu.is_read')
-              ->orWhere('nu.is_read', false);
-        });
-    } elseif ($isRead === true) {
-        $query->where('nu.is_read', true);
-    }
+        // 🔹 Okunma filtresi
+        if ($onlyUnread || $isRead === false) {
+            $query->where(function ($q) {
+                $q->whereNull('nu.is_read')
+                    ->orWhere('nu.is_read', false);
+            });
+        } elseif ($isRead === true) {
+            $query->where('nu.is_read', true);
+        }
 
-    $paginator = $query->select([
+        $paginator = $query->select([
             'notifications.id',
             'notifications.title',
             'notifications.type',
@@ -182,18 +182,18 @@ class NotificationService
             'nu.sent_at',
             'nu.is_read',
         ])
-        ->distinct()
-        ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
-        ->paginate($perPage, ['*'], 'page', $page);
+            ->distinct()
+            ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
+            ->paginate($perPage, ['*'], 'page', $page);
 
-    return [
-        'current_page' => $paginator->currentPage(),
-        'per_page'     => $paginator->perPage(),
-        'total'        => $paginator->total(),
-        'last_page'    => $paginator->lastPage(),
-        'data'         => $paginator->items(),
-    ];
-}
+        return [
+            'current_page' => $paginator->currentPage(),
+            'per_page'     => $paginator->perPage(),
+            'total'        => $paginator->total(),
+            'last_page'    => $paginator->lastPage(),
+            'data'         => $paginator->items(),
+        ];
+    }
 
     public function markAsRead(int $userId, int $notificationId): bool
     {
