@@ -71,7 +71,7 @@ class ChatService
             app()->setLocale($to->preferred_language ?? config('app.locale'));
             dispatch(new SendOneSignalNotification(
                 $player,
-                "Yeni Mesaj",
+                __('notifications.new_message'),
                 mb_strimwidth($body, 0, 100),
                 [
                     'conversation_id' => $conv->id,

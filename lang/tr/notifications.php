@@ -13,4 +13,5 @@ return [
     'friend_request_body'  => ':name sana arkadaşlık isteği gönderdi.',
      'friend_accepted_title' => 'Arkadaşlık İsteği Kabul Edildi! ✨',
     'friend_accepted_body'  => ':name arkadaşlık isteğini kabul etti. Artık patişebilirsiniz!',
+    'new_message' => 'Yeni mesaj alındı'
 ];

@@ -14,4 +14,5 @@ return [
     'friend_request_body'  => ':name sent you a friend request.',
     'friend_accepted_title' => 'Friend Request Accepted! ✨',
     'friend_accepted_body'  => ':name accepted your friend request. You can now paw together!',
+    'new_message' => 'New message received'
 ];
