@@ -48,7 +48,7 @@ WORKDIR /var/www/html
 # Projeyi kopyala
 COPY . .
 COPY ./docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
-
+COPY ./docker/php/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 # İzinleri ayarla (www-data kullanıcısına ver)
 RUN chown -R www-data:www-data /var/www/html
 
