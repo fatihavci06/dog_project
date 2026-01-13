@@ -50,28 +50,29 @@ class SendOneSignalNotification implements ShouldQueue
             ],
             'timeout' => 10
         ]);
-       $type = $this->data['type'] ?? 'info';
+        $type = $this->data['type'] ?? 'info';
 
-if ($type !== 'message') {
-    // 2. Bildirimi oluştur ve dönen objeyi değişkene ata
-    $notification = Notification::create([
-        'title'   => $this->title,
-        'message' => $this->body,
-        'type'    => $type,
-        'url'     => $this->data['url'] ?? null,
-    ]);
+        if ($type !== 'message') {
+            // 2. Bildirimi oluştur ve dönen objeyi değişkene ata
+            $notification = Notification::create([
+                'title'   => $this->title,
+                'message' => $this->body,
+                'type'    => $type,
+                'url'     => $this->data['url'] ?? null,
+            ]);
 
-    // 3. Kullanıcıyı bul (last() yerine latest()->first() veya direkt first())
-    $user = User::where('onesignal_player_id', $this->playerIds[0])->latest()->first();
+            // 3. Kullanıcıyı bul (last() yerine latest()->first() veya direkt first())
+            $user = User::where('onesignal_player_id', $this->playerIds[0])->latest()->first();
 
-    // 4. Eğer her iki obje de varsa pivot kaydını oluştur
-    if ($notification && $user) {
-        NotificationUser::create([
-            'notification_id' => $notification->id, // latest() sorgusuna gerek kalmadı
-            'user_id'         => $user->id,
-            'is_read'         => false,
-            'sent_at'         => now(),
-        ]);
+            // 4. Eğer her iki obje de varsa pivot kaydını oluştur
+            if ($notification && $user) {
+                NotificationUser::create([
+                    'notification_id' => $notification->id, // latest() sorgusuna gerek kalmadı
+                    'user_id'         => $user->id,
+                    'is_read'         => false,
+                    'sent_at'         => now(),
+                ]);
+            }
+        }
     }
-}
 }
