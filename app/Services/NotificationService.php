@@ -118,6 +118,7 @@ class NotificationService
     $userCreatedAt = User::where('id', $userId)->value('created_at');
 
     $query = Notification::query()
+        ->where('notifications.created_at', '>=', $userCreatedAt)
         ->leftJoin('notification_user as nu', function ($join) use ($userId) {
             $join->on('nu.notification_id', '=', 'notifications.id')
                 ->where('nu.user_id', $userId);
