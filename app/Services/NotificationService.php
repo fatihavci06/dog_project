@@ -115,45 +115,45 @@ class NotificationService
     bool $onlyUnread = false
 ): array {
 
-    // 🔹 Kullanıcının kayıt tarihi
-    $user = User::select('created_at')->findOrFail($userId);
-    $userCreatedAt = $user->created_at;
+    $userCreatedAt = User::where('id', $userId)->value('created_at');
 
     $query = Notification::query()
-        // Kullanıcıya özel okuma durumu ve gönderim tarihi
         ->leftJoin('notification_user as nu', function ($join) use ($userId) {
             $join->on('nu.notification_id', '=', 'notifications.id')
-                ->where('nu.user_id', '=', $userId);
+                ->where('nu.user_id', $userId);
         })
 
-        // 🔹 KAPSAM FİLTRESİ
+        // 🔥 ASIL FİLTRE BURASI
         ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
 
-            // 1️⃣ Kullanıcıya özel bildirimler
+            // User’a atanmışsa → her zaman göster
             $q->whereExists(function ($sub) use ($userId) {
-                $sub->select(DB::raw(1))
+                $sub->selectRaw(1)
                     ->from('notification_user')
                     ->whereColumn('notification_user.notification_id', 'notifications.id')
                     ->where('notification_user.user_id', $userId);
             })
 
-            // 2️⃣ Role özel bildirimler
-            ->orWhereExists(function ($sub) use ($roleId) {
-                $sub->select(DB::raw(1))
-                    ->from('notification_role')
-                    ->whereColumn('notification_role.notification_id', 'notifications.id')
-                    ->where('notification_role.role_id', $roleId);
+            // Role atanmışsa → kayıt tarihinden sonra
+            ->orWhere(function ($sub) use ($roleId, $userCreatedAt) {
+                $sub->whereExists(function ($r) use ($roleId) {
+                    $r->selectRaw(1)
+                        ->from('notification_role')
+                        ->whereColumn('notification_role.notification_id', 'notifications.id')
+                        ->where('notification_role.role_id', $roleId);
+                })
+                ->where('notifications.created_at', '>=', $userCreatedAt);
             })
 
-            // 3️⃣ GENEL bildirimler (⚠️ kayıt tarihinden sonra)
+            // Genel → kayıt tarihinden sonra
             ->orWhere(function ($sub) use ($userCreatedAt) {
-                $sub->whereNotExists(function ($none) {
-                    $none->select(DB::raw(1))
+                $sub->whereNotExists(function ($n) {
+                    $n->selectRaw(1)
                         ->from('notification_user')
                         ->whereColumn('notification_user.notification_id', 'notifications.id');
                 })
-                ->whereNotExists(function ($none) {
-                    $none->select(DB::raw(1))
+                ->whereNotExists(function ($n) {
+                    $n->selectRaw(1)
                         ->from('notification_role')
                         ->whereColumn('notification_role.notification_id', 'notifications.id');
                 })
@@ -161,7 +161,7 @@ class NotificationService
             });
         });
 
-    // 🔹 OKUNMA DURUMU FİLTRESİ
+    // 🔹 Okunma filtresi
     if ($onlyUnread || $isRead === false) {
         $query->where(function ($q) {
             $q->whereNull('nu.is_read')
@@ -171,7 +171,6 @@ class NotificationService
         $query->where('nu.is_read', true);
     }
 
-    // 🔹 SEÇİM, SIRALAMA ve PAGINATION
     $paginator = $query->select([
             'notifications.id',
             'notifications.title',
@@ -182,7 +181,7 @@ class NotificationService
             'nu.sent_at',
             'nu.is_read',
         ])
-        ->distinct() // hem role hem user atanmış duplicate kayıtları önler
+        ->distinct()
         ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
         ->paginate($perPage, ['*'], 'page', $page);
 
