@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiSupportController;
 use App\Http\Controllers\ApiFeedBackController;
 use App\Http\Controllers\ApiAnnouncmentController;
 use App\Http\Controllers\ApiNotificationController;
@@ -31,7 +32,7 @@ Route::post('/login', [AuthController::class, 'loginApi']);
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->name('verification.verify');
 Route::post('/refresh', [AuthController::class, 'refresh']);
-
+Route::get('/support/{lang}', [ApiSupportController::class, 'index']);
 Route::post('/logout', [AuthController::class, 'logoutApi']);
 Route::prefix('question')->group(function () {
     Route::get('list/{language?}', [QuestionController::class, 'index']);
