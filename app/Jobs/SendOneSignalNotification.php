@@ -59,8 +59,9 @@ class SendOneSignalNotification implements ShouldQueue
         NotificationUser::create([
             'notification_id' => Notification::latest()->first()->id,
             'user_id' => User::where('onesignal_player_id', $this->playerIds[0])
-                ->orderByDesc('updated_at')
-                ->value('id'),
+                ->orderBy('updated_at', 'desc')
+                ->first()
+                ->id,
             'is_read' => false,
             'sent_at' => now(),
         ]);
