@@ -50,12 +50,14 @@ class SendOneSignalNotification implements ShouldQueue
             ],
             'timeout' => 10
         ]);
-        Notification::create([
-            'title' => $this->title,
-            'message' => $this->body,
-            'type' => $this->data['type'] ?? 'info',
-            'url' => $this->data['url'] ?? null,
-        ]);
+        if ($this->data['type'] != 'message') {
+            Notification::create([
+                'title'   => $this->title,
+                'message' => $this->body,
+                'type'    => 'message',
+                'url'     => $this->data['url'] ?? null,
+            ]);
+        }
         NotificationUser::create([
             'notification_id' => Notification::latest()->first()->id,
             'user_id' => User::where('onesignal_player_id', $this->playerIds[0])->last()->id,
