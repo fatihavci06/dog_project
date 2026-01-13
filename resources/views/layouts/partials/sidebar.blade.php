@@ -80,6 +80,8 @@
                     Meetup</a>
                 <a class="collapse-item text-white" href="{{ route('screens.index') }}">Screen Settings
                     </a>
+                     <a class="collapse-item text-white" href="{{ route('support.index') }}">Support Pages
+                    </a>
 
 
             </div>

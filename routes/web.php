@@ -21,6 +21,7 @@ use App\Http\Controllers\GenericCrudController;
 use App\Http\Controllers\MobileAppStepInfoController;
 use App\Http\Controllers\PupProfileController;
 use App\Http\Controllers\ScreenController;
+use App\Http\Controllers\SupportAdminController;
 use App\Http\Controllers\WebAnnouncmentController;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Middleware\AdminMiddleware;
@@ -97,6 +98,14 @@ Route::middleware([AdminMiddleware::class])->group(function () {
         Route::get('/get/{id}', [ScreenController::class, 'get'])->name('screens.get');
 
     });
+    Route::prefix('admin/support')->group(function () {
+    Route::get('/', [SupportAdminController::class, 'index'])->name('support.index');
+    Route::get('/list', [SupportAdminController::class, 'list']);
+    Route::get('/get/{id}', [SupportAdminController::class, 'get']);
+    Route::post('/store', [SupportAdminController::class, 'store']);
+    Route::post('/update/{id}', [SupportAdminController::class, 'store']); // Aynı metod kullanılabilir
+    Route::post('/delete/{id}', [SupportAdminController::class, 'delete']);
+});
 
 
 
