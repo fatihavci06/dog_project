@@ -107,28 +107,39 @@ class NotificationService
         }
     }
     public function getUserNotifications(
-        int $userId,
-        int $roleId,
-        ?bool $isRead = null,
-        int $page = 1,
-        int $perPage = 10,
-        bool $onlyUnread = false
-    ): array {
-        $query = Notification::query()
-            // Kullanıcıya özel okuma durumu ve gönderim tarihi için join
-            ->leftJoin('notification_user as nu', function ($join) use ($userId) {
-                $join->on('nu.notification_id', '=', 'notifications.id')
-                    ->where('nu.user_id', '=', $userId);
+    int $userId,
+    int $roleId,
+    ?bool $isRead = null,
+    int $page = 1,
+    int $perPage = 10,
+    bool $onlyUnread = false
+): array {
+
+    // 1. ADIM: Kullanıcının kayıt tarihini alalım
+    // (User modelinizin namespace'ine dikkat edin, örn: App\Models\User)
+    $userCreatedAt = \App\Models\User::where('id', $userId)->value('created_at');
+
+    $query = Notification::query()
+        ->leftJoin('notification_user as nu', function ($join) use ($userId) {
+            $join->on('nu.notification_id', '=', 'notifications.id')
+                ->where('nu.user_id', '=', $userId);
+        })
+        // 2. ADIM: Kapsam sorgusunu güncelliyoruz
+        ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
+
+            // A) KULLANICIYA ÖZEL İSE: Tarih kontrolü yapma, direkt göster.
+            $q->whereExists(function ($sub) use ($userId) {
+                $sub->select(DB::raw(1))
+                    ->from('notification_user')
+                    ->whereColumn('notification_user.notification_id', 'notifications.id')
+                    ->where('notification_user.user_id', $userId);
             })
-            // 1. KAPSAM: Kullanıcıya özel MI, Role özel MI, yoksa Genel MI?
-            ->where(function ($q) use ($userId, $roleId) {
-                $q->whereExists(function ($sub) use ($userId) {
-                    $sub->select(DB::raw(1))
-                        ->from('notification_user')
-                        ->whereColumn('notification_user.notification_id', 'notifications.id')
-                        ->where('notification_user.user_id', $userId);
-                })
-                    ->orWhereExists(function ($sub) use ($roleId) {
+            // B) ROL VEYA GENEL İSE: Kullanıcının kayıt tarihinden SONRAKİLERİ göster (OR grubu)
+            ->orWhere(function($group) use ($roleId, $userCreatedAt) {
+
+                // (Role ait olanlar VEYA Genel olanlar)
+                $group->where(function($logic) use ($roleId) {
+                     $logic->whereExists(function ($sub) use ($roleId) {
                         $sub->select(DB::raw(1))
                             ->from('notification_role')
                             ->whereColumn('notification_role.notification_id', 'notifications.id')
@@ -140,49 +151,52 @@ class NotificationService
                                 ->from('notification_user')
                                 ->whereColumn('notification_user.notification_id', 'notifications.id');
                         })
-                            ->whereNotExists(function ($none) {
-                                $none->select(DB::raw(1))
-                                    ->from('notification_role')
-                                    ->whereColumn('notification_role.notification_id', 'notifications.id');
-                            });
+                        ->whereNotExists(function ($none) {
+                            $none->select(DB::raw(1))
+                                ->from('notification_role')
+                                ->whereColumn('notification_role.notification_id', 'notifications.id');
+                        });
                     });
+                })
+                // *** KRİTİK EKLEME BURADA ***
+                // Bu grup (Rol veya Genel) için bildirim tarihi >= kullanıcı kayıt tarihi olmalı
+                ->where('notifications.created_at', '>=', $userCreatedAt);
             });
+        });
 
-        // 2. FILTRE: onlyUnread veya isRead durumuna göre filtreleme
-        // Eğer onlyUnread true ise veya isRead false ise "okunmamışları" getir
-        if ($onlyUnread || $isRead === false) {
-            $query->where(function ($q) {
-                $q->whereNull('nu.is_read')
-                    ->orWhere('nu.is_read', false);
-            });
-        } elseif ($isRead === true) {
-            // Sadece okunmuşları getir
-            $query->where('nu.is_read', true);
-        }
-
-        // 3. SEÇİM VE SIRALAMA
-        $paginator = $query->select([
-            'notifications.id',
-            'notifications.title',
-            'notifications.type',
-            'notifications.message',
-            'notifications.url',
-            'notifications.created_at',
-            'nu.sent_at',
-            'nu.is_read',
-        ])
-            ->distinct() // Duplicate kayıtları (hem rol hem user atanmışsa) engeller
-            ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
-            ->paginate($perPage, ['*'], 'page', $page);
-
-        return [
-            'current_page' => $paginator->currentPage(),
-            'per_page'     => $paginator->perPage(),
-            'total'        => $paginator->total(),
-            'last_page'    => $paginator->lastPage(),
-            'data'         => $paginator->items(),
-        ];
+    // 3. ADIM: Okunma Filtreleri (Aynen kalıyor)
+    if ($onlyUnread || $isRead === false) {
+        $query->where(function ($q) {
+            $q->whereNull('nu.is_read')
+                ->orWhere('nu.is_read', false);
+        });
+    } elseif ($isRead === true) {
+        $query->where('nu.is_read', true);
     }
+
+    // 4. ADIM: Seçim ve Sıralama
+    $paginator = $query->select([
+        'notifications.id',
+        'notifications.title',
+        'notifications.type',
+        'notifications.message',
+        'notifications.url',
+        'notifications.created_at',
+        'nu.sent_at',
+        'nu.is_read',
+    ])
+        ->distinct()
+        ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
+        ->paginate($perPage, ['*'], 'page', $page);
+
+    return [
+        'current_page' => $paginator->currentPage(),
+        'per_page'     => $paginator->perPage(),
+        'total'        => $paginator->total(),
+        'last_page'    => $paginator->lastPage(),
+        'data'         => $paginator->items(),
+    ];
+}
     public function markAsRead(int $userId, int $notificationId): bool
     {
         // 1. Önce bildirimin gerçekten var olup olmadığını kontrol edelim
