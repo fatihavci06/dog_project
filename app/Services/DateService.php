@@ -43,6 +43,7 @@ class DateService
         // 2️⃣ Incoming: sender karşı taraf, receiver benim profillerim
         $paginator = Date::query()
             ->whereIn('receiver_id', $pupProfileIds)
+            ->where('status', 'pending')
             ->with([
                 'sender.user'
             ])
@@ -236,8 +237,9 @@ class DateService
 
         $paginator = Date::query()
             ->where(function ($q) use ($pupProfileIds) {
-                $q->whereIn('sender_id', $pupProfileIds);
+                $q->whereIn('sender_id', $pupProfileIds)->where('status', 'pending');
             })
+
             ->with([
                 'receiver.user'
             ])
