@@ -321,6 +321,7 @@ $currentLocale = app()->getLocale();
                 'user' => [
                     'id'   => $friendUserId,
                     'name' => $friend->user->name,
+                    'role_id' => $friend->user->role_id,
                 ],
 
                 'breed'         => $friend->breed?->translate('name'),
@@ -410,7 +411,8 @@ $currentLocale = app()->getLocale();
                     ]),
                     'user'           => [
                         'id'       => $req->sender->user->id,
-                        'name'     => $req->sender->user->name
+                        'name'     => $req->sender->user->name,
+                        'role_id'  => $req->sender->user->role_id
                     ],
                     'age_range'      => $req->sender->ageRange?->translate('name'),
                     'travel_radius'  => $req->sender->travelRadius?->translate('name'),
@@ -474,7 +476,8 @@ $currentLocale = app()->getLocale();
                     ]),
                     'user'           => [
                         'id'       => $req->receiver->user->id,
-                        'name'     => $req->receiver->user->name
+                        'name'     => $req->receiver->user->name,
+                        'role_id'  => $req->receiver->user->role_id
                     ],
                     'age_range'      => $req->receiver->ageRange?->translate('name'),
                     'breed'          => $req->receiver->breed?->translate('name'),
