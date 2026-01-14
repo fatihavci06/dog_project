@@ -236,8 +236,7 @@ class DateService
 
         $paginator = Date::query()
             ->where(function ($q) use ($pupProfileIds) {
-                $q->whereIn('sender_id', $pupProfileIds)
-                    ->orWhereIn('receiver_id', $pupProfileIds);
+                $q->whereIn('sender_id', $pupProfileIds);
             })
             ->with([
                 'receiver.user'
