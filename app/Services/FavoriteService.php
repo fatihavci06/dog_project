@@ -139,6 +139,7 @@ class FavoriteService extends BaseService
                 'user' => [
                     'id'   => $pup->user->id,
                     'name' => $pup->user->name,
+                    'role_id' => $pup->user->role_id
                 ],
                 'age_range'     => $pup->ageRange?->translate('name'),
                 'travel_radius' => $pup->travelRadius?->translate('name'),

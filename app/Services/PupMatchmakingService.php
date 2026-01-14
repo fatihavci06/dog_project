@@ -141,6 +141,7 @@ class PupMatchmakingService extends BaseService
         'user' => [
             'id'   => $profile->user->id,
             'name' => $profile->user->name,
+            'role_id' => $profile->user->role_id
         ],
 
         'breed'         => $profile->breed?->translate('name'),
@@ -436,6 +437,7 @@ class PupMatchmakingService extends BaseService
             'user' => [
                 'id'   => $profile->user->id,
                 'name' => $profile->user->name,
+                'role_id' => $profile->user->role_id
             ],
 
             'biography' => $profile->biography,
