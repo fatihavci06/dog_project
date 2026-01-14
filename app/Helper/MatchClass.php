@@ -4,6 +4,20 @@ namespace App\Helper;
 
 class MatchClass
 {
+    public static function normalize(array $answers): array
+    {
+        return collect($answers)
+            ->groupBy('question_id')
+            ->map(
+                fn($items) =>
+                $items
+                    ->sortBy('order_index')
+                    ->pluck('option_id')
+                    ->values()
+                    ->toArray()
+            )
+            ->toArray();
+    }
     public static function getMatchType(array $a, array $b): string
     {
         $perfect = true;

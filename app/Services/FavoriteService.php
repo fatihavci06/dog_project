@@ -152,8 +152,8 @@ class FavoriteService extends BaseService
                 'distance_km' => $distanceKm,
 
                 'match_type' => MatchClass::getMatchType(
-                    $pup->answers->toArray(),
-                    $authProfile ? $authProfile->answers->toArray() : []
+                    MatchClass::normalize($pup->answers->toArray()),
+                    $authProfile ? MatchClass::normalize($authProfile->answers->toArray()) : []
                 ),
             ];
         });

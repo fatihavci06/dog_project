@@ -268,6 +268,7 @@ $currentLocale = app()->getLocale();
             $friend = $isSenderMe ? $req->receiver : $req->sender;
             $me     = $isSenderMe ? $req->sender   : $req->receiver;
 
+
             // Pup Profile ID'ler
             $friendProfileId = $friend->id;
             $meProfileId     = $me->id;
@@ -332,8 +333,8 @@ $currentLocale = app()->getLocale();
                 'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
 
                 'match_type' => MatchClass::getMatchType(
-                    $me->answers->toArray(),
-                    $friend->answers->toArray()
+                    MatchClass::normalize($me->answers->toArray()),
+                    MatchClass::normalize($friend->answers->toArray())
                 ),
 
                 'distance_km' => $this->calculateDistance(
@@ -420,8 +421,8 @@ $currentLocale = app()->getLocale();
 
                     'is_favorite' => in_array($req->sender->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
-                        $req->sender->answers->toArray(),
-                        $req->receiver->answers->toArray()
+                        MatchClass::normalize($req->sender->answers->toArray()),
+                        MatchClass::normalize($req->receiver->answers->toArray())
                     ),
 
                     'distance_km' => $this->calculateDistance(
@@ -483,8 +484,8 @@ $currentLocale = app()->getLocale();
                     'biography'      => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
                     'match_type'   => MatchClass::getMatchType(
-                        $req->sender->answers->toArray(),
-                        $req->receiver->answers->toArray()
+                        MatchClass::normalize($req->sender->answers->toArray()),
+                        MatchClass::normalize($req->receiver->answers->toArray())
                     ),
 
                     'distance_km' => $this->calculateDistance(
