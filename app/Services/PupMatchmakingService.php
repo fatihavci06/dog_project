@@ -118,20 +118,24 @@ class PupMatchmakingService extends BaseService
 
 
         if (!empty($pupProfileIds)) {
+    $dates = Date::selectRaw('
+            LEAST(sender_id, receiver_id) as user_one,
+            GREATEST(sender_id, receiver_id) as user_two,
+            MAX(created_at) as last_date
+        ')
+        ->where('status', 'accepted')
+        ->where(function ($q) use ($profile, $pupProfileIds) {
+            $q->whereIn('sender_id', $pupProfileIds)
+              ->where('receiver_id', $profile->id)
+              ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
+                  $q2->where('sender_id', $profile->id)
+                     ->whereIn('receiver_id', $pupProfileIds);
+              });
+        })
+        ->groupBy('user_one', 'user_two')
+        ->get();
+}
 
-            $date = Date::whereIn('status', [ 'accepted'])
-                ->where(function ($q) use ($profile, $pupProfileIds) {
-                    $q->where(function ($q2) use ($profile, $pupProfileIds) {
-                        $q2->whereIn('sender_id', $pupProfileIds)
-                            ->where('receiver_id', $profile->id);
-                    })
-                        ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
-                            $q2->where('sender_id', $profile->id)
-                                ->whereIn('receiver_id', $pupProfileIds);
-                        });
-                })
-                ->get();
-        }
 
 
 
