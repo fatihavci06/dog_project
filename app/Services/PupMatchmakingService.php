@@ -119,7 +119,7 @@ class PupMatchmakingService extends BaseService
 
         if (!empty($pupProfileIds)) {
 
-            $date = Date::whereIn('status', ['pending', 'accepted'])
+            $date = Date::whereIn('status', [ 'accepted'])
                 ->where(function ($q) use ($profile, $pupProfileIds) {
                     $q->where(function ($q2) use ($profile, $pupProfileIds) {
                         $q2->whereIn('sender_id', $pupProfileIds)
@@ -130,8 +130,7 @@ class PupMatchmakingService extends BaseService
                                 ->whereIn('receiver_id', $pupProfileIds);
                         });
                 })
-                ->latest()
-                ->first();
+                ->get();
         }
 
 
