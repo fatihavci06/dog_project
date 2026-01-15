@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\ScreenService;
+use App\Models\Language; // Dil modelini ekledik
 
 class ScreenController extends Controller
 {
@@ -10,7 +11,9 @@ class ScreenController extends Controller
 
     public function index()
     {
-        return view('screens.index');
+        // Aktif dilleri çekip view'a gönderiyoruz
+        $languages = Language::where('is_active', 1)->get();
+        return view('screens.index', compact('languages'));
     }
 
     public function list()
@@ -27,13 +30,37 @@ class ScreenController extends Controller
 
     public function update(Request $request, $id)
     {
+        // 1. Formdan gelen tüm veriyi al
         $data = $request->all();
 
-        if ($request->hasFile('hero_image_file')) {
-            $path = $request->hero_image_file->store('screens', 'public');
-            $data['content']['hero_image']['url'] = secure_asset('storage/' . $path);
+        // 2. Veritabanındaki MEVCUT veriyi çek (Veri kaybını önlemek için)
+        // Service üzerinden veya direkt modelden çekebilirsin
+        $existingScreen = $this->service->getById($id);
+        $existingContent = $existingScreen->content;
+
+        $languages = \App\Models\Language::where('is_active', 1)->get();
+
+        foreach ($languages as $lang) {
+            $code = $lang->code;
+            $fileInputName = 'hero_image_file_' . $code;
+
+            // --- SENARYO 1: Yeni resim yüklendiyse ---
+            if ($request->hasFile($fileInputName)) {
+                $path = $request->file($fileInputName)->store('screens', 'public');
+
+                // Yeni yolu data dizisine işle
+                $data['content']['translations'][$code]['hero_image']['url'] = asset('storage/' . $path);
+            }
+            // --- SENARYO 2: Yeni resim YOKSA, eskisini koru ---
+            else {
+                // Eğer formdan URL gelmediyse veya boşsa, veritabanındaki eski URL'i alıp tekrar yerine koyuyoruz.
+                if (isset($existingContent['translations'][$code]['hero_image']['url'])) {
+                    $data['content']['translations'][$code]['hero_image']['url'] = $existingContent['translations'][$code]['hero_image']['url'];
+                }
+            }
         }
 
+        // Güncellenmiş $data dizisini servise gönder
         $screen = $this->service->update($id, $data);
 
         return response()->json([

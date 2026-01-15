@@ -38,7 +38,7 @@ Route::prefix('question')->group(function () {
     Route::get('list/{language?}', [QuestionController::class, 'index']);
     Route::post('answer-save', [QuestionController::class, 'userQuestionAnswerUpdateOrCreate']);
 });
-Route::get('/screen/{id}', [ApiScreenController::class, 'getScreen']);
+Route::get('/screen/{id}/{language?}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
     Route::post('/feedback/send', [ApiFeedBackController::class, 'store']);
     Route::get('/feedback/list', [ApiFeedBackController::class, 'index']);

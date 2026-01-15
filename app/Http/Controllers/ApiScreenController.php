@@ -8,10 +8,10 @@ use Illuminate\Http\Request;
 class ApiScreenController extends ApiController
 {
     public function __construct(private ScreenService $service) {}
-    public function getScreen($id)
+    public function getScreen($id, $language='en')
     {
         return[
-            "data" => $this->service->getById($id)
+            "data" => $this->service->getById($id, $language)
         ];
         // Burada ekran kayıtlarını ID'ye göre eşliyoruz
         // $screens = [
