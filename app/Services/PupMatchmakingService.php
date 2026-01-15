@@ -10,6 +10,7 @@ use App\Models\Friendship;
 use App\Models\PupProfile;
 use App\Models\PupProfileAnswer;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class PupMatchmakingService extends BaseService
 {
@@ -118,24 +119,29 @@ class PupMatchmakingService extends BaseService
 
 
         if (!empty($pupProfileIds)) {
-    $dates = Date::selectRaw('
-            LEAST(sender_id, receiver_id) as user_one,
-            GREATEST(sender_id, receiver_id) as user_two,
-            MAX(created_at) as last_date
-        ')
-        ->where('status', 'accepted')
-        ->where(function ($q) use ($profile, $pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)
-              ->where('receiver_id', $profile->id)
-              ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
-                  $q2->where('sender_id', $profile->id)
-                     ->whereIn('receiver_id', $pupProfileIds);
-              });
-        })
-        ->groupBy('user_one', 'user_two')
-        ->get();
-}
 
+            $date = Date::where('status', 'accepted')
+    ->where(function ($q) use ($profile, $pupProfileIds) {
+        $q->where(function ($q2) use ($profile, $pupProfileIds) {
+            $q2->whereIn('sender_id', $pupProfileIds)
+               ->where('receiver_id', $profile->id);
+        })
+        ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
+            $q2->where('sender_id', $profile->id)
+               ->whereIn('receiver_id', $pupProfileIds);
+        });
+    })
+    ->whereIn('created_at', function ($sub) {
+        $sub->select(DB::raw('MAX(created_at)'))
+            ->from('dates')
+            ->where('status', 'accepted')
+            ->groupBy(
+                DB::raw('LEAST(sender_id, receiver_id)'),
+                DB::raw('GREATEST(sender_id, receiver_id)')
+            );
+    })
+    ->get();
+        }
 
 
 
