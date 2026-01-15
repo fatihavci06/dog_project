@@ -14,177 +14,186 @@ use Exception;
 class PupMatchmakingService extends BaseService
 {
     public function getMatchDetail(
-    int $pupProfileId,
-    int $authUserId
-): array {
+        int $pupProfileId,
+        int $authUserId
+    ): array {
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 1️⃣ Hedef Pup Profile
     |--------------------------------------------------------------------------
     */
-    $profile = PupProfile::with([
-        'user',
-        'images',
-        'vibe',
-        'breed',
-        'ageRange',
-        'travelRadius',
-        'lookingFor',
-        'availabilityForMeetup',
+        $profile = PupProfile::with([
+            'user',
+            'images',
+            'vibe',
+            'breed',
+            'ageRange',
+            'travelRadius',
+            'lookingFor',
+            'availabilityForMeetup',
 
-    ])->find($pupProfileId);
+        ])->find($pupProfileId);
 
-    if (!$profile) {
-        throw new Exception('Profile not found', 404);
-    }
+        if (!$profile) {
+            throw new Exception('Profile not found', 404);
+        }
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 2️⃣ Auth kullanıcının pup profile’ı
     |--------------------------------------------------------------------------
     */
-    $authProfile = PupProfile::where('user_id', $authUserId)->first();
+        $authProfile = PupProfile::where('user_id', $authUserId)->first();
+        $pupProfileIds = PupProfile::where('user_id', $authUserId)
+            ->pluck('id')
+            ->toArray();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 3️⃣ Mesafe
     |--------------------------------------------------------------------------
     */
-    $distanceKm = null;
-    if ($authProfile) {
-        $distanceKm = $this->calculateDistance(
-            $authProfile->lat,
-            $authProfile->long,
-            $profile->lat,
-            $profile->long
-        );
-    }
+        $distanceKm = null;
+        if ($authProfile) {
+            $distanceKm = $this->calculateDistance(
+                $authProfile->lat,
+                $authProfile->long,
+                $profile->lat,
+                $profile->long
+            );
+        }
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 4️⃣ MATCH (Friendship) – pup_profile_id bazlı
     |--------------------------------------------------------------------------
     */
-    $isMatch = false;
+        $isMatch = false;
 
-    if ($authProfile) {
-        $isMatch = Friendship::where('status', 'accepted')
-            ->where(function ($q) use ($authProfile, $profile) {
-                $q->where('sender_id', $authProfile->id)
-                  ->where('receiver_id', $profile->id);
-            })
-            ->orWhere(function ($q) use ($authProfile, $profile) {
-                $q->where('sender_id', $profile->id)
-                  ->where('receiver_id', $authProfile->id);
-            })
-            ->exists();
-    }
+        if ($authProfile) {
+            $isMatch = Friendship::where('status', 'accepted')
+                ->where(function ($q) use ($authProfile, $profile) {
+                    $q->where('sender_id', $authProfile->id)
+                        ->where('receiver_id', $profile->id);
+                })
+                ->orWhere(function ($q) use ($authProfile, $profile) {
+                    $q->where('sender_id', $profile->id)
+                        ->where('receiver_id', $authProfile->id);
+                })
+                ->exists();
+        }
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 5️⃣ FAVORİ
     |--------------------------------------------------------------------------
     */
-    $isFavorite = Favorite::where('user_id', $authUserId)
-        ->where('favorite_id', $profile->id)
-        ->exists();
+        $isFavorite = Favorite::where('user_id', $authUserId)
+            ->where('favorite_id', $profile->id)
+            ->exists();
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 6️⃣ CONVERSATION (user_id bazlı – DOĞRU)
     |--------------------------------------------------------------------------
     */
-    $conversationId = Conversation::query()
-        ->where(function ($q) use ($authUserId, $profile) {
-            $q->where('user_one_id', $authUserId)
-              ->where('user_two_id', $profile->user->id);
-        })
-        ->orWhere(function ($q) use ($authUserId, $profile) {
-            $q->where('user_one_id', $profile->user->id)
-              ->where('user_two_id', $authUserId);
-        })
-        ->value('id');
+        $conversationId = Conversation::query()
+            ->where(function ($q) use ($authUserId, $profile) {
+                $q->where('user_one_id', $authUserId)
+                    ->where('user_two_id', $profile->user->id);
+            })
+            ->orWhere(function ($q) use ($authUserId, $profile) {
+                $q->where('user_one_id', $profile->user->id)
+                    ->where('user_two_id', $authUserId);
+            })
+            ->value('id');
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | 7️⃣ DATE (pending / accepted) – pup_profile_id bazlı
     |--------------------------------------------------------------------------
     */
-    $date = null;
+        $date = null;
 
-    if ($authProfile) {
-        $date = Date::whereIn('status', ['pending', 'accepted'])
-            ->where(function ($q) use ($authProfile, $profile) {
-                $q->where('sender_id', $authProfile->id)
-                  ->where('receiver_id', $profile->id);
-            })
-            ->orWhere(function ($q) use ($authProfile, $profile) {
-                $q->where('sender_id', $profile->id)
-                  ->where('receiver_id', $authProfile->id);
-            })
-            ->orderByDesc('created_at')
-            ->first();
-    }
 
-    /*
+        if (!empty($pupProfileIds)) {
+
+            $date = Date::whereIn('status', ['pending', 'accepted'])
+                ->where(function ($q) use ($profile, $pupProfileIds) {
+                    $q->where(function ($q2) use ($profile, $pupProfileIds) {
+                        $q2->whereIn('sender_id', $pupProfileIds)
+                            ->where('receiver_id', $profile->id);
+                    })
+                        ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
+                            $q2->where('sender_id', $profile->id)
+                                ->whereIn('receiver_id', $pupProfileIds);
+                        });
+                })
+                ->latest()
+                ->first();
+        }
+
+
+
+        /*
     |--------------------------------------------------------------------------
     | 8️⃣ RESPONSE
     |--------------------------------------------------------------------------
     */
-    return [
-        'pup_profile_id' => $profile->id,
-        'name'           => $profile->name,
-        'biography'      => $profile->biography,
-        'sex'            => $profile->sex,
+        return [
+            'pup_profile_id' => $profile->id,
+            'name'           => $profile->name,
+            'biography'      => $profile->biography,
+            'sex'            => $profile->sex,
 
-        'user' => [
-            'id'   => $profile->user->id,
-            'name' => $profile->user->name,
-            'role_id' => $profile->user->role_id
-        ],
+            'user' => [
+                'id'   => $profile->user->id,
+                'name' => $profile->user->name,
+                'role_id' => $profile->user->role_id
+            ],
 
-        'breed'         => $profile->breed?->translate('name'),
-        'age'           => $profile->ageRange?->translate('name'),
-        'travel_radius' => $profile->travelRadius?->translate('name'),
+            'breed'         => $profile->breed?->translate('name'),
+            'age'           => $profile->ageRange?->translate('name'),
+            'travel_radius' => $profile->travelRadius?->translate('name'),
 
-        'images' => $profile->images->map(fn ($img) => [
-            'id'   => $img->id,
-            'path' => $img->path,
-        ]),
+            'images' => $profile->images->map(fn($img) => [
+                'id'   => $img->id,
+                'path' => $img->path,
+            ]),
 
-        'vibe' => $profile->vibe->map(fn ($v) => [
-            'id'        => $v->id,
-            'name'      => $v->translate('name'),
-            'icon_path' => $v->icon_path,
-        ]),
+            'vibe' => $profile->vibe->map(fn($v) => [
+                'id'        => $v->id,
+                'name'      => $v->translate('name'),
+                'icon_path' => $v->icon_path,
+            ]),
 
-        'looking_for' => $profile->lookingFor->map(fn ($v) => [
-            'id'   => $v->id,
-            'name' => $v->translate('name'),
-        ]),
+            'looking_for' => $profile->lookingFor->map(fn($v) => [
+                'id'   => $v->id,
+                'name' => $v->translate('name'),
+            ]),
 
-        'availability_for_meetup' => $profile->availabilityForMeetup->map(fn ($v) => [
-            'id'   => $v->id,
-            'name' => $v->translate('name'),
-        ]),
+            'availability_for_meetup' => $profile->availabilityForMeetup->map(fn($v) => [
+                'id'   => $v->id,
+                'name' => $v->translate('name'),
+            ]),
 
-        'city'        => $profile->city,
-        'district'    => $profile->district,
-        'is_favorite' => $isFavorite,
-        'is_match'    => $isMatch,
-        'distance_km' => $distanceKm,
+            'city'        => $profile->city,
+            'district'    => $profile->district,
+            'is_favorite' => $isFavorite,
+            'is_match'    => $isMatch,
+            'distance_km' => $distanceKm,
 
-        'match_type' => MatchClass::getMatchType(
-            $this->getPupAnswers($authProfile->id ?? 0),
-            $this->getPupAnswers($profile->id)
-        ),
+            'match_type' => MatchClass::getMatchType(
+                $this->getPupAnswers($authProfile->id ?? 0),
+                $this->getPupAnswers($profile->id)
+            ),
 
-        // 🔥 YENİ ALANLAR
-        'conversation_id' => $conversationId,
-        'date'            => $date,
-    ];
-}
+            // 🔥 YENİ ALANLAR
+            'conversation_id' => $conversationId,
+            'date'            => $date,
+        ];
+    }
 
 
     /**
@@ -344,50 +353,51 @@ class PupMatchmakingService extends BaseService
      * Kendi user'a ait PupProfile'lar HARİÇ!
      */
     public function getMatchesPaginated(
-    int $pupProfileId,
-    int $authUserId,
-    int $page = 1,
-    int $perPage = 10
-): array {
+        int $pupProfileId,
+        int $authUserId,
+        int $page = 1,
+        int $perPage = 10
+    ): array {
 
-    $currentProfile = PupProfile::where('id', $pupProfileId)
-        ->where('user_id', $authUserId)
-        ->first();
+        $currentProfile = PupProfile::where('id', $pupProfileId)
+            ->where('user_id', $authUserId)
+            ->first();
 
-    if (!$currentProfile) {
-        throw new Exception('Not found', 404);
-    }
+        if (!$currentProfile) {
+            throw new Exception('Not found', 404);
+        }
 
-    // 1️⃣ Arkadaş user_id’leri
-    $friendUserIds = Friendship::where('status', 'accepted')
-        ->where(function ($q) use ($authUserId) {
-            $q->where('sender_id', $authUserId)
-              ->orWhere('receiver_id', $authUserId);
-        })
-        ->get()
-        ->map(fn ($f) =>
-            $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id
-        )
-        ->toArray();
+        // 1️⃣ Arkadaş user_id’leri
+        $friendUserIds = Friendship::where('status', 'accepted')
+            ->where(function ($q) use ($authUserId) {
+                $q->where('sender_id', $authUserId)
+                    ->orWhere('receiver_id', $authUserId);
+            })
+            ->get()
+            ->map(
+                fn($f) =>
+                $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id
+            )
+            ->toArray();
 
-    // Arkadaş pup_profile_id’leri
-    $friendProfileIds = PupProfile::whereIn('user_id', $friendUserIds)
-        ->pluck('id')
-        ->toArray();
+        // Arkadaş pup_profile_id’leri
+        $friendProfileIds = PupProfile::whereIn('user_id', $friendUserIds)
+            ->pluck('id')
+            ->toArray();
 
-    // Favoriler
-    $favoriteProfileIds = Favorite::where('user_id', $authUserId)
-        ->pluck('favorite_id')
-        ->toArray();
+        // Favoriler
+        $favoriteProfileIds = Favorite::where('user_id', $authUserId)
+            ->pluck('favorite_id')
+            ->toArray();
 
-    // Ana cevaplar
-    $mainAnswers = $this->getPupAnswers($pupProfileId);
+        // Ana cevaplar
+        $mainAnswers = $this->getPupAnswers($pupProfileId);
 
-    // Kullanıcının kendi profilleri
-    $myProfileIds = PupProfile::where('user_id', $authUserId)->pluck('id')->toArray();
+        // Kullanıcının kendi profilleri
+        $myProfileIds = PupProfile::where('user_id', $authUserId)->pluck('id')->toArray();
 
-    // 2️⃣ Diğer profiller
-    $otherProfiles = PupProfile::with([
+        // 2️⃣ Diğer profiller
+        $otherProfiles = PupProfile::with([
             'images',
             'vibe',
             'breed',
@@ -395,91 +405,90 @@ class PupMatchmakingService extends BaseService
             'travelRadius',
             'user'
         ])
-        ->whereNotIn('id', $myProfileIds)
-        ->whereNotIn('id', $friendProfileIds)
-        ->whereNotNull('name')
-        ->get();
+            ->whereNotIn('id', $myProfileIds)
+            ->whereNotIn('id', $friendProfileIds)
+            ->whereNotNull('name')
+            ->get();
 
-    $result = [];
+        $result = [];
 
-    foreach ($otherProfiles as $profile) {
+        foreach ($otherProfiles as $profile) {
 
-        $otherAnswers = $this->getPupAnswers($profile->id);
-        $matchType    = MatchClass::getMatchType($mainAnswers, $otherAnswers);
-        $score        = $this->matchScore($matchType);
+            $otherAnswers = $this->getPupAnswers($profile->id);
+            $matchType    = MatchClass::getMatchType($mainAnswers, $otherAnswers);
+            $score        = $this->matchScore($matchType);
 
-        $distanceKm = $this->calculateDistance(
-            $currentProfile->lat,
-            $currentProfile->long,
-            $profile->lat,
-            $profile->long
-        );
+            $distanceKm = $this->calculateDistance(
+                $currentProfile->lat,
+                $currentProfile->long,
+                $profile->lat,
+                $profile->long
+            );
 
-        // 🔥 conversation_id
-        $conversationId = Conversation::where(function ($q) use ($authUserId, $profile) {
+            // 🔥 conversation_id
+            $conversationId = Conversation::where(function ($q) use ($authUserId, $profile) {
                 $q->where('user_one_id', $authUserId)
-                  ->where('user_two_id', $profile->user_id);
+                    ->where('user_two_id', $profile->user_id);
             })
-            ->orWhere(function ($q) use ($authUserId, $profile) {
-                $q->where('user_one_id', $profile->user_id)
-                  ->where('user_two_id', $authUserId);
-            })
-            ->value('id');
+                ->orWhere(function ($q) use ($authUserId, $profile) {
+                    $q->where('user_one_id', $profile->user_id)
+                        ->where('user_two_id', $authUserId);
+                })
+                ->value('id');
 
-        // 🔥 date_id (pending / accepted varsa)
+            // 🔥 date_id (pending / accepted varsa)
 
 
-        $result[] = [
-            'pup_profile_id' => $profile->id,
-            'name'           => $profile->name,
-            'photo'          => $profile->images[0]->path ?? null,
+            $result[] = [
+                'pup_profile_id' => $profile->id,
+                'name'           => $profile->name,
+                'photo'          => $profile->images[0]->path ?? null,
 
-            'user' => [
-                'id'   => $profile->user->id,
-                'name' => $profile->user->name,
-                'role_id' => $profile->user->role_id
-            ],
+                'user' => [
+                    'id'   => $profile->user->id,
+                    'name' => $profile->user->name,
+                    'role_id' => $profile->user->role_id
+                ],
 
-            'biography' => $profile->biography,
+                'biography' => $profile->biography,
 
-            'vibe' => $profile->vibe->map(fn ($v) => [
-                'id'   => $v->id,
-                'name' => $v->translate('name'),
-            ]),
+                'vibe' => $profile->vibe->map(fn($v) => [
+                    'id'   => $v->id,
+                    'name' => $v->translate('name'),
+                ]),
 
-            'sex'           => $profile->sex,
-            'breed'         => $profile->breed->translate('name'),
-            'age'           => $profile->ageRange->translate('name'),
-            'travel_radius' => $profile->travelRadius->translate('name'),
+                'sex'           => $profile->sex,
+                'breed'         => $profile->breed->translate('name'),
+                'age'           => $profile->ageRange->translate('name'),
+                'travel_radius' => $profile->travelRadius->translate('name'),
 
-            'is_favorite' => in_array($profile->id, $favoriteProfileIds),
-            'is_match'    => in_array($profile->id, $friendProfileIds),
+                'is_favorite' => in_array($profile->id, $favoriteProfileIds),
+                'is_match'    => in_array($profile->id, $friendProfileIds),
 
-            'match_type'  => $matchType,
-            'match_score' => $score,
-            'distance_km' => $distanceKm,
+                'match_type'  => $matchType,
+                'match_score' => $score,
+                'distance_km' => $distanceKm,
 
-            // ✅ YENİ EKLENENLER
-            'conversation_id' => $conversationId,
+                // ✅ YENİ EKLENENLER
+                'conversation_id' => $conversationId,
 
+            ];
+        }
+
+        // 3️⃣ Skora göre sırala
+        $sorted = collect($result)->sortByDesc('match_score')->values();
+
+        // 4️⃣ Pagination
+        $total    = $sorted->count();
+        $lastPage = (int) ceil($total / $perPage);
+        $offset   = ($page - 1) * $perPage;
+
+        return [
+            'current_page' => $page,
+            'per_page'     => $perPage,
+            'total'        => $total,
+            'last_page'    => $lastPage,
+            'data'         => $sorted->slice($offset, $perPage)->values()->toArray(),
         ];
     }
-
-    // 3️⃣ Skora göre sırala
-    $sorted = collect($result)->sortByDesc('match_score')->values();
-
-    // 4️⃣ Pagination
-    $total    = $sorted->count();
-    $lastPage = (int) ceil($total / $perPage);
-    $offset   = ($page - 1) * $perPage;
-
-    return [
-        'current_page' => $page,
-        'per_page'     => $perPage,
-        'total'        => $total,
-        'last_page'    => $lastPage,
-        'data'         => $sorted->slice($offset, $perPage)->values()->toArray(),
-    ];
-}
-
 }
