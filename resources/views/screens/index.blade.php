@@ -182,7 +182,7 @@
 
                                     <div class="row g-3 mb-4">
                                         @foreach($layouts as $layout)
-                                        <div class="col-4 col-md-4 col-lg-4">
+                                        <div class="col-6 col-md-6 col-lg-6">
                                             <label class="layout-card d-block p-2 text-center h-100 w-100">
                                                 <input type="radio"
                                                        name="content[translations][{{ $lang->code }}][layout_type]"
