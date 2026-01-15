@@ -128,11 +128,11 @@
                                         // 2. Türkçe için Etiketleri Değiştiriyoruz
                                         if($lang->code == 'tr') {
                                             $layouts = [
-                                                ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static.png'), "label" => "Resim Üstü (Alt)"],
-                                                ["key" => "hero_overlay_center", "image" => asset('screens/hero_overlay_bottom.png'), "label" => "Resim Üstü (Orta)"],
-                                                ["key" => "hero_overlay_top", "image" => asset('screens/image_top_text_middle.png'), "label" => "Resim Üst / Metin Orta"],
-                                                ["key" => "full_center", "image" => asset('screens/text_only.png'), "label" => "Sadece Metin"],
-                                                ["key" => "full_bottom", "image" => asset('screens/text_top_image_bottom.png'), "label" => "Metin Üst / Resim Alt"],
+                                                ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static_tr.png'), "label" => "Resim Üstü (Alt)"],
+                                                ["key" => "hero_overlay_center", "image" => asset('screens/hero_overlay_bottom_tr.png'), "label" => "Resim Üstü (Orta)"],
+                                                ["key" => "hero_overlay_top", "image" => asset('screens/image_top_text_middle_tr.png'), "label" => "Resim Üst / Metin Orta"],
+                                                ["key" => "full_center", "image" => asset('screens/text_only_tr.png'), "label" => "Sadece Metin"],
+                                                ["key" => "full_bottom", "image" => asset('screens/text_top_image_bottom_tr.png'), "label" => "Metin Üst / Resim Alt"],
                                             ];
                                         }
 
