@@ -5,54 +5,90 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <style>
     /* Layout Kartları */
+   /* KART GÖVDE TASARIMI */
     .layout-card {
         cursor: pointer;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        transition: .2s;
-        position: relative;
+        border: 1px solid #dee2e6;
+        border-radius: 20px; /* Telefon köşesi gibi yuvarlak */
+        transition: all 0.3s ease;
+        background: #fff;
         overflow: hidden;
+        height: 100%;
+        position: relative;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Hafif gölge */
     }
+
+    /* Hover Efekti: Yukarı kalksın ve gölge artsın */
     .layout-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
         border-color: #adb5bd;
+    }
+
+    /* GÖRSEL ALANI (TELEFON EKRANI ORANI) */
+    .layout-img-wrapper {
+        width: 100%;
+        /* 9/16 Oranı: Gerçek telefon ekranı formatı */
+        aspect-ratio: 9/16;
         background-color: #f8f9fa;
+        border-bottom: 1px solid #f0f0f0;
+        overflow: hidden;
+        position: relative;
     }
-    /* Seçili Kart Stili */
+
+    .layout-img-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Resmi kutuya tam yay */
+        object-position: top center; /* Üst kısmı odakla */
+        transition: transform 0.5s;
+    }
+
+    /* Resme gelince hafif zoom yapsın */
+    .layout-card:hover .layout-img-wrapper img {
+        transform: scale(1.03);
+    }
+
+    /* BAŞLIK KISMI */
+    .layout-title {
+        padding: 15px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.1rem; /* Yazıyı büyüttük */
+        color: #495057;
+        background: white;
+    }
+
+    /* SEÇİLİ (ACTIVE) DURUMU */
     .layout-card.active {
-        border-color: #0d6efd;
-        background-color: #f0f7ff;
-        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.1);
+        border: 3px solid #0d6efd; /* Kalın mavi çerçeve */
+        box-shadow: 0 0 0 5px rgba(13, 110, 253, 0.2);
     }
+
+    .layout-card.active .layout-title {
+        color: #0d6efd;
+        background-color: #f0f7ff;
+    }
+
+    /* Seçili İkonu (Sağ Üstte Büyük Tik) */
     .layout-card.active::before {
         content: "✔";
         position: absolute;
-        top: 0;
-        right: 0;
+        top: 15px;
+        right: 15px;
+        width: 40px;
+        height: 40px;
         background: #0d6efd;
         color: white;
-        padding: 2px 8px;
-        border-bottom-left-radius: 8px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-
-    /* Görsel Önizleme Kutusu */
-    .img-preview-box {
-        height: 100px;
-        background-color: #f8f9fa;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px dashed #ced4da;
-        border-radius: 6px;
-        overflow: hidden;
+        font-size: 20px;
+        font-weight: bold;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    .img-preview-box img {
-        max-height: 100%;
-        max-width: 100%;
-        object-fit: contain;
-    }
-
     /* Sol Menü Stilleri */
     .nav-pills .nav-link { color: #495057; border-radius: 0.5rem; }
     .nav-pills .nav-link.active { background-color: #0d6efd; color: white; }
@@ -146,7 +182,7 @@
 
                                     <div class="row g-3 mb-4">
                                         @foreach($layouts as $layout)
-                                        <div class="col-6 col-md-4 col-lg-2">
+                                        <div class="col-4 col-md-4 col-lg-4">
                                             <label class="layout-card d-block p-2 text-center h-100 w-100">
                                                 <input type="radio"
                                                        name="content[translations][{{ $lang->code }}][layout_type]"
@@ -154,7 +190,7 @@
                                                        class="d-none layout-radio"
                                                        data-lang="{{ $lang->code }}">
 
-                                                <img src="{{ $layout['image'] }}" class="img-fluid rounded mb-2" style="max-height: 80px;">
+                                                <img src="{{ $layout['image'] }}" class="img-fluid rounded mb-2" style="max-height: 280px;">
                                                 <div class="small fw-bold text-dark" style="font-size: 0.75rem;">{{ $layout['label'] }}</div>
                                             </label>
                                         </div>
