@@ -270,7 +270,7 @@
         let id = $(this).data("id");
         $("#screenForm")[0].reset();
 
-        // Temizlik: Tüm layout seçimlerini ve önizlemeleri sıfırla
+        // Temizlik
         $(".layout-card").removeClass("active");
         $(".img-preview-box").html('<span class="text-muted small">Empty</span>');
 
@@ -280,19 +280,18 @@
             bootstrap.Tab.getInstance(firstTabTriggerEl)?.show() || new bootstrap.Tab(firstTabTriggerEl).show();
         }
 
-        // Veriyi çek
         $.get(`/mobile-app-settings/screens/get/${id}`, res => {
             $("#screen_id").val(res.id);
 
-            if (res.content.translations) {
-                // YENİ YAPI: Translations içinden verileri dağıt
+            // KONTROL: Eğer translations nesnesi varsa (Controller 'null' ile çağrıldıysa burası çalışır)
+            if (res.content && res.content.translations) {
+
                 languages.forEach(code => {
                     let transData = res.content.translations[code];
 
                     if (transData) {
-                        // 1. Layout Seçimi (DİLE ÖZEL)
+                        // 1. Layout
                         if(transData.layout_type){
-                            // İlgili dildeki ilgili radio button'ı bul ve seç
                             let radio = $(`input[name="content[translations][${code}][layout_type]"][value="${transData.layout_type}"]`);
                             radio.prop("checked", true);
                             radio.closest(".layout-card").addClass("active");
@@ -311,26 +310,9 @@
                         }
                     }
                 });
-            }
-            else {
-                // MIGRATION / ESKİ YAPI: Veriyi varsayılan dile (ilk dile) taşı
-                let defaultLang = languages[0];
-
-                // Eski Layout
-                if(res.content.layout_type){
-                    let radio = $(`input[name="content[translations][${defaultLang}][layout_type]"][value="${res.content.layout_type}"]`);
-                    radio.prop("checked", true).closest(".layout-card").addClass("active");
-                }
-                // Eski Görsel
-                if(res.content.hero_image && res.content.hero_image.url) {
-                    let url = res.content.hero_image.url;
-                    $(`[name="content[translations][${defaultLang}][hero_image][url]"]`).val(url);
-                    $(`#preview-${defaultLang}`).html(`<img src="${url}">`);
-                }
-                // Eski Metinler
-                $(`[name="content[translations][${defaultLang}][title]"]`).val(res.content.title || '');
-                $(`[name="content[translations][${defaultLang}][subtitle]"]`).val(res.content.subtitle || '');
-                $(`[name="content[translations][${defaultLang}][cta_text]"]`).val(res.content.cta_text || '');
+            } else {
+                // Eğer buraya düşüyorsa Controller'da 'null' parametresi unutulmuş demektir.
+                console.warn("Translations objesi bulunamadı! Controller'da getById($id, null) kullandığınızdan emin olun.");
             }
 
             $('#editModal').modal('show');

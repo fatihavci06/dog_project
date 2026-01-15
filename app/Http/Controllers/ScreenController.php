@@ -25,7 +25,7 @@ class ScreenController extends Controller
 
     public function get($id)
     {
-        return response()->json($this->service->getById($id));
+        return response()->json($this->service->getById($id, null));
     }
 
     public function update(Request $request, $id)
