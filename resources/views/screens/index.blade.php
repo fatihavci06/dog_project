@@ -4,32 +4,32 @@
 @section('styles')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <style>
-    /* Layout Kartları */
-   /* KART GÖVDE TASARIMI */
+    /* === KART VE TELEFON GÖRÜNÜMÜ STİLLERİ === */
+
     .layout-card {
         cursor: pointer;
         border: 1px solid #dee2e6;
-        border-radius: 20px; /* Telefon köşesi gibi yuvarlak */
-        transition: all 0.3s ease;
+        border-radius: 16px;
+        transition: all 0.2s ease-in-out;
         background: #fff;
         overflow: hidden;
         height: 100%;
         position: relative;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Hafif gölge */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex;
+        flex-direction: column;
     }
 
-    /* Hover Efekti: Yukarı kalksın ve gölge artsın */
     .layout-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         border-color: #adb5bd;
     }
 
-    /* GÖRSEL ALANI (TELEFON EKRANI ORANI) */
+    /* TELEFON EKRANI ALANI */
     .layout-img-wrapper {
         width: 100%;
-        /* 9/16 Oranı: Gerçek telefon ekranı formatı */
-        aspect-ratio: 9/16;
+        aspect-ratio: 9/16; /* Telefon Oranı */
         background-color: #f8f9fa;
         border-bottom: 1px solid #f0f0f0;
         overflow: hidden;
@@ -39,57 +39,87 @@
     .layout-img-wrapper img {
         width: 100%;
         height: 100%;
-        object-fit: cover; /* Resmi kutuya tam yay */
-        object-position: top center; /* Üst kısmı odakla */
-        transition: transform 0.5s;
+        object-fit: cover;
+        object-position: top center;
+        transition: transform 0.4s;
+        display: block;
     }
 
-    /* Resme gelince hafif zoom yapsın */
     .layout-card:hover .layout-img-wrapper img {
-        transform: scale(1.03);
+        transform: scale(1.05);
     }
 
-    /* BAŞLIK KISMI */
+    /* Başlık */
     .layout-title {
-        padding: 15px;
+        padding: 12px;
         text-align: center;
-        font-weight: 700;
-        font-size: 1.1rem; /* Yazıyı büyüttük */
+        font-weight: 600;
+        font-size: 0.95rem;
         color: #495057;
         background: white;
+        margin-top: auto;
     }
 
-    /* SEÇİLİ (ACTIVE) DURUMU */
+    /* SEÇİLİ DURUM */
     .layout-card.active {
-        border: 3px solid #0d6efd; /* Kalın mavi çerçeve */
-        box-shadow: 0 0 0 5px rgba(13, 110, 253, 0.2);
+        border: 2px solid #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
     }
-
     .layout-card.active .layout-title {
         color: #0d6efd;
-        background-color: #f0f7ff;
+        background-color: #f8fbff;
+        font-weight: bold;
     }
-
-    /* Seçili İkonu (Sağ Üstte Büyük Tik) */
     .layout-card.active::before {
         content: "✔";
         position: absolute;
-        top: 15px;
-        right: 15px;
-        width: 40px;
-        height: 40px;
+        top: 10px;
+        right: 10px;
+        width: 28px;
+        height: 28px;
         background: #0d6efd;
         color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
-        font-weight: bold;
+        font-size: 14px;
         z-index: 10;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    /* Sol Menü Stilleri */
+
+    /* Görsel Önizleme Kutusu (Sağ Panel) */
+    .img-preview-box {
+        height: 120px;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed #ced4da;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .img-preview-box img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    /* SCROLL AYARLARI */
+    /* Sol menü ve sağ içerik bağımsız scroll olsun */
+    .scrollable-panel {
+        overflow-y: auto;
+        overflow-x: hidden; /* Yatay scrollu engelle */
+        height: 100%;
+    }
+
+    /* Bootstrap Row negatif margin düzeltmesi */
+    .fix-row-overflow {
+        padding-left: 4px;
+        padding-right: 4px;
+        padding-top: 4px;
+    }
+
     .nav-pills .nav-link { color: #495057; border-radius: 0.5rem; }
     .nav-pills .nav-link.active { background-color: #0d6efd; color: white; }
 </style>
@@ -124,13 +154,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            <div class="modal-body p-0">
-                <form id="screenForm" enctype="multipart/form-data">
+            <div class="modal-body p-0" style="height: 70vh; min-height: 500px;"> <form id="screenForm" enctype="multipart/form-data" class="h-100">
                     @csrf
                     <input type="hidden" id="screen_id">
 
                     <div class="d-flex h-100">
-                        <div class="bg-light border-end" style="width: 200px; min-width: 200px;">
+
+                        <div class="bg-light border-end scrollable-panel" style="width: 220px; min-width: 220px;">
                             <div class="nav flex-column nav-pills p-3" id="v-pills-tab" role="tablist">
                                 @foreach($languages as $index => $lang)
                                 <button class="nav-link text-start {{ $index == 0 ? 'active' : '' }} mb-2"
@@ -145,14 +175,14 @@
                             </div>
                         </div>
 
-                        <div class="flex-grow-1 p-4 bg-white">
+                        <div class="flex-grow-1 p-4 bg-white scrollable-panel">
                             <div class="tab-content" id="v-pills-tabContent">
 
                                 @foreach($languages as $index => $lang)
                                 <div class="tab-pane fade {{ $index == 0 ? 'show active' : '' }}" id="v-pills-{{ $lang->code }}">
 
                                     @php
-                                        // 1. Varsayılan (İngilizce) Etiketler
+                                        // Layout Verileri
                                         $layouts = [
                                             ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static.png'), "label" => "Overlay Bottom"],
                                             ["key" => "hero_overlay_center", "image" => asset('screens/hero_overlay_bottom.png'), "label" => "Overlay Center"],
@@ -161,7 +191,6 @@
                                             ["key" => "full_bottom", "image" => asset('screens/text_top_image_bottom.png'), "label" => "Txt Top / Img Btm"],
                                         ];
 
-                                        // 2. Türkçe için Etiketleri Değiştiriyoruz
                                         if($lang->code == 'tr') {
                                             $layouts = [
                                                 ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static_tr.png'), "label" => "Resim Üstü (Alt)"],
@@ -172,7 +201,6 @@
                                             ];
                                         }
 
-                                        // UI Başlıklarını da dile göre ayarlayalım
                                         $labelLayout = $lang->code == 'tr' ? 'Şablon Seçimi' : 'Select Layout Template';
                                         $labelText   = $lang->code == 'tr' ? 'Metin İçeriği' : 'Text Content';
                                         $labelMedia  = $lang->code == 'tr' ? 'Medya / Görsel' : 'Media Settings';
@@ -180,18 +208,21 @@
 
                                     <h6 class="fw-bold text-secondary mb-3">📐 {{ $labelLayout }} <small class="text-muted">({{ strtoupper($lang->code) }})</small></h6>
 
-                                    <div class="row g-3 mb-4">
+                                    <div class="row g-4 mb-5 fix-row-overflow">
                                         @foreach($layouts as $layout)
-                                        <div class="col-6 col-md-5 col-lg-6">
-                                            <label class="layout-card d-block p-2 text-center h-100 w-100">
+                                        <div class="col-12 col-md-6 col-xl-4">
+                                            <label class="layout-card h-100 w-100">
                                                 <input type="radio"
                                                        name="content[translations][{{ $lang->code }}][layout_type]"
                                                        value="{{ $layout['key'] }}"
                                                        class="d-none layout-radio"
                                                        data-lang="{{ $lang->code }}">
 
-                                                <img src="{{ $layout['image'] }}" class="img-fluid rounded mb-2" style="max-height: 280px;">
-                                                <div class="small fw-bold text-dark" style="font-size: 0.75rem;">{{ $layout['label'] }}</div>
+                                                <div class="layout-img-wrapper">
+                                                    <img src="{{ $layout['image'] }}" alt="{{ $layout['label'] }}">
+                                                </div>
+
+                                                <div class="layout-title">{{ $layout['label'] }}</div>
                                             </label>
                                         </div>
                                         @endforeach
@@ -213,8 +244,8 @@
                                             <div class="mb-3">
                                                 <label class="form-label small text-muted">Subtitle</label>
                                                 <textarea class="form-control" rows="2"
-                                                       name="content[translations][{{ $lang->code }}][subtitle]"
-                                                       placeholder="{{ $lang->code == 'tr' ? 'Alt başlık giriniz...' : 'Enter subtitle...' }}"></textarea>
+                                                          name="content[translations][{{ $lang->code }}][subtitle]"
+                                                          placeholder="{{ $lang->code == 'tr' ? 'Alt başlık giriniz...' : 'Enter subtitle...' }}"></textarea>
                                             </div>
 
                                             <div class="mb-3">
@@ -273,10 +304,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // PHP'den gelen aktif dil kodları
     const languages = @json($languages->pluck('code'));
 
-    // DataTable Init
     let table = $('#screenTable').DataTable({
         ajax: {
             url: "{{ route('screens.list') }}",
@@ -288,9 +317,8 @@
             {
                 data: null,
                 render: d => {
-                   // Kaç dilde veri girilmiş diye basit sayaç
-                   let count = (d.content && d.content.translations) ? Object.keys(d.content.translations).length : 0;
-                   return `<small class="text-muted">${count} languages configured</small>`;
+                    let count = (d.content && d.content.translations) ? Object.keys(d.content.translations).length : 0;
+                    return `<small class="text-muted">${count} languages configured</small>`;
                 }
             },
             {
@@ -301,16 +329,12 @@
         ]
     });
 
-    // ================== EDIT MODAL AÇMA ==================
     $(document).on("click", ".editBtn", function () {
         let id = $(this).data("id");
         $("#screenForm")[0].reset();
-
-        // Temizlik
         $(".layout-card").removeClass("active");
         $(".img-preview-box").html('<span class="text-muted small">Empty</span>');
 
-        // İlk sekmeyi aç
         const firstTabTriggerEl = document.querySelector('#v-pills-tab button:first-child');
         if(firstTabTriggerEl) {
             bootstrap.Tab.getInstance(firstTabTriggerEl)?.show() || new bootstrap.Tab(firstTabTriggerEl).show();
@@ -318,27 +342,19 @@
 
         $.get(`/mobile-app-settings/screens/get/${id}`, res => {
             $("#screen_id").val(res.id);
-
-            // KONTROL: Eğer translations nesnesi varsa (Controller 'null' ile çağrıldıysa burası çalışır)
             if (res.content && res.content.translations) {
-
                 languages.forEach(code => {
                     let transData = res.content.translations[code];
-
                     if (transData) {
-                        // 1. Layout
                         if(transData.layout_type){
                             let radio = $(`input[name="content[translations][${code}][layout_type]"][value="${transData.layout_type}"]`);
                             radio.prop("checked", true);
                             radio.closest(".layout-card").addClass("active");
                         }
-
-                        // 2. Metinler
                         $(`[name="content[translations][${code}][title]"]`).val(transData.title || '');
                         $(`[name="content[translations][${code}][subtitle]"]`).val(transData.subtitle || '');
                         $(`[name="content[translations][${code}][cta_text]"]`).val(transData.cta_text || '');
 
-                        // 3. Görsel
                         if(transData.hero_image && transData.hero_image.url) {
                             let url = transData.hero_image.url;
                             $(`[name="content[translations][${code}][hero_image][url]"]`).val(url);
@@ -346,28 +362,17 @@
                         }
                     }
                 });
-            } else {
-                // Eğer buraya düşüyorsa Controller'da 'null' parametresi unutulmuş demektir.
-                console.warn("Translations objesi bulunamadı! Controller'da getById($id, null) kullandığınızdan emin olun.");
             }
-
             $('#editModal').modal('show');
         });
     });
 
-    // ================== GÖRSEL EFEKTLER ==================
-    // Layout Kartına Tıklayınca
     $(document).on("change", ".layout-radio", function(){
-        let langCode = $(this).data("lang"); // Hangi dilde işlem yapılıyor?
-
-        // Sadece o dilin panelindeki kartlardan 'active' sınıfını sil
+        let langCode = $(this).data("lang");
         $(`#v-pills-${langCode} .layout-card`).removeClass("active");
-
-        // Seçileni aktif yap
         $(this).closest(".layout-card").addClass("active");
     });
 
-    // ================== KAYDETME İŞLEMİ ==================
     $("#saveBtn").click(function() {
         let id = $("#screen_id").val();
         let btn = $(this);
@@ -379,8 +384,8 @@
             url: `/mobile-app-settings/screens/update/${id}`,
             type: "POST",
             data: formData,
-            processData: false, // Multipart form için gerekli
-            contentType: false, // Multipart form için gerekli
+            processData: false,
+            contentType: false,
             success: res => {
                 Swal.fire({
                     icon: 'success',
