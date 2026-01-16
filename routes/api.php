@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiPlanController;
 use App\Http\Controllers\ApiSupportController;
 use App\Http\Controllers\ApiFeedBackController;
 use App\Http\Controllers\ApiAnnouncmentController;
@@ -40,6 +41,7 @@ Route::prefix('question')->group(function () {
 });
 Route::get('/screen/{id}/{language?}', [ApiScreenController::class, 'getScreen']);
 Route::middleware([JwtMiddleware::class])->group(function () {
+
     Route::post('/feedback/send', [ApiFeedBackController::class, 'store']);
     Route::get('/feedback/list', [ApiFeedBackController::class, 'index']);
     Route::get('/pup/{pupProfileId}/discover', [ApiPupMatchController::class, 'matches']);
@@ -100,12 +102,12 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::get('show/{id}', [ApiAnnouncmentController::class, 'show']);
     });
 
-    Route::prefix('calendar')->group(function () {
-        Route::get('list', [ApiCalendarController::class, 'index']);
-        Route::post('create', [ApiCalendarController::class, 'store']);
-        Route::put('update/{id}', [ApiCalendarController::class, 'update']);
-        Route::delete('delete/{id}', [ApiCalendarController::class, 'destroy']);
-        Route::get('show/{id}', [ApiCalendarController::class, 'show']);
+    Route::prefix('plans')->group(function () {
+        Route::get('list', [ApiPlanController::class, 'index']);
+        Route::post('create', [ApiPlanController::class, 'store']);
+        Route::put('update/{id}', [ApiPlanController::class, 'update']);
+        Route::delete('delete/{id}', [ApiPlanController::class, 'destroy']);
+        Route::get('show/{id}', [ApiPlanController::class, 'show']);
     });
     Route::prefix('location')->group(function () {
         Route::get('list', [ApiLocationController::class, 'index']);

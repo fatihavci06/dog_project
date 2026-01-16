@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Faker\Provider\Base;
+use Illuminate\Foundation\Http\FormRequest;
+
+class StorePlanRequest extends BaseRequest
+{
+
+
+    public function rules(): array
+    {
+        return [
+            'title' => 'required|string|max:255',
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after_or_equal:start_date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'color' => ['required', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'], // Hex kodu kontrolü
+            'location' => 'nullable|string|max:255',
+            'lang' => 'nullable|numeric', // JSON'dan gelen isimle validation
+            'long' => 'nullable|numeric',
+            'notes' => 'nullable|string',
+            'icon' => 'nullable|in:paw,location,check,',
+            'completed' => 'nullable|boolean',
+            'cancelled' => 'nullable|boolean',
+            'participant_id' => 'nullable|integer',
+            'user_id' => 'required|integer|exists:users,id',
+        ];
+    }
+}
