@@ -2,13 +2,26 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Faker\Provider\Base;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePlanRequest extends BaseRequest
 {
 
-
+protected function prepareForValidation()
+    {
+        // Gelen ISO tarih formatını (2025-01-15T00:00:00.000Z) parçala
+        // Eğer parse edilemezse null bırak, validation hatası versin.
+        try {
+            $this->merge([
+                'start_date' => $this->start_date ? Carbon::parse($this->start_date)->format('Y-m-d') : null,
+                'end_date'   => $this->end_date ? Carbon::parse($this->end_date)->format('Y-m-d') : null,
+            ]);
+        } catch (\Exception $e) {
+            // Tarih formatı bozuksa dokunma, validation kuralı yakalasın
+        }
+    }
     public function rules(): array
     {
         return [

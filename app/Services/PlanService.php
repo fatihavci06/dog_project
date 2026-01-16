@@ -19,16 +19,17 @@ class PlanService
     /**
      * Yeni plan oluştur
      */
-    public function createPlan(array $data)
+   public function createPlan(array $data)
     {
-        // 1. Type Belirleme Mantığı
-        $data['type'] = $this->determineType($data['start_date'], $data['end_date']);
-
-        // 2. JSON key mapleme (lang -> latitude)
+        // 1. Koordinatları map'le (lang -> latitude)
         $data = $this->mapCoordinates($data);
 
-        // 3. User ID ekleme
-        $data['user_id'] = $data['user_id'];
+        // 2. Type'ı sunucu tarafında garantiye al (Kullanıcının gönderdiğini ezeriz)
+        // Eğer kullanıcının gönderdiğine güvenmek istersen bu satırı silebilirsin.
+        $data['type'] = $this->determineType($data['start_date'], $data['end_date']);
+
+        // 3. User ID ekle
+        $data['user_id'] = $data['user_id'] ;
 
         return Plan::create($data);
     }
@@ -38,16 +39,13 @@ class PlanService
      */
     public function updatePlan(Plan $plan, array $data)
     {
-        // Tarihler değişmişse Type tekrar hesaplanmalı
-        if (isset($data['start_date']) || isset($data['end_date'])) {
+         if (isset($data['start_date']) || isset($data['end_date'])) {
             $startDate = $data['start_date'] ?? $plan->start_date;
             $endDate = $data['end_date'] ?? $plan->end_date;
             $data['type'] = $this->determineType($startDate, $endDate);
         }
 
-        // Koordinat mapleme
         $data = $this->mapCoordinates($data);
-
         $plan->update($data);
         return $plan;
     }
@@ -65,22 +63,18 @@ class PlanService
      */
     private function determineType($startDate, $endDate)
     {
-        // Tarihleri karşılaştır (Carbon instances veya string)
         return $startDate === $endDate ? 'single' : 'multi-day';
     }
 
-    /**
-     * Yardımcı Metot: Koordinat İsimlendirme
-     */
     private function mapCoordinates(array $data)
     {
         if (isset($data['lang'])) {
-            $data['latitude'] = $data['lang'];
+            $data['latitude'] = $data['lang']; // String gelse de DB decimal ise kaydeder
             unset($data['lang']);
         }
         if (isset($data['long'])) {
             $data['longitude'] = $data['long'];
-            unset($data['long']); // Modelde long yoksa unset etmesen de olur ama temizlik iyidir
+            unset($data['long']);
         }
         return $data;
     }
