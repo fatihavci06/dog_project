@@ -36,7 +36,13 @@ class ScreenController extends Controller
         // 2. Veritabanındaki MEVCUT veriyi çek (Veri kaybını önlemek için)
         // Service üzerinden veya direkt modelden çekebilirsin
         $existingScreen = $this->service->getById($id);
-        $existingContent = $existingScreen->content;
+        $existingContent = $existingScreen['content'] ?? [];
+
+// EKSTRA GÜVENLİK:
+// Eğer veritabanından 'content' JSON string olarak geliyorsa ve array'e çevrilmemişse:
+if (is_string($existingContent)) {
+    $existingContent = json_decode($existingContent, true);
+}
 
         $languages = \App\Models\Language::where('is_active', 1)->get();
 
