@@ -53,8 +53,10 @@ class ApiPlanController extends ApiController
     /**
      * Güncelleme (PUT/PATCH)
      */
-    public function update(StorePlanRequest $request, Plan $plan)
+    public function update(StorePlanRequest $request,int $id)
     {
+        $plan = Plan::findOrFail($id);
+
         // Policy kontrolü: $this->authorize('update', $plan);
 
         return $this->planService->updatePlan($plan, $request->validated());
