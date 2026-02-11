@@ -17,7 +17,11 @@ class RegisterRequest extends BaseRequest
             /* ----------------------------- USER FIELDS ----------------------------- */
 
             'fullname'  => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
             'password'  => 'required|confirmed|min:8',
 
             'role' => [
