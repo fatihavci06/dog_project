@@ -25,7 +25,8 @@ class Plan extends Model
         'type',
         'completed',
         'cancelled',
-        'participant_id'
+        'participant_id',
+        'date_id'
     ];
 
     protected $casts = [
@@ -40,4 +41,9 @@ class Plan extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function date()
+{
+    return $this->belongsTo(Date::class);
+}
+
 }

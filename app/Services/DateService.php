@@ -420,6 +420,54 @@ class DateService
         }
 
         $date->update(['status' => $status]);
+
+        if ($status === 'accepted') {
+
+            $meetingDateTime = $date->meeting_date;
+
+            $senderProfile   = \App\Models\PupProfile::find($date->sender_id);
+            $receiverProfile = \App\Models\PupProfile::find($date->receiver_id);
+
+            $senderUserId   = $senderProfile->user_id;
+            $receiverUserId = $receiverProfile->user_id;
+
+            $basePlanData = [
+                'date_id'    => $date->id, // ✅ artık bağlı
+                'start_date' => $meetingDateTime->format('Y-m-d'),
+                'end_date'   => $meetingDateTime->format('Y-m-d'),
+                'start_time' => $meetingDateTime->format('H:i'),
+                'end_time'   => $meetingDateTime->copy()->addHour()->format('H:i'),
+                'location'   => $date->address,
+                'latitude'   => $date->latitude,
+                'longitude'  => $date->longitude,
+                'notes'      => $date->description,
+                'icon'       => 'date',
+                'type'       => 'date',
+                'completed'  => false,
+                'cancelled'  => false,
+            ];
+
+            // Sender Plan
+            \App\Models\Plan::create(array_merge($basePlanData, [
+                'user_id'        => $senderUserId,
+                'participant_id' => $receiverUserId,
+                'title'          => __('calendar.date_accepted_sender', [
+                    'name' => $receiverProfile->name
+                ]),
+                'color'          => '#3B82F6',
+            ]));
+
+            // Receiver Plan
+            \App\Models\Plan::create(array_merge($basePlanData, [
+                'user_id'        => $receiverUserId,
+                'participant_id' => $senderUserId,
+                'title'          => __('calendar.date_accepted_receiver', [
+                    'name' => $senderProfile->name
+                ]),
+                'color'          => '#10B981',
+            ]));
+        }
+
         $senderProfile = \App\Models\PupProfile::find($date->sender_id);
         $targetUser = $senderProfile ? $senderProfile->user : null;
 

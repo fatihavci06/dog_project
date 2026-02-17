@@ -29,12 +29,11 @@ class Date extends Model
         'longitude'    => 'float',
     ];
 
-    public function getMeetingDateAttribute($value): ?string
-    {
-        return $value
-            ? Carbon::parse($value)->format('d-m-y H:i')
-            : null;
-    }
+    public function plans()
+{
+    return $this->hasMany(Plan::class);
+}
+
 
     public function sender()
     {
