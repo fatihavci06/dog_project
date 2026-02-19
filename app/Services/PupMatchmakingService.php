@@ -11,6 +11,7 @@ use App\Models\PupProfile;
 use App\Models\PupProfileAnswer;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PupMatchmakingService extends BaseService
 {
@@ -121,26 +122,26 @@ class PupMatchmakingService extends BaseService
         if (!empty($pupProfileIds)) {
 
             $date = Date::where('status', 'accepted')
-    ->where(function ($q) use ($profile, $pupProfileIds) {
-        $q->where(function ($q2) use ($profile, $pupProfileIds) {
-            $q2->whereIn('sender_id', $pupProfileIds)
-               ->where('receiver_id', $profile->id);
-        })
-        ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
-            $q2->where('sender_id', $profile->id)
-               ->whereIn('receiver_id', $pupProfileIds);
-        });
-    })
-    ->whereIn('created_at', function ($sub) {
-        $sub->select(DB::raw('MAX(created_at)'))
-            ->from('dates')
-            ->where('status', 'accepted')
-            ->groupBy(
-                DB::raw('LEAST(sender_id, receiver_id)'),
-                DB::raw('GREATEST(sender_id, receiver_id)')
-            );
-    })
-    ->get();
+                ->where(function ($q) use ($profile, $pupProfileIds) {
+                    $q->where(function ($q2) use ($profile, $pupProfileIds) {
+                        $q2->whereIn('sender_id', $pupProfileIds)
+                            ->where('receiver_id', $profile->id);
+                    })
+                        ->orWhere(function ($q2) use ($profile, $pupProfileIds) {
+                            $q2->where('sender_id', $profile->id)
+                                ->whereIn('receiver_id', $pupProfileIds);
+                        });
+                })
+                ->whereIn('created_at', function ($sub) {
+                    $sub->select(DB::raw('MAX(created_at)'))
+                        ->from('dates')
+                        ->where('status', 'accepted')
+                        ->groupBy(
+                            DB::raw('LEAST(sender_id, receiver_id)'),
+                            DB::raw('GREATEST(sender_id, receiver_id)')
+                        );
+                })
+                ->get();
         }
 
 
@@ -368,9 +369,11 @@ class PupMatchmakingService extends BaseService
         int $perPage = 10
     ): array {
 
-        $currentProfile = PupProfile::where('id', $pupProfileId)
+        $currentProfile = PupProfile::with('travelRadius.translations')->where('id', $pupProfileId)
             ->where('user_id', $authUserId)
             ->first();
+
+        $travelRadiusKm = (int) Str::numbers($currentProfile->travelRadius->translations[0]->value);
 
         if (!$currentProfile) {
             throw new Exception('Not found', 404);
@@ -433,7 +436,9 @@ class PupMatchmakingService extends BaseService
                 $profile->lat,
                 $profile->long
             );
-
+            if ($distanceKm > $travelRadiusKm) {
+                continue; // Eğer mesafe belirlenen km'den büyükse bu profili atla ve listeye ekleme
+            }
             // 🔥 conversation_id
             $conversationId = Conversation::where(function ($q) use ($authUserId, $profile) {
                 $q->where('user_one_id', $authUserId)
