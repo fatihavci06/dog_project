@@ -381,22 +381,9 @@ class PupMatchmakingService extends BaseService
         }
 
         // 1️⃣ Arkadaş user_id’leri
-        $friendUserIds = Friendship::where('status', 'accepted')
-            ->where(function ($q) use ($authUserId) {
-                $q->where('sender_id', $authUserId)
-                    ->orWhere('receiver_id', $authUserId);
-            })
-            ->get()
-            ->map(
-                fn($f) =>
-                $f->sender_id == $authUserId ? $f->receiver_id : $f->sender_id
-            )
-            ->toArray();
 
-        // Arkadaş pup_profile_id’leri
-        $friendProfileIds = PupProfile::whereIn('user_id', $friendUserIds)
-            ->pluck('id')
-            ->toArray();
+
+
 
         // Favoriler
         $favoriteProfileIds = Favorite::where('user_id', $authUserId)
@@ -408,6 +395,20 @@ class PupMatchmakingService extends BaseService
 
         // Kullanıcının kendi profilleri
         $myProfileIds = PupProfile::where('user_id', $authUserId)->pluck('id')->toArray();
+
+        $friendProfileIds = Friendship::where('status', 'accepted')
+            ->where(function ($query) use ($pupProfileId) {
+                $query->where('sender_id', $pupProfileId)
+                    ->orWhere('receiver_id', $pupProfileId);
+            })
+            ->get()
+            ->map(function ($friendship) use ($pupProfileId) {
+                // Kendisi dışındaki ID'yi (arkadaşının ID'sini) seç
+                return $friendship->sender_id == $pupProfileId
+                    ? $friendship->receiver_id
+                    : $friendship->sender_id;
+            })
+            ->toArray();
 
         // 2️⃣ Diğer profiller
         $otherProfiles = PupProfile::with([
