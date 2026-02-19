@@ -151,11 +151,12 @@ class PupMatchmakingService extends BaseService
     | 8️⃣ RESPONSE
     |--------------------------------------------------------------------------
     */
+
         return [
             'pup_profile_id' => $profile->id,
             'name'           => $profile->name,
             'biography'      => $profile->biography,
-            'sex'            => $profile->sex,
+            'sex' => __('app.' . $profile->sex),
 
             'user' => [
                 'id'   => $profile->user->id,

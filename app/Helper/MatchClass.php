@@ -59,7 +59,7 @@ class MatchClass
          * 💘 Perfect Match
          */
         if ($perfect) {
-            return '❤️ Pawfect';
+            return __('app.pawfect');
         }
 
 
@@ -75,7 +75,7 @@ class MatchClass
         $q1StrongFix = ($first2_Q1_A === $first2_Q1_B);
 
         if ($q1StrongFix && $strongCount >= 3) {
-            return '💪 Strong';
+            return __('app.strong_match');
         }
 
 
@@ -91,13 +91,13 @@ class MatchClass
         $q1GoodFix = ($first3_Q1_A === $first3_Q1_B);
 
         if ($q1GoodFix && $goodCount >= 3) {
-            return '🙂 Good';
+            return __('app.good_match');
         }
 
 
         /**
          * 🤔 No Match
          */
-        return '🤔 No Match';
+         return __('app.no_match');
     }
 }
