@@ -46,6 +46,12 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('/feedback/list', [ApiFeedBackController::class, 'index']);
     Route::get('/pup/{pupProfileId}/discover', [ApiPupMatchController::class, 'matches']);
     Route::get('/discover/show/{id}', [ApiPupMatchController::class, 'showProfile']); //id pup profile id
+    Route::post('discover/blacklist/add', [ApiPupMatchController::class, 'blackListAdd']);
+    Route::get('discover/blacklist', [ApiPupMatchController::class, 'getBlacklist']);
+
+    Route::delete('discover/blacklist/{pupProfileId}', [ApiPupMatchController::class, 'removeBlacklist']);
+
+
 
     Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
     Route::post('/friend/accept', [ApiFriendshipController::class, 'accept']);

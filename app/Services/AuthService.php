@@ -364,7 +364,7 @@ class AuthService
                     ->count(),
 
                 'photo_url'             => $user->photo_url,
-                'pup_profiles'          => $user->pupProfiles,
+              'pup_profiles' => ($user->role_id == 4) ? null : $user->pupProfiles,
             ]
         ];
     }

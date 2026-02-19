@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Helper\MatchClass;
 use App\Models\Conversation;
 use App\Models\Date;
+use App\Models\DiscoverBlackList;
 use App\Models\Favorite;
 use App\Models\Friendship;
 use App\Models\PupProfile;
@@ -410,6 +411,12 @@ class PupMatchmakingService extends BaseService
             })
             ->toArray();
 
+        $blackListProfileIds = DiscoverBlackList::where('user_id', $authUserId)
+            ->pluck('pup_profile_id')
+            ->toArray();
+
+
+
         // 2️⃣ Diğer profiller
         $otherProfiles = PupProfile::with([
             'images',
@@ -421,6 +428,7 @@ class PupMatchmakingService extends BaseService
         ])
             ->whereNotIn('id', $myProfileIds)
             ->whereNotIn('id', $friendProfileIds)
+            ->whereNotIn('id', $blackListProfileIds)
             ->whereNotNull('name')
             ->get();
 
