@@ -74,4 +74,11 @@ class ApiPlanController extends ApiController
       return  $this->planService->deletePlan(Plan::findOrFail($id));
 
     }
+    public function upcoming(Request $request)
+    {
+        // Policy kontrolü: $this->authorize('delete', $plan);
+
+       return $this->planService->getUpcomingPlans($request->user_id);
+
+    }
 }

@@ -108,6 +108,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
         Route::put('update/{id}', [ApiPlanController::class, 'update']);
         Route::delete('delete/{id}', [ApiPlanController::class, 'destroy']);
         Route::get('show/{id}', [ApiPlanController::class, 'show']);
+        Route::get('upcoming-list', [ApiPlanController::class, 'upcoming']);
     });
     Route::prefix('location')->group(function () {
         Route::get('list', [ApiLocationController::class, 'index']);

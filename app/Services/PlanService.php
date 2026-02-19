@@ -15,11 +15,22 @@ class PlanService
         // Sadece giriş yapan kullanıcının planlarını getir
         return Plan::where('user_id', $userId)->orderBy('start_date', 'asc')->get();
     }
+    public function getUpcomingPlans(int $userId)
+    {
+        return Plan::where('user_id', $userId)
+    ->whereBetween('start_date', [
+        now()->startOfDay(),          // Bugünün başlangıcı (00:00:00)
+        now()->addMonth()->endOfDay() // 1 ay sonrasının bitişi (23:59:59)
+    ])
+    ->orderBy('start_date', 'asc')
+    ->take(7)
+    ->get();
+    }
 
     /**
      * Yeni plan oluştur
      */
-   public function createPlan(array $data)
+    public function createPlan(array $data)
     {
         // 1. Koordinatları map'le (lang -> latitude)
         $data = $this->mapCoordinates($data);
@@ -29,7 +40,7 @@ class PlanService
         $data['type'] = $this->determineType($data['start_date'], $data['end_date']);
 
         // 3. User ID ekle
-        $data['user_id'] = $data['user_id'] ;
+        $data['user_id'] = $data['user_id'];
 
         return Plan::create($data);
     }
@@ -39,7 +50,7 @@ class PlanService
      */
     public function updatePlan(Plan $plan, array $data)
     {
-         if (isset($data['start_date']) || isset($data['end_date'])) {
+        if (isset($data['start_date']) || isset($data['end_date'])) {
             $startDate = $data['start_date'] ?? $plan->start_date;
             $endDate = $data['end_date'] ?? $plan->end_date;
             $data['type'] = $this->determineType($startDate, $endDate);
