@@ -62,7 +62,7 @@ class JwtMiddleware
         ]);
 
         // Dil
-        app()->setLocale($decoded->language ?? 'en');
+        app()->setLocale($user->preferred_language  ?? 'en');
 
         } catch (Exception $e) {
             Log::warning('JWT verification failed', [
