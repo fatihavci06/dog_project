@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 
 class ApiLanguageController extends ApiController
 {
@@ -18,6 +19,7 @@ class ApiLanguageController extends ApiController
         $user->preferred_language = $request->language;
         $user->save();
 
+        App::setLocale($request->language);
 
     }
 }
