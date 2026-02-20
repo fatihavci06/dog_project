@@ -34,7 +34,8 @@ class PupMatchmakingService extends BaseService
             'ageRange',
             'travelRadius',
             'lookingFor',
-            'friends',
+            'friendsOfMine', // Eklendi
+            'friendOf',      // Eklendi
             'availabilityForMeetup',
 
         ])->find($pupProfileId);
@@ -66,6 +67,21 @@ class PupMatchmakingService extends BaseService
                 $profile->lat,
                 $profile->long
             );
+        }
+
+
+        if ($authProfile) {
+            // İki profil arasındaki tek kaydı bul (kimin gönderdiğine bakmaksızın)
+            $friendship = Friendship::where(function ($q) use ($authProfile, $profile) {
+                $q->where('sender_id', $authProfile->id)->where('receiver_id', $profile->id);
+            })
+                ->orWhere(function ($q) use ($authProfile, $profile) {
+                    $q->where('sender_id', $profile->id)->where('receiver_id', $authProfile->id);
+                })
+                ->first();
+
+            // Varsa status (accepted, pending vb.), yoksa null dönecek
+            $friendshipStatus = $friendship ? $friendship->status : null;
         }
 
         /*
@@ -156,7 +172,7 @@ class PupMatchmakingService extends BaseService
 
         return [
             'pup_profile_id' => $profile->id,
-            'is_friendship'=>count($profile->friends)>0 ? true : false,
+            'friendship'     => $friendshipStatus,
             'name'           => $profile->name,
             'biography'      => $profile->biography,
             'sex' => __('app.' . $profile->sex),

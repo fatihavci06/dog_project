@@ -72,13 +72,23 @@ class PupProfile extends Model
     {
         return $this->belongsTo(User::class);
     }
-    public function friends()
-    {
-        return $this->belongsToMany(
-            PupProfile::class,
-            'friendships',
-            'sender_id',
-            'receiver_id'
-        )->wherePivot('status', 'accepted');
-    }
+   // PupProfile.php
+
+public function friendsOfMine()
+{
+    return $this->belongsToMany(PupProfile::class, 'friendships', 'sender_id', 'receiver_id')
+                ->withPivot('status', 'sender_id', 'receiver_id');
+}
+
+public function friendOf()
+{
+    return $this->belongsToMany(PupProfile::class, 'friendships', 'receiver_id', 'sender_id')
+                ->withPivot('status', 'sender_id', 'receiver_id');
+}
+
+// JSON'da 'friendship' olarak serialize edilecek olan kısım
+public function getFriendshipsAttribute()
+{
+    return $this->friendsOfMine->merge($this->friendOf);
+}
 }
