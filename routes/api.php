@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProfileFlagController;
 use App\Http\Controllers\ApiPlanController;
 use App\Http\Controllers\ApiSupportController;
 use App\Http\Controllers\ApiFeedBackController;
@@ -51,7 +52,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
     Route::delete('discover/blacklist/{pupProfileId}', [ApiPupMatchController::class, 'removeBlacklist']);
 
-
+Route::post('/profile/flag', [ProfileFlagController::class, 'store']);
 
     Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
     Route::post('/friend/accept', [ApiFriendshipController::class, 'accept']);
