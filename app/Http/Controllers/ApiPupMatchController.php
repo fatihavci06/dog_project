@@ -7,7 +7,7 @@ use App\Models\DiscoverBlackList;
 use App\Services\PupMatchmakingService;
 use Illuminate\Http\Request;
 
-class ApiPupMatchController extends ApiController
+class ApiPupMatchController extends Controller
 {
     public function matches(Request $request, int $pupProfileId, PupMatchmakingService $service)
     {

@@ -34,6 +34,7 @@ class PupMatchmakingService extends BaseService
             'ageRange',
             'travelRadius',
             'lookingFor',
+            'friends',
             'availabilityForMeetup',
 
         ])->find($pupProfileId);
@@ -155,6 +156,7 @@ class PupMatchmakingService extends BaseService
 
         return [
             'pup_profile_id' => $profile->id,
+            'is_friendship'=>count($profile->friends)>0 ? true : false,
             'name'           => $profile->name,
             'biography'      => $profile->biography,
             'sex' => __('app.' . $profile->sex),

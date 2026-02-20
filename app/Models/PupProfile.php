@@ -72,4 +72,13 @@ class PupProfile extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function friends()
+    {
+        return $this->belongsToMany(
+            PupProfile::class,
+            'friendships',
+            'sender_id',
+            'receiver_id'
+        )->wherePivot('status', 'accepted');
+    }
 }
