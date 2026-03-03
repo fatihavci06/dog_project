@@ -388,7 +388,6 @@ class PupMatchmakingService extends BaseService
         int $page = 1,
         int $perPage = 10
     ): array {
-    dd($pupProfileId, $authUserId, $page, $perPage);
         $currentProfile = PupProfile::with('travelRadius.translations')->where('id', $pupProfileId)
             ->where('user_id', $authUserId)
             ->first();
