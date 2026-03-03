@@ -66,9 +66,9 @@
         </a>
         <div id="collapseff" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
             <div class="bg-dark-light py-2 collapse-inner rounded">
-                <a class="collapse-item text-white" href="{{ route('mobileSteps.index') }}">Step By Step
-                    Information</a>
-                <a class="collapse-item text-white" href="{{ route('pageInfo.index') }}">Page
+                <a class="collapse-item text-white" href="{{ route('mobileSteps.index') }}">Onboarding Steps</a>
+
+                <a class="collapse-item text-white" href="{{ route('pageInfo.index') }}">Survey
                     Information</a>
                 <a class="collapse-item text-white" href="{{ url('/Bread') }}">Breed</a>
                 <a class="collapse-item text-white" href="{{ url('/AgeRange') }}">Age Range</a>
