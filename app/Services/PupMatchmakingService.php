@@ -388,19 +388,16 @@ class PupMatchmakingService extends BaseService
         int $page = 1,
         int $perPage = 10
     ): array {
+    dd($pupProfileId, $authUserId, $page, $perPage);
+        $currentProfile = PupProfile::with('travelRadius.translations')->where('id', $pupProfileId)
+            ->where('user_id', $authUserId)
+            ->first();
 
-        $currentProfile = PupProfile::with('travelRadius.translations')
-    ->where('id', $pupProfileId)
-    ->where('user_id', $authUserId)
-    ->first();
+        $travelRadiusKm = (int) Str::numbers($currentProfile->travelRadius->translations[0]->value);
 
-if (!$currentProfile) {
-    throw new Exception('Not found', 404);
-}
-
-$travelRadiusKm = (int) Str::numbers(
-    $currentProfile->travelRadius->translations[0]->value
-);
+        if (!$currentProfile) {
+            throw new Exception('Not found', 404);
+        }
 
         // 1️⃣ Arkadaş user_id’leri
 
