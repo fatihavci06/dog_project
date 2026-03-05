@@ -301,7 +301,23 @@ class DateService
                 __('errors.cannot_date_own_profile')
             );
         }
+        $hasPendingRequest = Date::where('status', 'pending')
+            ->where(function ($query) use ($data) {
+                $query->where(function ($q) use ($data) {
+                    $q->where('sender_id', $data['my_pup_profile_id'])
+                      ->where('receiver_id', $data['target_pup_profile_id']);
+                })->orWhere(function ($q) use ($data) {
+                    $q->where('sender_id', $data['target_pup_profile_id'])
+                      ->where('receiver_id', $data['my_pup_profile_id']);
+                });
+            })->exists();
 
+        if ($hasPendingRequest) {
+            throw new HttpException(
+                422,
+                __('errors.already_have_pending_request')
+            );
+        }
         $myUserId = $myProfile->user_id;
         $targetUserId = $targetProfile->user_id;
 
