@@ -59,6 +59,9 @@ class ApiPupMatchController extends Controller
                       ->whereIn('receiver_id', $myPupProfileIds);
             })->delete();
         }
+        \App\Models\Favorite::where('user_id', $request->user_id)
+            ->where('favorite_id', $request->pup_profile_id)
+            ->delete();
 
         // 4. Sonucu çok dilli (multi-language) olarak döndür
         return response()->json([
