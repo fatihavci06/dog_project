@@ -38,11 +38,32 @@ class ApiPupMatchController extends Controller
 
     public function blackListAdd(BlackListAddRequest $request)
     {
-
-
-        return  DiscoverBlackList::firstOrCreate([
+        // 1. Kara listeye ekleme işlemi
+        $blackList = DiscoverBlackList::firstOrCreate([
             'user_id' => $request->user_id,
             'pup_profile_id' => $request->pup_profile_id
+        ]);
+
+        // 2. İşlemi yapan kullanıcının tüm kendi köpek profillerinin ID'lerini al
+        $myPupProfileIds = \App\Models\PupProfile::where('user_id', $request->user_id)
+            ->pluck('id')
+            ->toArray();
+
+        // 3. Kullanıcının köpekleri ile kara listeye eklenen köpek arasındaki arkadaşlıkları (Friendship) sil
+        if (!empty($myPupProfileIds)) {
+            \App\Models\Friendship::where(function ($query) use ($myPupProfileIds, $request) {
+                $query->whereIn('sender_id', $myPupProfileIds)
+                      ->where('receiver_id', $request->pup_profile_id);
+            })->orWhere(function ($query) use ($myPupProfileIds, $request) {
+                $query->where('sender_id', $request->pup_profile_id)
+                      ->whereIn('receiver_id', $myPupProfileIds);
+            })->delete();
+        }
+
+        // 4. Sonucu çok dilli (multi-language) olarak döndür
+        return response()->json([
+            'message' => __('messages.success'),
+            'data' => $blackList
         ]);
     }
     public function getBlacklist(Request $request)
