@@ -118,7 +118,7 @@ class ChatService
                         return [
                             'id' => $pup->id,
                             'name' => $pup->name,
-                            'images' => $pup->images->map(fn($img) => $img->path)->toArray(),
+                            'images' => $pup->images->take(1)->map(fn($img) => $img->path)->toArray(),
                         ];
                     })->toArray(),
                     'last_message' => $lastMessage ? [
