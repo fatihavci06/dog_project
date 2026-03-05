@@ -41,7 +41,8 @@ class ChatService
     {
         $user = User::findOrFail($fromUserId);
         $to = User::findOrFail($toUserId);
-        $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluck('id')->toArray();
+
+$toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluck('id')->toArray();
         $fromUserPupProfileIds = \App\Models\PupProfile::where('user_id', $fromUserId)->pluck('id')->toArray();
 
         // Herhangi bir engelleme var mı kontrolü
@@ -59,7 +60,6 @@ class ChatService
         if ($isBlocked) {
             throw new \Exception(__('errors.cannot_send_message_blocked'), 403);
         }
-
         // conversation bul veya oluştur
         [$a, $b] = [$user->id, $to->id];
         if ($a > $b) [$a, $b] = [$b, $a];
@@ -99,7 +99,7 @@ class ChatService
             ));
         }
 
-        app()->setLocale($currentLocale);
+        app()->setLocale($currentLocale ?? config('app.locale'));
         return $message;
     }
 
