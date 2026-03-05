@@ -47,7 +47,7 @@ class DateService
             ->with([
                 'sender.user'
             ])
-            ->orderByDesc('created_at')
+            ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         // 3️⃣ Response mapping
