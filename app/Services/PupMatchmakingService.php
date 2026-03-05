@@ -94,12 +94,14 @@ class PupMatchmakingService extends BaseService
         if ($authProfile) {
             $isMatch = Friendship::where('status', 'accepted')
                 ->where(function ($q) use ($authProfile, $profile) {
-                    $q->where('sender_id', $authProfile->id)
-                        ->where('receiver_id', $profile->id);
-                })
-                ->orWhere(function ($q) use ($authProfile, $profile) {
-                    $q->where('sender_id', $profile->id)
-                        ->where('receiver_id', $authProfile->id);
+                    $q->where(function ($sub) use ($authProfile, $profile) {
+                        $sub->where('sender_id', $authProfile->id)
+                            ->where('receiver_id', $profile->id);
+                    })
+                        ->orWhere(function ($sub) use ($authProfile, $profile) {
+                            $sub->where('sender_id', $profile->id)
+                                ->where('receiver_id', $authProfile->id);
+                        });
                 })
                 ->exists();
         }
@@ -393,15 +395,15 @@ class PupMatchmakingService extends BaseService
             ->first();
 
         // Önce profil var mı kontrol et (Sıralamayı yukarı çekmelisin)
-if (!$currentProfile) {
-    throw new Exception('Not found', 404);
-}
+        if (!$currentProfile) {
+            throw new Exception('Not found', 404);
+        }
 
-// Opsiyonel zincirleme (Optional Chaining) veya null kontrolü kullan
-$travelRadiusKm = 0; // Varsayılan değer
-if ($currentProfile->travelRadius && isset($currentProfile->travelRadius->translations[0])) {
-    $travelRadiusKm = (int) Str::numbers($currentProfile->travelRadius->translations[0]->value);
-}
+        // Opsiyonel zincirleme (Optional Chaining) veya null kontrolü kullan
+        $travelRadiusKm = 0; // Varsayılan değer
+        if ($currentProfile->travelRadius && isset($currentProfile->travelRadius->translations[0])) {
+            $travelRadiusKm = (int) Str::numbers($currentProfile->travelRadius->translations[0]->value);
+        }
 
         // 1️⃣ Arkadaş user_id’leri
 
