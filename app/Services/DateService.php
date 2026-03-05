@@ -243,7 +243,7 @@ class DateService
             ->with([
                 'receiver.user'
             ])
-            ->orderByDesc('created_at')
+            ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
