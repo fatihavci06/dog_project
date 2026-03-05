@@ -435,10 +435,26 @@ class PupMatchmakingService extends BaseService
             })
             ->toArray();
 
-        $blackListProfileIds = DiscoverBlackList::where('user_id', $authUserId)
+        $iBlockedPupIds = DiscoverBlackList::where('user_id', $authUserId)
             ->pluck('pup_profile_id')
             ->toArray();
 
+        // B. Beni engelleyenleri bul:
+        // Benim köpek profillerimi ($myProfileIds) kara listeye alan 'user_id' leri bul
+        $usersWhoBlockedMe = DiscoverBlackList::whereIn('pup_profile_id', $myProfileIds)
+            ->pluck('user_id')
+            ->toArray();
+
+        // Beni engelleyen kullanıcıların tüm köpek profillerini bul
+        $pupsOfUsersWhoBlockedMe = [];
+        if (!empty($usersWhoBlockedMe)) {
+            $pupsOfUsersWhoBlockedMe = PupProfile::whereIn('user_id', $usersWhoBlockedMe)
+                ->pluck('id')
+                ->toArray();
+        }
+
+        // C. İki listeyi birleştir (Benim engellediğim köpekler + Beni engelleyenlerin köpekleri)
+        $blackListProfileIds = array_unique(array_merge($iBlockedPupIds, $pupsOfUsersWhoBlockedMe));
 
 
         // 2️⃣ Diğer profiller
