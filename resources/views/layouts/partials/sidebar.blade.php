@@ -82,7 +82,7 @@
                     </a>
                      <a class="collapse-item text-white" href="{{ route('support.index') }}">Support Pages
                     </a>
-
+                    <a class="collapse-item text-white" href="{{ route('chatMessages.index') }}">Chat Ready Messages</a>
 
             </div>
         </div>

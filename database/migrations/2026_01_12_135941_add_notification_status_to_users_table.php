@@ -7,11 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->boolean('notification_status')
-                ->default(true)
-                ->after('remember_token');
-        });
+        if (!Schema::hasColumn('users', 'notification_status')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->boolean('notification_status')
+                    ->default(true)
+                    ->after('remember_token');
+            });
+        }
     }
 
     public function down(): void

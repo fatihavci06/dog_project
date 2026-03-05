@@ -12,20 +12,22 @@ return new class extends Migration
     // database/migrations/xxxx_create_supports_table.php
     public function up(): void
     {
-        Schema::create('supports', function (Blueprint $table) {
-            $table->id();
-            $table->string('language_code'); // 'tr', 'en' gibi
-            $table->string('title');
-            $table->text('description');
-            $table->string('email')->nullable();
-            $table->string('phone')->nullable();
-            $table->string('address')->nullable();
-            $table->string('website_url');
-            $table->string('instagram_url');
-            $table->string('tiktok_url');
-            $table->string('x_url');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('supports')) {
+            Schema::create('supports', function (Blueprint $table) {
+                $table->id();
+                $table->string('language_code'); // 'tr', 'en' gibi
+                $table->string('title');
+                $table->text('description');
+                $table->string('email')->nullable();
+                $table->string('phone')->nullable();
+                $table->string('address')->nullable();
+                $table->string('website_url');
+                $table->string('instagram_url');
+                $table->string('tiktok_url');
+                $table->string('x_url');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -18,6 +18,8 @@ use App\Http\Controllers\TravelRadiusController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VibeController;
 use App\Http\Controllers\GenericCrudController;
+use App\Http\Controllers\MobileAppChatMessageController;
+use App\Http\Controllers\MobileAppFaqController;
 use App\Http\Controllers\MobileAppStepInfoController;
 use App\Http\Controllers\PupProfileController;
 use App\Http\Controllers\ScreenController;
@@ -90,23 +92,33 @@ Route::middleware([AdminMiddleware::class])->group(function () {
         Route::post('/page-info/{id}', [MobilAppPageInfoController::class, 'update'])->name('pageInfo.update');
         Route::get('/mobile-steps', [MobileAppStepInfoController::class, 'index'])->name('mobileSteps.index');
         Route::post('/mobile-steps/{id}', [MobileAppStepInfoController::class, 'update'])->name('mobileSteps.update');
+
+        Route::post('/chat-messages/reorder', [MobileAppChatMessageController::class, 'reorder'])->name('chatMessages.reorder');
+        Route::get('/chat-messages', [MobileAppChatMessageController::class, 'index'])->name('chatMessages.index');
+        Route::post('/chat-messages', [MobileAppChatMessageController::class, 'store'])->name('chatMessages.store');
+        Route::post('/chat-messages/{id}', [MobileAppChatMessageController::class, 'update'])->name('chatMessages.update');
+        Route::delete('/chat-messages/{id}', [MobileAppChatMessageController::class, 'destroy'])->name('chatMessages.destroy');
     });
     Route::prefix('mobile-app-settings/screens')->group(function () {
         Route::get('/', [ScreenController::class, 'index'])->name('screens.index');
         Route::get('list', [ScreenController::class, 'list'])->name('screens.list');
         Route::post('update/{id}', [ScreenController::class, 'update'])->name('screens.update');
         Route::get('/get/{id}', [ScreenController::class, 'get'])->name('screens.get');
-
+    });
+    Route::prefix('mobile-app-settings/screens')->group(function () {
+        Route::get('/', [ScreenController::class, 'index'])->name('screens.index');
+        Route::get('list', [ScreenController::class, 'list'])->name('screens.list');
+        Route::post('update/{id}', [ScreenController::class, 'update'])->name('screens.update');
+        Route::get('/get/{id}', [ScreenController::class, 'get'])->name('screens.get');
     });
     Route::prefix('admin/support')->group(function () {
-    Route::get('/', [SupportAdminController::class, 'index'])->name('support.index');
-    Route::get('/list', [SupportAdminController::class, 'list']);
-    Route::get('/get/{id}', [SupportAdminController::class, 'get']);
-    Route::post('/store', [SupportAdminController::class, 'store']);
-    Route::post('/update/{id}', [SupportAdminController::class, 'store']); // Aynı metod kullanılabilir
-    Route::post('/delete/{id}', [SupportAdminController::class, 'delete']);
-});
-
+        Route::get('/', [SupportAdminController::class, 'index'])->name('support.index');
+        Route::get('/list', [SupportAdminController::class, 'list']);
+        Route::get('/get/{id}', [SupportAdminController::class, 'get']);
+        Route::post('/store', [SupportAdminController::class, 'store']);
+        Route::post('/update/{id}', [SupportAdminController::class, 'store']); // Aynı metod kullanılabilir
+        Route::post('/delete/{id}', [SupportAdminController::class, 'delete']);
+    });
 
 
     Route::prefix('messages')->group(function () {

@@ -9,6 +9,7 @@ use App\Http\Controllers\ApiNotificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ApiCalendarController;
 use App\Http\Controllers\ApiChatController;
+use App\Http\Controllers\ApiChatMessageController;
 use App\Http\Controllers\ApiDateController;
 use App\Http\Controllers\ApiFavoriteController;
 use App\Http\Controllers\ApiFriendshipController;
@@ -51,6 +52,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('discover/blacklist', [ApiPupMatchController::class, 'getBlacklist']);
 
     Route::delete('discover/blacklist/{pupProfileId}', [ApiPupMatchController::class, 'removeBlacklist']);
+    Route::get('/chat-suggestions', [ApiChatMessageController::class, 'index']);
 
 Route::post('/profile/flag', [ProfileFlagController::class, 'store']);
 
