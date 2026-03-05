@@ -5,6 +5,7 @@ return [
      'cannot_send_request_to_self' => 'You cannot send requests to yourself.',
      'cannot_access_pup_profile'=> 'You do not have permission to access this pup profile.',
      'already_have_pending_request' => 'You already have a pending request for this profile.',
+     'cannot_send_message_blocked' => 'You cannot send a message to this user because you are blocked.',
 
 
 ];

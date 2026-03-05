@@ -41,6 +41,24 @@ class ChatService
     {
         $user = User::findOrFail($fromUserId);
         $to = User::findOrFail($toUserId);
+        $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluck('id')->toArray();
+        $fromUserPupProfileIds = \App\Models\PupProfile::where('user_id', $fromUserId)->pluck('id')->toArray();
+
+        // Herhangi bir engelleme var mı kontrolü
+        $isBlocked = \App\Models\DiscoverBlackList::where(function ($query) use ($fromUserId, $toUserPupProfileIds) {
+            // Ben, alıcının köpeklerinden herhangi birini engelledim mi?
+            $query->where('user_id', $fromUserId)
+                  ->whereIn('pup_profile_id', $toUserPupProfileIds);
+        })->orWhere(function ($query) use ($toUserId, $fromUserPupProfileIds) {
+            // Alıcı, benim köpeklerimden herhangi birini engelledi mi?
+            $query->where('user_id', $toUserId)
+                  ->whereIn('pup_profile_id', $fromUserPupProfileIds);
+        })->exists();
+
+        // Eğer bloklanma durumu varsa işlemi durdur ve hata dön
+        if ($isBlocked) {
+            throw new \Exception(__('errors.cannot_send_message_blocked'), 403);
+        }
 
         // conversation bul veya oluştur
         [$a, $b] = [$user->id, $to->id];
