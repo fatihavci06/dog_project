@@ -114,6 +114,13 @@ class ChatService
                         'name' => $otherUser->name,
                         'avatar' => $otherUser->photo_url ?? null,
                     ],
+                    'pup_profiles' => $otherUser->pupProfiles->map(function ($pup) {
+                        return [
+                            'id' => $pup->id,
+                            'name' => $pup->name,
+                            'images' => $pup->images->map(fn($img) => $img->path)->toArray(),
+                        ];
+                    })->toArray(),
                     'last_message' => $lastMessage ? [
                         'id' => $lastMessage->id,
                         'conversation_id' => $lastMessage->conversation_id,
