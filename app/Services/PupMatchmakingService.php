@@ -117,6 +117,15 @@ class PupMatchmakingService extends BaseService
 
         /*
     |--------------------------------------------------------------------------
+    | 5.5️⃣ BLACKLIST
+    |--------------------------------------------------------------------------
+    */
+        $isBlacklisted = DiscoverBlackList::where('user_id', $authUserId)
+            ->where('pup_profile_id', $profile->id)
+            ->exists();
+
+        /*
+    |--------------------------------------------------------------------------
     | 6️⃣ CONVERSATION (user_id bazlı – DOĞRU)
     |--------------------------------------------------------------------------
     */
@@ -174,46 +183,47 @@ class PupMatchmakingService extends BaseService
 
         return [
             'pup_profile_id' => $profile->id,
-            'friendship'     => $friendshipStatus,
-            'name'           => $profile->name,
-            'biography'      => $profile->biography,
+            'friendship' => $friendshipStatus,
+            'name' => $profile->name,
+            'biography' => $profile->biography,
             'sex' => __('app.' . $profile->sex),
 
             'user' => [
-                'id'   => $profile->user->id,
+                'id' => $profile->user->id,
                 'name' => $profile->user->name,
                 'role_id' => $profile->user->role_id
             ],
 
-            'breed'         => $profile->breed?->translate('name'),
-            'age'           => $profile->ageRange?->translate('name'),
+            'breed' => $profile->breed?->translate('name'),
+            'age' => $profile->ageRange?->translate('name'),
             'travel_radius' => $profile->travelRadius?->translate('name'),
 
             'images' => $profile->images->map(fn($img) => [
-                'id'   => $img->id,
+                'id' => $img->id,
                 'path' => $img->path,
             ]),
 
             'vibe' => $profile->vibe->map(fn($v) => [
-                'id'        => $v->id,
-                'name'      => $v->translate('name'),
+                'id' => $v->id,
+                'name' => $v->translate('name'),
                 'icon_path' => $v->icon_path,
             ]),
 
             'looking_for' => $profile->lookingFor->map(fn($v) => [
-                'id'   => $v->id,
+                'id' => $v->id,
                 'name' => $v->translate('name'),
             ]),
 
             'availability_for_meetup' => $profile->availabilityForMeetup->map(fn($v) => [
-                'id'   => $v->id,
+                'id' => $v->id,
                 'name' => $v->translate('name'),
             ]),
 
-            'city'        => $profile->city,
-            'district'    => $profile->district,
+            'city' => $profile->city,
+            'district' => $profile->district,
             'is_favorite' => $isFavorite,
-            'is_match'    => $isMatch,
+            'is_blacklisted' => $isBlacklisted,
+            'is_match' => $isMatch,
             'distance_km' => $distanceKm,
 
             'match_type' => MatchClass::getMatchType(
@@ -223,7 +233,7 @@ class PupMatchmakingService extends BaseService
 
             // 🔥 YENİ ALANLAR
             'conversation_id' => $conversationId,
-            'date'            => $date,
+            'date' => $date,
         ];
     }
 
@@ -278,7 +288,7 @@ class PupMatchmakingService extends BaseService
     {
         $perfect = true;
         $strongCount = 0;
-        $goodCount   = 0;
+        $goodCount = 0;
 
         foreach ($a as $qId => $aAns) {
 
@@ -365,9 +375,9 @@ class PupMatchmakingService extends BaseService
     {
         return match ($matchType) {
             '❤️ Pawfect' => 4,
-            '💪 Strong'  => 3,
-            '🙂 Good'    => 2,
-            default   => 1,
+            '💪 Strong' => 3,
+            '🙂 Good' => 2,
+            default => 1,
         };
     }
     /**
@@ -477,8 +487,8 @@ class PupMatchmakingService extends BaseService
         foreach ($otherProfiles as $profile) {
 
             $otherAnswers = $this->getPupAnswers($profile->id);
-            $matchType    = MatchClass::getMatchType($mainAnswers, $otherAnswers);
-            $score        = $this->matchScore($matchType);
+            $matchType = MatchClass::getMatchType($mainAnswers, $otherAnswers);
+            $score = $this->matchScore($matchType);
 
             $distanceKm = $this->calculateDistance(
                 $currentProfile->lat,
@@ -505,11 +515,11 @@ class PupMatchmakingService extends BaseService
 
             $result[] = [
                 'pup_profile_id' => $profile->id,
-                'name'           => $profile->name,
-                'photo'          => $profile->images[0]->path ?? null,
+                'name' => $profile->name,
+                'photo' => $profile->images[0]->path ?? null,
 
                 'user' => [
-                    'id'   => $profile->user->id,
+                    'id' => $profile->user->id,
                     'name' => $profile->user->name,
                     'role_id' => $profile->user->role_id
                 ],
@@ -517,19 +527,19 @@ class PupMatchmakingService extends BaseService
                 'biography' => $profile->biography,
 
                 'vibe' => $profile->vibe->map(fn($v) => [
-                    'id'   => $v->id,
+                    'id' => $v->id,
                     'name' => $v->translate('name'),
                 ]),
 
-                'sex'           => $profile->sex,
-                'breed'         => $profile->breed->translate('name'),
-                'age'           => $profile->ageRange->translate('name'),
+                'sex' => $profile->sex,
+                'breed' => $profile->breed->translate('name'),
+                'age' => $profile->ageRange->translate('name'),
                 'travel_radius' => $profile->travelRadius->translate('name'),
 
                 'is_favorite' => in_array($profile->id, $favoriteProfileIds),
-                'is_match'    => in_array($profile->id, $friendProfileIds),
+                'is_match' => in_array($profile->id, $friendProfileIds),
 
-                'match_type'  => $matchType,
+                'match_type' => $matchType,
                 'match_score' => $score,
                 'distance_km' => $distanceKm,
 
@@ -543,16 +553,16 @@ class PupMatchmakingService extends BaseService
         $sorted = collect($result)->sortByDesc('match_score')->values();
 
         // 4️⃣ Pagination
-        $total    = $sorted->count();
+        $total = $sorted->count();
         $lastPage = (int) ceil($total / $perPage);
-        $offset   = ($page - 1) * $perPage;
+        $offset = ($page - 1) * $perPage;
 
         return [
             'current_page' => $page,
-            'per_page'     => $perPage,
-            'total'        => $total,
-            'last_page'    => $lastPage,
-            'data'         => $sorted->slice($offset, $perPage)->values()->toArray(),
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => $lastPage,
+            'data' => $sorted->slice($offset, $perPage)->values()->toArray(),
         ];
     }
 }
