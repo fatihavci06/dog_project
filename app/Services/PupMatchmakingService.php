@@ -124,6 +124,10 @@ class PupMatchmakingService extends BaseService
             ->where('pup_profile_id', $profile->id)
             ->exists();
 
+        if ($isBlacklisted) {
+            $isFavorite = false;
+        }
+
         /*
     |--------------------------------------------------------------------------
     | 6️⃣ CONVERSATION (user_id bazlı – DOĞRU)
