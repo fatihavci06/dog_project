@@ -40,8 +40,8 @@
     .layout-img-wrapper img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        object-position: top center;
+        object-fit: contain; /* kırpma olmasın, tamamı görünsün */
+        object-position: center;
         transition: transform 0.4s;
         display: block;
     }
@@ -199,20 +199,20 @@
                                     @php
                                         // Layout Verileri
                                         $layouts = [
-                                            ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static.png'), "label" => "Overlay Bottom"],
-                                            ["key" => "hero_overlay_center", "image" => asset('screens/hero_overlay_bottom.png'), "label" => "Overlay Center"],
-                                            ["key" => "hero_overlay_top", "image" => asset('screens/image_top_text_middle.png'), "label" => "Img Top / Txt Mid"],
-                                            ["key" => "full_center", "image" => asset('screens/text_only.png'), "label" => "Text Only"],
-                                            ["key" => "full_bottom", "image" => asset('screens/text_top_image_bottom.png'), "label" => "Txt Top / Img Btm"],
+                                            ["key" => "hero_overlay_bottom", "image" => asset('screens/sadece_resim.png'), "label" => "Only Image"],
+                                            ["key" => "hero_overlay_center", "image" => asset('screens/yazi_resim_ustunde.png'), "label" => "Text on Image"],
+                                            ["key" => "hero_overlay_top", "image" => asset('screens/resim_ustte_yazi_ortada.png'), "label" => "Img Top / Txt Mid"],
+                                            ["key" => "full_center", "image" => asset('screens/sadece_yazi.png'), "label" => "Text Only"],
+                                            ["key" => "full_bottom", "image" => asset('screens/yazi_ustte_resim_ortada.png'), "label" => "Txt Top / Img Btm"],
                                         ];
 
                                         if($lang->code == 'tr') {
                                             $layouts = [
-                                                ["key" => "hero_overlay_bottom", "image" => asset('screens/full_hero_static_tr.png'), "label" => "Resim Üstü (Alt)"],
-                                                ["key" => "hero_overlay_center", "image" => asset('screens/hero_overlay_bottom_tr.png'), "label" => "Resim Üstü (Orta)"],
-                                                ["key" => "hero_overlay_top", "image" => asset('screens/image_top_text_middle_tr.png'), "label" => "Resim Üst / Metin Orta"],
-                                                ["key" => "full_center", "image" => asset('screens/text_only_tr.png'), "label" => "Sadece Metin"],
-                                                ["key" => "full_bottom", "image" => asset('screens/text_top_image_bottom_tr.png'), "label" => "Metin Üst / Resim Alt"],
+                                                ["key" => "hero_overlay_bottom", "image" => asset('screens/sadece_resim-1.png'), "label" => "Sadece Resim"],
+                                                ["key" => "hero_overlay_center", "image" => asset('screens/yazi_resim_ustunde-1.png'), "label" => "Yazı Resim Ustunde"],
+                                                ["key" => "hero_overlay_top", "image" => asset('screens/resim_ustte_yazi_ortada-1.png'), "label" => "Resim Üst / Metin Orta"],
+                                                ["key" => "full_center", "image" => asset('screens/sadece_yazi-1.png'), "label" => "Sadece Metin"],
+                                                ["key" => "full_bottom", "image" => asset('screens/yazi_ustte_resim_ortada-1.png'), "label" => "Metin Üst / Resim Alt"],
                                             ];
                                         }
 
