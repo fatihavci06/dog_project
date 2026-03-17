@@ -6,6 +6,7 @@ use App\Events\MessageSent;
 use App\Jobs\SendOneSignalNotification;
 use App\Models\Conversation;
 use App\Models\DiscoverBlackList;
+use App\Models\Friendship;
 use App\Models\Message;
 use App\Models\PupProfile;
 use App\Models\User;
@@ -151,6 +152,7 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
                 return [
                     'conversation_id' => $conv->id,
                     'is_black_list' => false,
+                    'is_match' => false,
                     'user' => [
                         'id' => $otherUser->id,
                         'name' => $otherUser->name,
@@ -181,11 +183,60 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
             ->sortByDesc('updated_at')
             ->values();
 
+        // Inbox'taki diğer user'lar için "match" hesapla (friendships.status = accepted)
+        $otherUserIds = $conversations
+            ->pluck('user.id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $matchUserIds = [];
+        if ($otherUserIds->isNotEmpty() && $myPupProfileIds->isNotEmpty()) {
+            $otherPupProfiles = PupProfile::whereIn('user_id', $otherUserIds)->get(['id', 'user_id']);
+            $otherPupProfileIds = $otherPupProfiles->pluck('id')->values();
+
+            if ($otherPupProfileIds->isNotEmpty()) {
+                $pupIdToUserId = PupProfile::whereIn(
+                    'id',
+                    $myPupProfileIds->merge($otherPupProfileIds)
+                )->pluck('user_id', 'id');
+
+                $friendships = Friendship::query()
+                    ->where('status', 'accepted')
+                    ->where(function ($q) use ($myPupProfileIds, $otherPupProfileIds) {
+                        $q->where(function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
+                            $q2->whereIn('sender_id', $myPupProfileIds)
+                                ->whereIn('receiver_id', $otherPupProfileIds);
+                        })->orWhere(function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
+                            $q2->whereIn('sender_id', $otherPupProfileIds)
+                                ->whereIn('receiver_id', $myPupProfileIds);
+                        });
+                    })
+                    ->get(['sender_id', 'receiver_id']);
+
+                $matchUserIds = $friendships
+                    ->map(function ($f) use ($pupIdToUserId, $userId) {
+                        $senderUserId = $pupIdToUserId[$f->sender_id] ?? null;
+                        $receiverUserId = $pupIdToUserId[$f->receiver_id] ?? null;
+                        if ($senderUserId === null || $receiverUserId === null) {
+                            return null;
+                        }
+                        return $senderUserId === $userId ? $receiverUserId : $senderUserId;
+                    })
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
+        }
+
         $conversations = $conversations
-            ->map(function (array $item) use ($blacklistedUserIds) {
+            ->map(function (array $item) use ($blacklistedUserIds, $matchUserIds) {
                 $otherUserId = $item['user']['id'] ?? null;
                 $item['is_black_list'] = $otherUserId !== null
                     && in_array($otherUserId, $blacklistedUserIds, true);
+                $item['is_match'] = $otherUserId !== null
+                    && in_array($otherUserId, $matchUserIds, true);
                 return $item;
             })
             ->values();
