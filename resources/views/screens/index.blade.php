@@ -34,6 +34,7 @@
         border-bottom: 1px solid #f0f0f0;
         overflow: hidden;
         position: relative;
+        max-height: 260px; /* kartlar daha kompakt */
     }
 
     .layout-img-wrapper img {
@@ -58,6 +59,11 @@
         color: #495057;
         background: white;
         margin-top: auto;
+    }
+
+    @media (max-width: 576px) {
+        .layout-img-wrapper { max-height: 220px; }
+        .layout-title { font-size: 0.85rem; padding: 10px; }
     }
 
     /* SEÇİLİ DURUM */
@@ -122,6 +128,15 @@
 
     .nav-pills .nav-link { color: #495057; border-radius: 0.5rem; }
     .nav-pills .nav-link.active { background-color: #0d6efd; color: white; }
+
+    /* Layout kartlarını geniş ekranda 5'li diz */
+    @media (min-width: 1200px) {
+        .layout-grid .layout-col {
+            flex: 0 0 20%;
+            width: 20%;
+            max-width: 20%;
+        }
+    }
 </style>
 @endsection
 
@@ -208,9 +223,9 @@
 
                                     <h6 class="fw-bold text-secondary mb-3">📐 {{ $labelLayout }} <small class="text-muted">({{ strtoupper($lang->code) }})</small></h6>
 
-                                    <div class="row g-4 mb-5 fix-row-overflow">
+                                    <div class="row g-4 mb-5 fix-row-overflow layout-grid">
                                         @foreach($layouts as $layout)
-                                        <div class="col-12 col-md-6 col-xl-4">
+                                        <div class="col-6 col-md-4 layout-col">
                                             <label class="layout-card h-100 w-100">
                                                 <input type="radio"
                                                        name="content[translations][{{ $lang->code }}][layout_type]"
