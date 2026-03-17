@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PupProfileCreateRequest;
 use App\Http\Requests\PupProfileUpdateRequest;
 use App\Http\Requests\SurveyUpdateRequest;
+use App\Http\Requests\UpdateLoverLocationRequest;
 use App\Models\PupProfile;
 use App\Models\PupProfileAnswer;
 use App\Models\Question;
@@ -70,5 +71,39 @@ class ApiPupProfileController extends ApiController
         );
 
 
+    }
+
+    public function updateLoverLocation(UpdateLoverLocationRequest $request)
+    {
+        $user = User::findOrFail($request->user_id);
+
+        if ((int) $user->role_id !== 4) {
+            throw new Exception('Forbidden', 403);
+        }
+
+        $pupProfile = PupProfile::where('user_id', $user->id)->first();
+        if (!$pupProfile) {
+            throw new Exception('Not found.', 404);
+        }
+
+        $location = $request->validated()['location'];
+
+        $pupProfile->update([
+            'lat'      => $location['lat'],
+            'long'     => $location['long'],
+            'city'     => $location['city'] ?? $pupProfile->city,
+            'district' => $location['district'] ?? $pupProfile->district,
+        ]);
+
+        return [
+            'message' => 'messages.success',
+            'data' => [
+                'pup_profile_id' => $pupProfile->id,
+                'lat' => $pupProfile->lat,
+                'long' => $pupProfile->long,
+                'city' => $pupProfile->city,
+                'district' => $pupProfile->district,
+            ],
+        ];
     }
 }

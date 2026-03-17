@@ -83,6 +83,7 @@ Route::post('/profile/flag', [ProfileFlagController::class, 'store']);
     Route::delete('pup/delete/{pupId}', [ApiPupProfileController::class, 'destroy']);
     Route::post('pup/create', [ApiPupProfileController::class, 'store']);
     Route::put('pup/update/{id}', [ApiPupProfileController::class, 'update']);
+    Route::put('pup/lover/location', [ApiPupProfileController::class, 'updateLoverLocation']);
     Route::get('/profile/share-qr', [ApiProfileShareController::class, 'generate']);
     Route::prefix('dates')->group(function () {
         // Listeleme
