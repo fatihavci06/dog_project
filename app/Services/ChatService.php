@@ -109,24 +109,23 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
     {
         $user = User::findOrFail($userId);
 
-        $excludedUserIds = collect();
-        if ($excludeBlacklisted) {
-            $myPupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+        $myPupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
 
-            // Benim kara listeye aldığım pup profillerin sahipleri
-            $blockedByMeUserIds = PupProfile::whereIn(
-                'id',
-                DiscoverBlackList::where('user_id', $userId)->pluck('pup_profile_id')
-            )->pluck('user_id');
+        // Benim kara listeye aldığım pup profillerin sahipleri
+        $blockedByMeUserIds = PupProfile::whereIn(
+            'id',
+            DiscoverBlackList::where('user_id', $userId)->pluck('pup_profile_id')
+        )->pluck('user_id');
 
-            // Beni (pup profillerimi) kara listeye alan kullanıcılar
-            $blockedMeUserIds = DiscoverBlackList::whereIn('pup_profile_id', $myPupProfileIds)->pluck('user_id');
+        // Beni (pup profillerimi) kara listeye alan kullanıcılar
+        $blockedMeUserIds = DiscoverBlackList::whereIn('pup_profile_id', $myPupProfileIds)->pluck('user_id');
 
-            $excludedUserIds = $blockedByMeUserIds
-                ->merge($blockedMeUserIds)
-                ->unique()
-                ->values();
-        }
+        // İki yönlü kara liste user seti
+        $blacklistedUserIds = $blockedByMeUserIds
+            ->merge($blockedMeUserIds)
+            ->unique()
+            ->values()
+            ->all();
 
         $conversations = Conversation::where('user_one_id', $user->id)
             ->orWhere('user_two_id', $user->id)
@@ -151,6 +150,7 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
 
                 return [
                     'conversation_id' => $conv->id,
+                    'is_black_list' => false,
                     'user' => [
                         'id' => $otherUser->id,
                         'name' => $otherUser->name,
@@ -181,9 +181,18 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
             ->sortByDesc('updated_at')
             ->values();
 
-        if ($excludeBlacklisted && $excludedUserIds->isNotEmpty()) {
+        $conversations = $conversations
+            ->map(function (array $item) use ($blacklistedUserIds) {
+                $otherUserId = $item['user']['id'] ?? null;
+                $item['is_black_list'] = $otherUserId !== null
+                    && in_array($otherUserId, $blacklistedUserIds, true);
+                return $item;
+            })
+            ->values();
+
+        if ($excludeBlacklisted && !empty($blacklistedUserIds)) {
             $conversations = $conversations
-                ->reject(fn ($item) => in_array($item['user']['id'] ?? null, $excludedUserIds->all(), true))
+                ->reject(fn ($item) => (bool) ($item['is_black_list'] ?? false))
                 ->values();
         }
 
