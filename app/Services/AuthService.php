@@ -337,6 +337,9 @@ class AuthService
             })
             ->count();
 
+        // Token'daki rol "Dog lover" ise (role_id = 1), dog_count 0 dönsün
+        $isDogLover = ((int) $user->role_id === 4);
+
         return [
             'user' => [
                 'id'                    => $user->id,
@@ -356,7 +359,7 @@ class AuthService
                 'preferred_language'    => $user->preferred_language,
 
                 // computed alanlar
-                'dog_count'             => $user->pupProfiles->count(),
+                'dog_count'             => $isDogLover ? 0 : $user->pupProfiles->count(),
                 'match_count'           => $friendshipCount,
                 'favorite_count'        => Favorite::where('user_id', $user->id)->count(),
                 'date_count'            => Date::where('sender_id', $user->id)
@@ -364,7 +367,7 @@ class AuthService
                     ->count(),
 
                 'photo_url'             => $user->photo_url,
-              'pup_profiles' => ($user->role_id == 4) ? null : $user->pupProfiles,
+              'pup_profiles' => ($isDogLover || $user->role_id == 4) ? null : $user->pupProfiles,
             ]
         ];
     }
