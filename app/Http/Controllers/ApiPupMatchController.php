@@ -108,9 +108,12 @@ class ApiPupMatchController extends Controller
     {
         $authUserId = $request->user_id;
 
-      return   DiscoverBlackList::where('user_id', $authUserId)
+      $data = DiscoverBlackList::where('user_id', $authUserId)
             ->where('pup_profile_id', $pupProfileId)
             ->delete();
-
+        return response()->json([
+            'message' => __('messages.success'),
+            'data' => $data->values()->toArray()
+        ], 200);
     }
 }
