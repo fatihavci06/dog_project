@@ -111,9 +111,16 @@ class ApiPupMatchController extends Controller
       $data = DiscoverBlackList::where('user_id', $authUserId)
             ->where('pup_profile_id', $pupProfileId)
             ->delete();
-        return response()->json([
-            'message' => __('messages.success'),
-            'data' => $data->values()->toArray()
-        ], 200);
+
+        if ($data === 0) {
+            return \App\Http\Resources\ExceptionResponseResource::fromException(
+                new \Exception(__('messages.not_found'), 404)
+            );
+        }
+
+        return new \App\Http\Resources\SuccessResponseResource([
+            'message' => 'messages.success',
+            'data'    => $data,
+        ]);
     }
 }
