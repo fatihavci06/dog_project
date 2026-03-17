@@ -18,13 +18,13 @@ class PlanService
     public function getUpcomingPlans(int $userId)
     {
         return Plan::where('user_id', $userId)
-    ->whereBetween('start_date', [
-        now()->startOfDay(),          // Bugünün başlangıcı (00:00:00)
-        now()->addMonth()->endOfDay() // 1 ay sonrasının bitişi (23:59:59)
-    ])
-    ->orderBy('start_date', 'asc')
-    ->take(7)
-    ->get();
+            ->whereBetween('start_date', [
+                now()->startOfDay(),          // Bugünün başlangıcı (00:00:00)
+                now()->addMonth()->endOfDay() // 1 ay sonrasının bitişi (23:59:59)
+            ])
+            ->orderBy('start_date', 'asc')
+            ->take(7)
+            ->get();
     }
 
     /**
