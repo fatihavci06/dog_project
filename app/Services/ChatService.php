@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Events\MessageSent;
 use App\Jobs\SendOneSignalNotification;
 use App\Models\Conversation;
+use App\Models\DiscoverBlackList;
 use App\Models\Message;
+use App\Models\PupProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -103,9 +105,28 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
         return $message;
     }
 
-    public function getInbox(int $userId)
+    public function getInbox(int $userId, bool $excludeBlacklisted = false)
     {
         $user = User::findOrFail($userId);
+
+        $excludedUserIds = collect();
+        if ($excludeBlacklisted) {
+            $myPupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
+
+            // Benim kara listeye aldığım pup profillerin sahipleri
+            $blockedByMeUserIds = PupProfile::whereIn(
+                'id',
+                DiscoverBlackList::where('user_id', $userId)->pluck('pup_profile_id')
+            )->pluck('user_id');
+
+            // Beni (pup profillerimi) kara listeye alan kullanıcılar
+            $blockedMeUserIds = DiscoverBlackList::whereIn('pup_profile_id', $myPupProfileIds)->pluck('user_id');
+
+            $excludedUserIds = $blockedByMeUserIds
+                ->merge($blockedMeUserIds)
+                ->unique()
+                ->values();
+        }
 
         $conversations = Conversation::where('user_one_id', $user->id)
             ->orWhere('user_two_id', $user->id)
@@ -117,6 +138,9 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
             ->map(function ($conv) use ($user) {
                 $otherUserId = $conv->user_one_id === $user->id ? $conv->user_two_id : $conv->user_one_id;
                 $otherUser = User::find($otherUserId);
+                if (!$otherUser) {
+                    return null;
+                }
 
                 $unreadCount = Message::where('conversation_id', $conv->id)
                     ->where('receiver_id', $user->id)
@@ -153,8 +177,15 @@ $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluc
                     'updated_at' => $conv->updated_at,
                 ];
             })
+            ->filter()
             ->sortByDesc('updated_at')
             ->values();
+
+        if ($excludeBlacklisted && $excludedUserIds->isNotEmpty()) {
+            $conversations = $conversations
+                ->reject(fn ($item) => in_array($item['user']['id'] ?? null, $excludedUserIds->all(), true))
+                ->values();
+        }
 
         return $conversations;
     }

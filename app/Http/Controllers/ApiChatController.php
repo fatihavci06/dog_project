@@ -35,7 +35,9 @@ class ApiChatController extends ApiController
 
     public function inbox(Request $request)
     {
-        return  $this->chatService->getInbox($request->user_id);
+        $excludeBlacklisted = (bool) $request->boolean('exclude_blacklisted', false);
+
+        return $this->chatService->getInbox($request->user_id, $excludeBlacklisted);
     }
 
     public function markRead($conversationId, Request $request)
