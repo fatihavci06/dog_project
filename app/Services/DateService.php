@@ -45,7 +45,8 @@ class DateService
             ->whereIn('receiver_id', $pupProfileIds)
             ->where('status', 'pending')
             ->with([
-                'sender.user'
+                'sender.user',
+                'sender.images',
             ])
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
@@ -74,7 +75,7 @@ class DateService
 
                 // 🔥 Incoming olduğu için sender dönüyoruz
                 'sender' => $date->sender,
-                'pup_profile_photo' => $date->receiver
+                'pup_profile_photo' => $date->sender
                     ->images()
                     ->select('path')
                     ->value('path'),
