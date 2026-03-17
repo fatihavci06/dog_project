@@ -113,14 +113,15 @@ class ApiPupMatchController extends Controller
             ->delete();
 
         if ($data === 0) {
-            return \App\Http\Resources\ExceptionResponseResource::fromException(
-                new \Exception(__('messages.not_found'), 404)
-            );
+            return response()->json([
+                'success' => false,
+                'message' => __('messages.not_found'),
+            ], 404);
         }
 
-        return new \App\Http\Resources\SuccessResponseResource([
-            'message' => 'messages.success',
-            'data'    => $data,
-        ]);
+        return response()->json([
+            'success' => true,
+            'message' => __('messages.success'),
+        ], 200);
     }
 }
