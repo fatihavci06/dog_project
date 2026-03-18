@@ -466,7 +466,7 @@ class DateService
                 'title' => __('calendar.date_accepted_sender', [
                     'name' => $receiverProfile->name
                 ]),
-                'color' => '#A8B89F44',
+                'color' => '#A8B89F70',
             ]));
 
             // Receiver Plan
