@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class ChatService
 {
-    public function getMessages(int $conversationId, int $userId, int $page = 1, int $perPage = 15, bool $paginate = false)
+    public function getMessages(int $conversationId, int $userId)
     {
         $user = User::findOrFail($userId);
         $conversation = Conversation::findOrFail($conversationId);
@@ -28,20 +28,20 @@ class ChatService
             ->where('conversation_id', $conversationId)
             ->orderBy('created_at', 'desc');
 
-        if ($paginate) {
-            $messages = $query->paginate($perPage, ['*'], 'page', $page);
-            $items = $messages->getCollection()->map(function ($msg) {
-                return [
-                'sender_id' => $msg->sender_id,
-                'receiver_id' => $msg->receiver_id,
-                'sender_name' => $msg->sender->name,
-                'created_at' => $msg->created_at,
-                'body' => $msg->body,
-                ];
-            });
-            $messages->setCollection($items);
-            return $messages;
-        }
+        // if ($paginate) {
+        //     $messages = $query->paginate($perPage, ['*'], 'page', $page);
+        //     $items = $messages->getCollection()->map(function ($msg) {
+        //         return [
+        //         'sender_id' => $msg->sender_id,
+        //         'receiver_id' => $msg->receiver_id,
+        //         'sender_name' => $msg->sender->name,
+        //         'created_at' => $msg->created_at,
+        //         'body' => $msg->body,
+        //         ];
+        //     });
+        //     $messages->setCollection($items);
+        //     return $messages;
+        // }
 
         $messages = $query->get();
 
