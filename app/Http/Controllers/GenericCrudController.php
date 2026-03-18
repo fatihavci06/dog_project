@@ -117,6 +117,9 @@ class GenericCrudController extends Controller
 
 
 
+
+
+
     
 public function destroy($model, $id)
     {
@@ -138,7 +141,7 @@ public function destroy($model, $id)
         catch (QueryException $e) {
             // 23000 kodu Foreign Key kısıtlaması ihlalini belirtir
             if ($e->getCode() == "23000") {
-                return redirect()->back()->with('error', 'This record cannot be deleted because it is being used! (Example: There are dog profiles using this distance). You must update the relevant profiles first.');
+                return redirect()->back()->with('error', 'This record cannot be deleted because it is being used! (Example: There are dog profiles using this distance). ');
             }
 
             // Diğer veritabanı hataları için
