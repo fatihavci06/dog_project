@@ -19,18 +19,18 @@ class ApiChatController extends ApiController
 
     public function messages($conversationId, Request $request)
     {
-        $page = (int) $request->get('page', 1);
-        $perPage = (int) $request->get('per_page', 15);
-        $paginate = $request->get('paginate', true); // Default to true now
+        $page = (int)$request->get('page', 1);
+        $perPage = (int)$request->get('per_page', 15);
+        $paginate = $request->has('page') || $request->has('per_page');
 
-        return $this->chatService->getMessages($conversationId, $request->user_id, (int)$page, (int)$perPage, (bool)$paginate);
+        return $this->chatService->getMessages($conversationId, $request->user_id, $page, $perPage, $paginate);
     }
 
     public function send(ChatSendRequest $request)
     {
 
 
-        return  $this->chatService->sendMessage(
+        return $this->chatService->sendMessage(
             $request->user_id,
             $request->to_user_id,
             $request->body
@@ -39,7 +39,7 @@ class ApiChatController extends ApiController
 
     public function inbox(Request $request)
     {
-        $excludeBlacklisted = (bool) $request->boolean('exclude_blacklisted', false);
+        $excludeBlacklisted = (bool)$request->boolean('exclude_blacklisted', false);
 
         return $this->chatService->getInbox($request->user_id, $excludeBlacklisted);
     }
@@ -58,8 +58,8 @@ class ApiChatController extends ApiController
     }
     public function userPupProfileList(Request $request)
     {
-        $page = (int) $request->input('page', 1);
-        $perPage = (int) $request->input('per_page', 10);
+        $page = (int)$request->input('page', 1);
+        $perPage = (int)$request->input('per_page', 10);
 
         return $this->chatService->getUserPupProfileList(
             $request->user_id,
