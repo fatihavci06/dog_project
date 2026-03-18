@@ -19,8 +19,6 @@ class ApiChatController extends ApiController
 
     public function messages($conversationId, Request $request)
     {
-
-
         return $this->chatService->getMessages($conversationId, $request->user_id);
     }
 

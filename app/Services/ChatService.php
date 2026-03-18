@@ -24,26 +24,10 @@ class ChatService
             throw new \Exception('forbidden');
         }
 
-        $query = Message::with('sender')
+        $messages = Message::with('sender')
             ->where('conversation_id', $conversationId)
-            ->orderBy('created_at', 'desc');
-
-        // if ($paginate) {
-        //     $messages = $query->paginate($perPage, ['*'], 'page', $page);
-        //     $items = $messages->getCollection()->map(function ($msg) {
-        //         return [
-        //         'sender_id' => $msg->sender_id,
-        //         'receiver_id' => $msg->receiver_id,
-        //         'sender_name' => $msg->sender->name,
-        //         'created_at' => $msg->created_at,
-        //         'body' => $msg->body,
-        //         ];
-        //     });
-        //     $messages->setCollection($items);
-        //     return $messages;
-        // }
-
-        $messages = $query->get();
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return $messages->map(function ($msg) {
             return [
