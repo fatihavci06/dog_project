@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Services\GenericMultilangService;
 use App\Models\Language;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\QueryException;
 
 class GenericCrudController extends Controller
 {
@@ -22,10 +23,11 @@ class GenericCrudController extends Controller
 
         $items = $modelClass::query()
             ->when($search, function ($q) use ($search) {
-                $q->whereHas('translations', function ($t) use ($search) {
+            $q->whereHas('translations', function ($t) use ($search) {
                     $t->where('key', 'name')
                         ->where('value', 'like', "%$search%");
-                });
+                }
+                );
             })
             ->paginate(10)
             ->appends(['search' => $search]);
@@ -101,20 +103,46 @@ class GenericCrudController extends Controller
     }
 
 
-    public function destroy($model, $id)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+public function destroy($model, $id)
     {
-        $service = new GenericMultilangService("App\\Models\\" . $model);
-        $deleted = $service->delete($id);
-
-        // 🔥 Icon dosyasını da silelim (Vibe ise)
-        if ($model === 'Vibe') {
-            $vibe = ("App\\Models\\Vibe")::find($id);
-
-            if ($vibe && $vibe->icon_path) {
-                Storage::disk('public')->delete($vibe->icon_path);
+        try {
+            // 🔥 Icon silme işlemini veriyi silmeden ÖNCE yapmak daha güvenlidir
+            if ($model === 'Vibe') {
+                $vibe = ("App\\Models\\Vibe")::find($id);
+                if ($vibe && $vibe->icon_path) {
+                    Storage::disk('public')->delete($vibe->icon_path);
+                }
             }
-        }
 
-        return redirect()->back()->with('success', 'Deleted.');
+            $service = new GenericMultilangService("App\\Models\\" . $model);
+            $deleted = $service->delete($id);
+
+            return redirect()->back()->with('success', 'Deleted.');
+
+        }
+        catch (QueryException $e) {
+            // 23000 kodu Foreign Key kısıtlaması ihlalini belirtir
+            if ($e->getCode() == "23000") {
+                return redirect()->back()->with('error', 'This record cannot be deleted because it is being used! (Example: There are dog profiles using this distance). You must update the relevant profiles first.');
+            }
+
+            // Diğer veritabanı hataları için
+            return redirect()->back()->with('error', 'Bir veritabanı hatası oluştu.');
+        }
     }
 }
