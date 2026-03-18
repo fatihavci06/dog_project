@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,17 +30,17 @@ class Message extends Model
     {
         return $this->belongsTo(User::class, 'receiver_id');
     }
-    protected function createdAt(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => \Carbon\Carbon::parse($value)->format('d-m-Y H:i')
-        );
-    }
+   protected function createdAt(): Attribute
+{
+    return Attribute::make(
+        get: fn ($value) => Carbon::parse($value)->toIso8601ZuluString()
+    );
+}
 
-    protected function updatedAt(): Attribute
-    {
-        return Attribute::make(
-            get: fn($value) => \Carbon\Carbon::parse($value)->format('d-m-Y H:i')
-        );
-    }
+protected function updatedAt(): Attribute
+{
+    return Attribute::make(
+        get: fn ($value) => Carbon::parse($value)->toIso8601ZuluString()
+    );
+}
 }
