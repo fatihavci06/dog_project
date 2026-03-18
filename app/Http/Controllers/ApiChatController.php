@@ -21,9 +21,9 @@ class ApiChatController extends ApiController
     {
         $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 15);
-        $paginate = $request->has('page') || $request->has('per_page');
+        $paginate = $request->get('paginate', true); // Default to true now
 
-        return $this->chatService->getMessages($conversationId, $request->user_id, $page, $perPage, $paginate);
+        return $this->chatService->getMessages($conversationId, $request->user_id, (int)$page, (int)$perPage, (bool)$paginate);
     }
 
     public function send(ChatSendRequest $request)

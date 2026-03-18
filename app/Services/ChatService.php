@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class ChatService
 {
-    public function getMessages(int $conversationId, int $userId, int $page = 1, int $perPage = 15, bool $paginate = false)
+    public function getMessages(int $conversationId, int $userId, int $page = 1, int $perPage = 15, bool $paginate = true)
     {
         $user = User::findOrFail($userId);
         $conversation = Conversation::findOrFail($conversationId);
