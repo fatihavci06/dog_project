@@ -12,6 +12,7 @@ class ScreenService
 
     public function getById($id, $language = 'en')
     {
+
         $screen = Screen::findOrFail($id);
 
         // 1. DURUM: Admin Paneli (Controller'dan $language null gelirse)
