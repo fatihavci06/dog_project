@@ -336,6 +336,10 @@ class AuthService
                     ->orWhereIn('receiver_id', $pupProfileIds);
             })
             ->count();
+              $dateCount = Date::where(function ($q) use ($pupProfileIds) {
+        $q->whereIn('sender_id', $pupProfileIds)
+          ->orWhereIn('receiver_id', $pupProfileIds);
+    })->count();
 
         // Token'daki rol "Dog lover" ise (role_id = 1), dog_count 0 dönsün
         $isDogLover = ((int) $user->role_id === 4);
@@ -378,9 +382,7 @@ class AuthService
                 'dog_count'             => $isDogLover ? 0 : $user->pupProfiles->count(),
                 'match_count'           => $friendshipCount,
                 'favorite_count'        => Favorite::where('user_id', $user->id)->count(),
-                'date_count'            => Date::where('sender_id', $user->id)
-                    ->orWhere('receiver_id', $user->id)
-                    ->count(),
+                'date_count'            =>  $dateCount,
 
                 'photo_url'             => $user->photo_url,
                 'pup_profiles' => ($isDogLover || $user->role_id == 4) ? null : $user->pupProfiles,
