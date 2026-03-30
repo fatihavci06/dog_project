@@ -339,6 +339,21 @@ class AuthService
 
         // Token'daki rol "Dog lover" ise (role_id = 1), dog_count 0 dönsün
         $isDogLover = ((int) $user->role_id === 4);
+        $locations = null;
+
+        $locations = $user->pupProfiles()
+            ->whereNotNull('lat')
+            ->whereNotNull('long')
+            ->get()
+            ->map(function ($profile) {
+                return [
+                    'lat'      => $profile->lat,
+                    'long'     => $profile->long,
+                    'city'     => $profile->city,
+                    'district' => $profile->district,
+                ];
+            });
+
 
         return [
             'user' => [
@@ -367,7 +382,8 @@ class AuthService
                     ->count(),
 
                 'photo_url'             => $user->photo_url,
-              'pup_profiles' => ($isDogLover || $user->role_id == 4) ? null : $user->pupProfiles,
+                'pup_profiles' => ($isDogLover || $user->role_id == 4) ? null : $user->pupProfiles,
+                'locations' => $locations,
             ]
         ];
     }

@@ -33,6 +33,9 @@ return [
     'boolean' => 'The :attribute field must be true or false.',
     'numeric' => 'The :attribute must be a number.',
     'in' => 'The selected :attribute is invalid.',
+     'pup_profile_not_belongs' =>
+        'Pup profile does not belong to the user or does not exist.',
+
 
     'attributes' => [
         'title' => 'Plan title',

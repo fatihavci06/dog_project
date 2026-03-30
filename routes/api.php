@@ -54,21 +54,21 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::delete('discover/blacklist/{pupProfileId}', [ApiPupMatchController::class, 'removeBlacklist']);
     Route::get('/chat-suggestions', [ApiChatMessageController::class, 'index']);
 
-Route::post('/profile/flag', [ProfileFlagController::class, 'store']);
+    Route::post('/profile/flag', [ProfileFlagController::class, 'store']);
 
-    Route::post('/friend/send',   [ApiFriendshipController::class, 'send']);
+    Route::post('/friend/send', [ApiFriendshipController::class, 'send']);
     Route::post('/friend/accept', [ApiFriendshipController::class, 'accept']);
     Route::post('/friend/reject', [ApiFriendshipController::class, 'reject']);
-    Route::get('/friends',        [ApiFriendshipController::class, 'friends']);
+    Route::get('/friends', [ApiFriendshipController::class, 'friends']);
     Route::get('/friend/incoming', [ApiFriendshipController::class, 'incoming']);
     Route::get('/friend/outgoing', [ApiFriendshipController::class, 'outgoing']);
     Route::post('/friend/unfriend', [ApiFriendshipController::class, 'unfriend']);
     Route::post('/friend/cancel-friend-request', [ApiFriendshipController::class, 'cancelFriendRequest']);
     Route::get('/friend/info', [ApiFriendshipController::class, 'totalMatchAndChats']);
     // Favorites
-    Route::post('/favorite/add',    [ApiFavoriteController::class, 'add']);
+    Route::post('/favorite/add', [ApiFavoriteController::class, 'add']);
     Route::post('/favorite/remove', [ApiFavoriteController::class, 'remove']);
-    Route::get('/favorite/list',    [ApiFavoriteController::class, 'list']);
+    Route::get('/favorite/list', [ApiFavoriteController::class, 'list']);
 
     Route::get('users', [AuthController::class, 'index']);
     Route::post('my-profile/change-password', [AuthController::class, 'changePassword']);
@@ -78,12 +78,13 @@ Route::post('/profile/flag', [ProfileFlagController::class, 'store']);
     Route::get('/survey/{pupProfile}', [ApiPupProfileController::class, 'questionsWithAnswers']);
     Route::get('/my-pups', [ApiPupProfileController::class, 'myPups']);
     Route::get('/my-pup/show/{id}', [ApiPupProfileController::class, 'myPupShow']);
+    Route::put('pup/lover/location', [ApiPupProfileController::class, 'updateLoverLocation']);
+
     Route::get('pup/{pupId}/survey-answers', [ApiPupProfileController::class, 'getAnswers']);
     Route::put('pup/{pupId}/survey/update', [ApiPupProfileController::class, 'updateSurvey']);
     Route::delete('pup/delete/{pupId}', [ApiPupProfileController::class, 'destroy']);
     Route::post('pup/create', [ApiPupProfileController::class, 'store']);
     Route::put('pup/update/{id}', [ApiPupProfileController::class, 'update']);
-    Route::put('pup/lover/location', [ApiPupProfileController::class, 'updateLoverLocation']);
     Route::get('/profile/share-qr', [ApiProfileShareController::class, 'generate']);
     Route::prefix('dates')->group(function () {
         // Listeleme

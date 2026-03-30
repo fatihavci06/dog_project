@@ -42,7 +42,8 @@ return [
     | Burada veritabanı sütun isimlerini (start_date) kullanıcı dostu
     | isimlere (Başlangıç Tarihi) çeviriyoruz.
     */
-
+     'pup_profile_not_belongs' =>
+        'Köpek profili kullanıcıya ait değil veya mevcut değil.',
     'attributes' => [
         'title' => 'Plan başlığı',
         'start_date' => 'Başlangıç tarihi',

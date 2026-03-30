@@ -35,7 +35,7 @@ class ApiPupProfileController extends ApiController
         if (!$control) {
             throw new Exception('Not found.', 404);
         }
-        return  $this->service->getSurveyAnswers($pupId);
+        return $this->service->getSurveyAnswers($pupId);
     }
     public function myPups(Request $request)
     {
@@ -49,7 +49,7 @@ class ApiPupProfileController extends ApiController
     }
     public function store(PupProfileCreateRequest $request)
     {
-        return  $this->service->createPupProfileForUser(
+        return $this->service->createPupProfileForUser(
             User::find($request->user_id),
             $request->validated()
         );
@@ -75,13 +75,16 @@ class ApiPupProfileController extends ApiController
 
     public function updateLoverLocation(UpdateLoverLocationRequest $request)
     {
+
         $user = User::findOrFail($request->user_id);
 
         if ((int) $user->role_id !== 4) {
-            throw new Exception('Forbidden', 403);
+            $pupProfile = PupProfile::where('id', $request->pup_profile_id)->first();
+        }   else {
+            $pupProfile = PupProfile::where('user_id', $request->user_id)->first();
         }
 
-        $pupProfile = PupProfile::where('user_id', $user->id)->first();
+
         if (!$pupProfile) {
             throw new Exception('Not found.', 404);
         }
@@ -89,9 +92,9 @@ class ApiPupProfileController extends ApiController
         $location = $request->validated()['location'];
 
         $pupProfile->update([
-            'lat'      => $location['lat'],
-            'long'     => $location['long'],
-            'city'     => $location['city'] ?? $pupProfile->city,
+            'lat' => $location['lat'],
+            'long' => $location['long'],
+            'city' => $location['city'] ?? $pupProfile->city,
             'district' => $location['district'] ?? $pupProfile->district,
         ]);
 
