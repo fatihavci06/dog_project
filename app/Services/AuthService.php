@@ -347,6 +347,7 @@ class AuthService
             ->get()
             ->map(function ($profile) {
                 return [
+                    'pup_profile_id' => $profile->id,
                     'lat'      => $profile->lat,
                     'long'     => $profile->long,
                     'city'     => $profile->city,
