@@ -130,7 +130,7 @@ class FavoriteService extends BaseService
 
             return [
                 'pup_profile_id' => $pup->id,
-                'name'           => $pup->name,
+                'name'           => ($pup->user->role_id == 4 && !$pup->name) ? $pup->user->name : $pup->name,
                 'breed'          => $pup->breed?->translate('name'),
                 'vibe'           => $pup->vibe->map(fn($v) => [
                     'id'   => $v->id,
@@ -144,7 +144,7 @@ class FavoriteService extends BaseService
                 'age_range'     => $pup->ageRange?->translate('name'),
                 'travel_radius' => $pup->travelRadius?->translate('name'),
                 'sex'           => $pup->sex,
-                'photo'         => $pup->images[0]->path ?? null,
+                'photo'          => ($pup->user->role_id == 4) ? ($pup->user->photo ?? null) : ($pup->images[0]->path ?? null),
                 'biography'     => $pup->biography,
 
                 // 🔥 FLAG’LER
