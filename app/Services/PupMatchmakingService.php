@@ -188,7 +188,7 @@ class PupMatchmakingService extends BaseService
         return [
             'pup_profile_id' => $profile->id,
             'friendship' => $friendshipStatus,
-            'name' => $profile->name,
+            'name' => ($profile->user->role_id == 4 && !$profile->name) ? $profile->user->name : $profile->name,
             'biography' => $profile->biography,
             'sex' => __('app.' . $profile->sex),
 
@@ -202,10 +202,12 @@ class PupMatchmakingService extends BaseService
             'age' => $profile->ageRange?->translate('name'),
             'travel_radius' => $profile->travelRadius?->translate('name'),
 
-            'images' => $profile->images->map(fn($img) => [
-                'id' => $img->id,
-                'path' => $img->path,
-            ]),
+            'images' => ($profile->user->role_id == 4)
+                ? collect([['id' => 0, 'path' => $profile->user->photo_url]])
+                : $profile->images->map(fn($img) => [
+                    'id' => $img->id,
+                    'path' => $img->path,
+                ]),
 
             'vibe' => $profile->vibe->map(fn($v) => [
                 'id' => $v->id,
