@@ -92,7 +92,7 @@ class ApiPupMatchController extends Controller
                 'blacklist_id' => $item->id,
                 'pup_profile_id' => $item->pupProfile->id,
                 'name' => ($item->pupProfile->user->role_id == 4 && !$item->pupProfile->name) ? $item->pupProfile->user->name : $item->pupProfile->name,
-                'photo' => ($item->pupProfile->user->role_id == 4) ? ($item->pupProfile->user->photo ?? null) : ($item->pupProfile->images[0]->path ?? null),
+                'photo' => ($item->pupProfile->user->role_id == 4) ? ($item->pupProfile->user->photo_url ?? null) : ($item->pupProfile->images[0]->path ?? null),
                 'added_at' => $item->created_at->format('Y-m-d H:i'),
             ]);
 

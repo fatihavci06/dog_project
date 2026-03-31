@@ -525,7 +525,7 @@ class PupMatchmakingService extends BaseService
             $result[] = [
                 'pup_profile_id' => $profile->id,
                 'name' => ($profile->user->role_id == 4 && !$profile->name) ? $profile->user->name : $profile->name,
-                'photo' => ($profile->user->role_id == 4) ? ($profile->user->photo ?? null) : ($profile->images[0]->path ?? null),
+                'photo' => ($profile->user->role_id == 4) ? ($profile->user->photo_url ?? null) : ($profile->images[0]->path ?? null),
 
                 'user' => [
                     'id' => $profile->user->id,
