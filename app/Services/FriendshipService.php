@@ -323,7 +323,7 @@ class FriendshipService extends BaseService
                 'breed' => $friend->breed?->translate('name'),
                 'age_range' => $friend->ageRange?->translate('name'),
                 'travel_radius' => $friend->travelRadius?->translate('name'),
-                'sex' => $friend->sex,
+                'sex'           => ($friend->user->role_id == 4) ? $friend->user->gender : $friend->sex,
                 'photo' => ($friend->user->role_id == 4) ? ($friend->user->photo_url ?? null) : ($friend->images->first()->path ?? null),
                 'biography' => $friend->biography,
 
@@ -413,7 +413,7 @@ class FriendshipService extends BaseService
                     'age_range' => $req->sender->ageRange?->translate('name'),
                     'travel_radius' => $req->sender->travelRadius?->translate('name'),
                     'breed' => $req->sender->breed?->translate('name'),
-                    'sex' => $req->sender->sex,
+                    'sex'            => ($req->sender->user->role_id == 4) ? $req->sender->user->gender : $req->sender->sex,
                     'photo' => ($req->sender->user->role_id == 4) ? ($req->sender->user->photo_url ?? null) : ($req->sender->images[0]->path ?? null),
                     'biography' => $req->sender->biography,
 
@@ -478,7 +478,7 @@ class FriendshipService extends BaseService
                     'age_range' => $req->receiver->ageRange?->translate('name'),
                     'breed' => $req->receiver->breed?->translate('name'),
                     'travel_radius' => $req->receiver->travelRadius?->translate('name'),
-                    'sex' => $req->receiver->sex,
+                    'sex'            => ($req->receiver->user->role_id == 4) ? $req->receiver->user->gender : $req->receiver->sex,
                     'photo' => ($req->receiver->user->role_id == 4) ? ($req->receiver->user->photo_url ?? null) : ($req->receiver->images[0]->path ?? null),
                     'biography' => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,

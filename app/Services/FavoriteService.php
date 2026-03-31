@@ -139,7 +139,7 @@ class FavoriteService extends BaseService
                 ],
                 'age_range' => $pup->ageRange?->translate('name'),
                 'travel_radius' => $pup->travelRadius?->translate('name'),
-                'sex' => $pup->sex,
+                'sex' => ($pup->user->role_id == 4) ? $pup->user->gender : $pup->sex,
                 'photo' => ($pup->user->role_id == 4) ? ($pup->user->photo_url ?? null) : ($pup->images[0]->path ?? null),
                 'biography' => $pup->biography,
 

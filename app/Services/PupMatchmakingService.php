@@ -190,7 +190,7 @@ class PupMatchmakingService extends BaseService
             'friendship' => $friendshipStatus,
             'name' => ($profile->user->role_id == 4 && !$profile->name) ? $profile->user->name : $profile->name,
             'biography' => $profile->biography,
-            'sex' => __('app.' . $profile->sex),
+            'sex' => ($profile->user->role_id == 4) ? ($profile->user->gender ? __('app.' . $profile->user->gender) : null) : __('app.' . $profile->sex),
 
             'user' => [
                 'id' => $profile->user->id,
@@ -544,7 +544,7 @@ class PupMatchmakingService extends BaseService
                     'name' => $v->translate('name'),
                 ]),
 
-                'sex' => $profile->sex,
+                'sex' => ($profile->user->role_id == 4) ? $profile->user->gender : $profile->sex,
                 'breed' => $profile->breed?->translate('name'),
                 'age' => ($profile->user->role_id == 4 && $profile->user->date_of_birth)
                     ? \Carbon\Carbon::parse($profile->user->date_of_birth)->age
