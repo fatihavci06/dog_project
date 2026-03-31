@@ -1,9 +1,9 @@
 <?php
 return [
-    'male'   => 'Male',
+    'male' => 'Male',
     'female' => 'Female',
-    'pawfect' => '❤️ Pawfect',
+    'pawfect' => '💘 Pawfect',
     'strong_match' => '💪 Strong',
     'good_match' => '🙂 Good',
-    'no_match'=> '🤔 No Match'
+    'no_match' => '🤔 No Match'
 ];
