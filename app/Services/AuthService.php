@@ -408,7 +408,7 @@ class AuthService
             if ($user->role_id == 4) {
                 PupProfile::where('user_id', $user->id)->update([
                     'biography' => $data['biography'],
-                    'travel_radius' => $data['travel_radius']
+                    'travel_radius_id' => $data['travel_radius_id']
                 ]);
             }
 
