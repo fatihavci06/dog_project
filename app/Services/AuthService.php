@@ -404,6 +404,7 @@ class AuthService
                 'gender' => $data['gender'] ?? $user->gender,
                 'country' => $data['country'] ?? $user->country,
             ]);
+            dd($data);
             if ($user->role_id == 4) {
                 PupProfile::where('user_id', $user->id)->update([
                     'biography' => $data['biography'],
