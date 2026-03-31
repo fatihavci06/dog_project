@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class AuthController extends ApiController
+class AuthController extends Controller
 {
     //
     protected $authService;
@@ -27,7 +27,7 @@ class AuthController extends ApiController
     {
         $user = User::find($request->user_id);
 
-        return  $this->authService->changePassword($user, $request->validated());
+        return $this->authService->changePassword($user, $request->validated());
     }
 
     public function login(Request $request)
@@ -84,7 +84,7 @@ class AuthController extends ApiController
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -93,7 +93,7 @@ class AuthController extends ApiController
 
             $this->authService->logout($data['refresh_token']);
 
-              return response()->json(['message' => __('auth.logout_success')], 200);
+            return response()->json(['message' => __('auth.logout_success')], 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
@@ -143,7 +143,8 @@ class AuthController extends ApiController
 
 
         try {
-            return['data'=>$this->authService->login($request->only('email', 'password','language'))]; ;
+            return ['data' => $this->authService->login($request->only('email', 'password', 'language'))];
+            ;
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -160,13 +161,13 @@ class AuthController extends ApiController
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation error',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         try {
-            $data   = $validator->validated();
-            return ['data'=> $this->authService->refresh($data['refresh_token'])];
+            $data = $validator->validated();
+            return ['data' => $this->authService->refresh($data['refresh_token'])];
         } catch (\Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -186,7 +187,7 @@ class AuthController extends ApiController
             ], 422);
         }
 
-        return ['data'=>$this->authService->forgotPassword($request->input('email'))];
+        return ['data' => $this->authService->forgotPassword($request->input('email'))];
     }
 
     public function resetPassword(Request $request)
@@ -249,7 +250,7 @@ class AuthController extends ApiController
     }
     public function myProfile(Request $request)
     {
-        return['data'=> $this->authService->myProfile($request->user_id)];
+        return ['data' => $this->authService->myProfile($request->user_id)];
     }
     public function myProfileUpdate(ProfileUpdateRequest $request)
     {
