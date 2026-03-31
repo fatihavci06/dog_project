@@ -22,7 +22,7 @@ class ProfileUpdateRequest extends BaseRequest
             'gender' => 'nullable|in:male,female,other',
             'country' => 'nullable|string|max:120',
             'biography' => 'nullable|string|max:1200',
-            'travel_radius' => 'nullable|integer|exists:travel_radius,id',
+            'travel_radius_id' => 'nullable|integer|exists:travel_radius,id',
 
 
             'photo' => [
