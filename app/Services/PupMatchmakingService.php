@@ -483,7 +483,12 @@ class PupMatchmakingService extends BaseService
             ->whereNotIn('id', $myProfileIds)
             ->whereNotIn('id', $friendProfileIds)
             ->whereNotIn('id', $blackListProfileIds)
-            ->whereNotNull('name')
+            ->where(function ($q) {
+                $q->whereNotNull('name')
+                    ->orWhereHas('user', function ($qu) {
+                        $qu->where('role_id', 4);
+                    });
+            })
             ->get();
 
         $result = [];
@@ -519,8 +524,8 @@ class PupMatchmakingService extends BaseService
 
             $result[] = [
                 'pup_profile_id' => $profile->id,
-                'name' => $profile->name,
-                'photo' => $profile->images[0]->path ?? null,
+                'name' => ($profile->user->role_id == 4 && !$profile->name) ? $profile->user->name : $profile->name,
+                'photo' => ($profile->user->role_id == 4) ? ($profile->user->photo ?? null) : ($profile->images[0]->path ?? null),
 
                 'user' => [
                     'id' => $profile->user->id,
@@ -536,9 +541,9 @@ class PupMatchmakingService extends BaseService
                 ]),
 
                 'sex' => $profile->sex,
-                'breed' => $profile->breed->translate('name'),
-                'age' => $profile->ageRange->translate('name'),
-                'travel_radius' => $profile->travelRadius->translate('name'),
+                'breed' => $profile->breed?->translate('name'),
+                'age' => $profile->ageRange?->translate('name'),
+                'travel_radius' => $profile->travelRadius?->translate('name'),
 
                 'is_favorite' => in_array($profile->id, $favoriteProfileIds),
                 'is_match' => in_array($profile->id, $friendProfileIds),
