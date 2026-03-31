@@ -14,7 +14,7 @@ class FriendshipService extends BaseService
 {
     public function send(int $myPupProfileId, int $targetPupProfileId)
     {
-        $myProfile     = PupProfile::findOrFail($myPupProfileId);
+        $myProfile = PupProfile::findOrFail($myPupProfileId);
         $targetProfile = PupProfile::findOrFail($targetPupProfileId);
 
         // 🚫 Kendi pup profile’larından birine istek atamaz
@@ -69,9 +69,9 @@ class FriendshipService extends BaseService
                 ]),
                 [
                     'friendship_id' => $friendship->id,
-                    'sender_id'     => $myPupProfileId,
-                    'type'          => 'friend_request',
-                    'url'           => "pupcrawl://profile/{$myPupProfileId}",
+                    'sender_id' => $myPupProfileId,
+                    'type' => 'friend_request',
+                    'url' => "pupcrawl://profile/{$myPupProfileId}",
 
                 ]
             ));
@@ -99,7 +99,7 @@ class FriendshipService extends BaseService
         // Kabul eden kişi (şu anki kullanıcı): receiver_id
         $acceptorProfile = \App\Models\PupProfile::find($req->receiver_id);
         $acceptorName = $acceptorProfile ? $acceptorProfile->name : __('notifications.unknown_user');
-$currentLocale = app()->getLocale();
+        $currentLocale = app()->getLocale();
 
         // Hedef kullanıcının tercih ettiği dili set et
         if (!empty($targetUser->preferred_language)) {
@@ -118,8 +118,8 @@ $currentLocale = app()->getLocale();
                 ]),
                 [
                     'friendship_id' => $req->id,
-                    'type'          => 'friend_accepted',
-                    'url'           => "pupcrawl://profile/{$req->receiver_id}"
+                    'type' => 'friend_accepted',
+                    'url' => "pupcrawl://profile/{$req->receiver_id}"
                 ]
             ));
         }
@@ -218,8 +218,10 @@ $currentLocale = app()->getLocale();
         $profileIdsOnPage = collect();
 
         foreach ($friendships as $f) {
-            if ($f->sender)   $profileIdsOnPage->push($f->sender->id);
-            if ($f->receiver) $profileIdsOnPage->push($f->receiver->id);
+            if ($f->sender)
+                $profileIdsOnPage->push($f->sender->id);
+            if ($f->receiver)
+                $profileIdsOnPage->push($f->receiver->id);
         }
 
         $uniqueProfileIds = $profileIdsOnPage->unique()->values()->toArray();
@@ -254,28 +256,22 @@ $currentLocale = app()->getLocale();
     | 7️⃣ DATA MAPPING
     |--------------------------------------------------------------------------
     */
-        $data = $friendships->getCollection()->map(function ($req) use (
-            $myProfileIds,
-            $favoriteIds,
-            $userId,
-            $allDates,
-            $allConversations
-        ) {
+        $data = $friendships->getCollection()->map(function ($req) use ($myProfileIds, $favoriteIds, $userId, $allDates, $allConversations) {
 
             // Ben gönderici miyim?
             $isSenderMe = in_array($req->sender_id, $myProfileIds);
 
             $friend = $isSenderMe ? $req->receiver : $req->sender;
-            $me     = $isSenderMe ? $req->sender   : $req->receiver;
+            $me = $isSenderMe ? $req->sender : $req->receiver;
 
 
             // Pup Profile ID'ler
             $friendProfileId = $friend->id;
-            $meProfileId     = $me->id;
+            $meProfileId = $me->id;
 
             // User ID'ler (chat & conversation)
             $friendUserId = $friend->user->id;
-            $meUserId     = $me->user->id;
+            $meUserId = $me->user->id;
 
             /*
         |--------------------------------------------------------------------------
@@ -302,11 +298,11 @@ $currentLocale = app()->getLocale();
             });
 
             return [
-                'id'             => $req->id,
+                'id' => $req->id,
                 'pup_profile_id' => $friend->id,
-                'name'           => $friend->name,
-                'status'         => $req->status,
-                'sent_at'        => optional($req->created_at)->format('d-m-Y H:i'),
+                'name' => $friend->name,
+                'status' => $req->status,
+                'sent_at' => optional($req->created_at)->format('d-m-Y H:i'),
 
                 'last_chat_at' => MessageService::getLastChatDateBetweenProfiles(
                     $userId,
@@ -314,22 +310,22 @@ $currentLocale = app()->getLocale();
                 ),
 
                 'vibe' => $friend->vibe->map(fn($v) => [
-                    'id'   => $v->id,
+                    'id' => $v->id,
                     'name' => $v->translate('name'),
                 ]),
 
                 'user' => [
-                    'id'   => $friendUserId,
+                    'id' => $friendUserId,
                     'name' => $friend->user->name,
                     'role_id' => $friend->user->role_id,
                 ],
 
-                'breed'         => $friend->breed?->translate('name'),
-                'age_range'     => $friend->ageRange?->translate('name'),
+                'breed' => $friend->breed?->translate('name'),
+                'age_range' => $friend->ageRange?->translate('name'),
                 'travel_radius' => $friend->travelRadius?->translate('name'),
-                'sex'           => $friend->sex,
-                'photo'         => $friend->images->first()->path ?? null,
-                'biography'     => $friend->biography,
+                'sex' => $friend->sex,
+                'photo' => $friend->user->role_id == 4 ? $friend->photo_url : ($friend->images->first()->path ?? null),
+                'biography' => $friend->biography,
 
                 'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
 
@@ -360,10 +356,10 @@ $currentLocale = app()->getLocale();
     */
         return [
             'current_page' => $friendships->currentPage(),
-            'per_page'     => $friendships->perPage(),
-            'total'        => $friendships->total(),
-            'last_page'    => $friendships->lastPage(),
-            'data'         => $data,
+            'per_page' => $friendships->perPage(),
+            'total' => $friendships->total(),
+            'last_page' => $friendships->lastPage(),
+            'data' => $data,
         ];
     }
 
@@ -402,27 +398,27 @@ $currentLocale = app()->getLocale();
                 return [
                     'id' => $req->id,
                     'pup_profile_id' => $req->sender_id,
-                    'name'        => $req->sender->name ?? null,
-                    'status'      => $req->status,
+                    'name' => $req->sender->name ?? null,
+                    'status' => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
                     'vibe' => $req->sender->vibe->map(fn($v) => [
-                        'id'   => $v->id,
+                        'id' => $v->id,
                         'name' => $v->translate('name'),
                     ]),
-                    'user'           => [
-                        'id'       => $req->sender->user->id,
-                        'name'     => $req->sender->user->name,
-                        'role_id'  => $req->sender->user->role_id
+                    'user' => [
+                        'id' => $req->sender->user->id,
+                        'name' => $req->sender->user->name,
+                        'role_id' => $req->sender->user->role_id
                     ],
-                    'age_range'      => $req->sender->ageRange?->translate('name'),
-                    'travel_radius'  => $req->sender->travelRadius?->translate('name'),
-                    'breed'          => $req->sender->breed?->translate('name'),
-                    'sex'            => $req->sender->sex,
-                    'photo'          => $req->sender->images[0]->path ?? null,
-                    'biography'      => $req->sender->biography,
+                    'age_range' => $req->sender->ageRange?->translate('name'),
+                    'travel_radius' => $req->sender->travelRadius?->translate('name'),
+                    'breed' => $req->sender->breed?->translate('name'),
+                    'sex' => $req->sender->sex,
+                    'photo' => $req->sender->user->role_id == 4 ? $req->sender->photo_url : ($req->sender->images[0]->path ?? null),
+                    'biography' => $req->sender->biography,
 
                     'is_favorite' => in_array($req->sender->id, $favoriteIds) ? 1 : 0,
-                    'match_type'   => MatchClass::getMatchType(
+                    'match_type' => MatchClass::getMatchType(
                         MatchClass::normalize($req->sender->answers->toArray()),
                         MatchClass::normalize($req->receiver->answers->toArray())
                     ),
@@ -467,26 +463,26 @@ $currentLocale = app()->getLocale();
                 return [
                     'id' => $req->id,
                     'pup_profile_id' => $req->receiver_id,
-                    'name'        => $req->receiver->name ?? null,
-                    'status'      => $req->status,
+                    'name' => $req->receiver->name ?? null,
+                    'status' => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
                     'vibe' => $req->receiver->vibe->map(fn($v) => [
-                        'id'   => $v->id,
+                        'id' => $v->id,
                         'name' => $v->translate('name'),
                     ]),
-                    'user'           => [
-                        'id'       => $req->receiver->user->id,
-                        'name'     => $req->receiver->user->name,
-                        'role_id'  => $req->receiver->user->role_id
+                    'user' => [
+                        'id' => $req->receiver->user->id,
+                        'name' => $req->receiver->user->name,
+                        'role_id' => $req->receiver->user->role_id
                     ],
-                    'age_range'      => $req->receiver->ageRange?->translate('name'),
-                    'breed'          => $req->receiver->breed?->translate('name'),
-                    'travel_radius'  => $req->receiver->travelRadius?->translate('name'),
-                    'sex'            => $req->receiver->sex,
-                    'photo'          => $req->receiver->images[0]->path ?? null,
-                    'biography'      => $req->receiver->biography,
+                    'age_range' => $req->receiver->ageRange?->translate('name'),
+                    'breed' => $req->receiver->breed?->translate('name'),
+                    'travel_radius' => $req->receiver->travelRadius?->translate('name'),
+                    'sex' => $req->receiver->sex,
+                    'photo' => $req->receiver->images[0]->path ?? null,
+                    'biography' => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
-                    'match_type'   => MatchClass::getMatchType(
+                    'match_type' => MatchClass::getMatchType(
                         MatchClass::normalize($req->sender->answers->toArray()),
                         MatchClass::normalize($req->receiver->answers->toArray())
                     ),
@@ -534,7 +530,7 @@ $currentLocale = app()->getLocale();
 
         return [
             'total_matches' => $totalMatches,
-            'total_chats'   => $totalChats,
+            'total_chats' => $totalChats,
         ];
     }
 }
