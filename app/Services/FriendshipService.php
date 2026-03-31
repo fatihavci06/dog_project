@@ -324,7 +324,7 @@ class FriendshipService extends BaseService
                 'age_range' => $friend->ageRange?->translate('name'),
                 'travel_radius' => $friend->travelRadius?->translate('name'),
                 'sex' => $friend->sex,
-                'photo' => $friend->user->role_id == 4 ? $friend->photo_url : ($friend->images->first()->path ?? null),
+                'photo' => ($friend->user->role_id == 4) ? ($friend->user->photo_url ?? null) : ($friend->images->first()->path ?? null),
                 'biography' => $friend->biography,
 
                 'is_favorite' => in_array($friend->id, $favoriteIds) ? 1 : 0,
@@ -414,7 +414,7 @@ class FriendshipService extends BaseService
                     'travel_radius' => $req->sender->travelRadius?->translate('name'),
                     'breed' => $req->sender->breed?->translate('name'),
                     'sex' => $req->sender->sex,
-                    'photo' => $req->sender->user->role_id == 4 ? $req->sender->photo_url : ($req->sender->images[0]->path ?? null),
+                    'photo' => ($req->sender->user->role_id == 4) ? ($req->sender->user->photo_url ?? null) : ($req->sender->images[0]->path ?? null),
                     'biography' => $req->sender->biography,
 
                     'is_favorite' => in_array($req->sender->id, $favoriteIds) ? 1 : 0,
@@ -479,7 +479,7 @@ class FriendshipService extends BaseService
                     'breed' => $req->receiver->breed?->translate('name'),
                     'travel_radius' => $req->receiver->travelRadius?->translate('name'),
                     'sex' => $req->receiver->sex,
-                    'photo' => $req->receiver->images[0]->path ?? null,
+                    'photo' => ($req->receiver->user->role_id == 4) ? ($req->receiver->user->photo_url ?? null) : ($req->receiver->images[0]->path ?? null),
                     'biography' => $req->receiver->biography,
                     'is_favorite' => in_array($req->receiver->id, $favoriteIds) ? 1 : 0,
                     'match_type' => MatchClass::getMatchType(
