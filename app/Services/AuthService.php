@@ -70,14 +70,14 @@ class AuthService
             /* ---------------- USER CREATE ---------------- */
 
             $user = User::create([
-                'name'           => $data['fullname'],
-                'email'          => $data['email'],
-                'password'       => bcrypt($data['password']),
-                'role_id'        => $data['role'],
-                'status'         => 'active',
+                'name' => $data['fullname'],
+                'email' => $data['email'],
+                'password' => bcrypt($data['password']),
+                'role_id' => $data['role'],
+                'status' => 'active',
                 'preferred_language' => $data['language'] ?? 'en',
                 'privacy_policy' => $data['privacy_policy'],
-                'newlestter'     => $data['newlestter'] ?? 0,
+                'newlestter' => $data['newlestter'] ?? 0,
             ]);
 
             // User'ın pivot rolu (RBAC için)
@@ -89,7 +89,7 @@ class AuthService
                 'verification.verify',
                 Carbon::now()->addMinutes(60),
                 [
-                    'id'   => $user->id,
+                    'id' => $user->id,
                     'hash' => sha1($user->email),
                 ]
             );
@@ -106,8 +106,8 @@ class AuthService
             }
 
             return [
-                'user'              => $user,
-                'verification_url'  => $verificationUrl,
+                'user' => $user,
+                'verification_url' => $verificationUrl,
             ];
         });
     }
@@ -116,7 +116,7 @@ class AuthService
         $user = User::findOrFail($id);
 
         // hash kontrolü
-        if (! hash_equals((string) $hash, sha1($user->email))) {
+        if (!hash_equals((string) $hash, sha1($user->email))) {
             throw new \Exception('Geçersiz doğrulama linki.');
         }
 
@@ -139,7 +139,7 @@ class AuthService
     {
         $user = User::where('email', $credentials['email'])->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw new \Exception(__('validation.incorrect_credentials'));
         }
 
@@ -153,19 +153,19 @@ class AuthService
         $hash = hash('sha256', $rawRefresh);
 
         RefreshToken::create([
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'token_hash' => $hash,
             'expires_at' => now()->addDays(30),
         ]);
 
         return [
-            'access_token'  => $accessToken,
+            'access_token' => $accessToken,
             'refresh_token' => $rawRefresh,
-            'user_id'       => $user->id,
+            'user_id' => $user->id,
             'notification_status' => $user->notification_status,
-            'language'     => $user->preferred_language,
-            'pup_profiles'  => $user->pupProfiles->map(fn($p) => [
-                'id'   => $p->id,
+            'language' => $user->preferred_language,
+            'pup_profiles' => $user->pupProfiles->map(fn($p) => [
+                'id' => $p->id,
                 'name' => $p->name,
             ]),
         ];
@@ -194,10 +194,10 @@ class AuthService
     public function refresh(string $incomingToken): array
     {
 
-        $hash   = hash('sha256', $incomingToken);
+        $hash = hash('sha256', $incomingToken);
         $record = RefreshToken::where('token_hash', $hash)->first();
 
-        if (! $record || $record->revoked || now()->gt($record->expires_at)) {
+        if (!$record || $record->revoked || now()->gt($record->expires_at)) {
             throw new \Exception('Invalid refresh token');
         }
 
@@ -205,11 +205,11 @@ class AuthService
         $record->update(['revoked' => true]);
 
         // yeni refresh token üret
-        $newRaw  = bin2hex(random_bytes(64));
+        $newRaw = bin2hex(random_bytes(64));
         $newHash = hash('sha256', $newRaw);
 
         RefreshToken::create([
-            'user_id'    => $record->user_id,
+            'user_id' => $record->user_id,
             'token_hash' => $newHash,
             'expires_at' => now()->addDays(30),
         ]);
@@ -234,11 +234,11 @@ class AuthService
             ->count();
 
         return [
-            'access_token'  => $accessToken,
+            'access_token' => $accessToken,
             'refresh_token' => $newRaw,
-            'token_type'    => 'bearer',
-            'expires_in'    => 15 * 60,
-            'user'          => $user,
+            'token_type' => 'bearer',
+            'expires_in' => 15 * 60,
+            'user' => $user,
         ];
     }
     public function decodeToken(string $token)
@@ -247,7 +247,7 @@ class AuthService
     }
     public function logout(string $incomingToken): void
     {
-        $hash   = hash('sha256', $incomingToken);
+        $hash = hash('sha256', $incomingToken);
         $record = RefreshToken::where('token_hash', $hash)->first();
 
         if ($record) {
@@ -336,10 +336,10 @@ class AuthService
                     ->orWhereIn('receiver_id', $pupProfileIds);
             })
             ->count();
-              $dateCount = Date::where(function ($q) use ($pupProfileIds) {
-        $q->whereIn('sender_id', $pupProfileIds)
-          ->orWhereIn('receiver_id', $pupProfileIds);
-    })->count();
+        $dateCount = Date::where(function ($q) use ($pupProfileIds) {
+            $q->whereIn('sender_id', $pupProfileIds)
+                ->orWhereIn('receiver_id', $pupProfileIds);
+        })->count();
 
         // Token'daki rol "Dog lover" ise (role_id = 1), dog_count 0 dönsün
         $isDogLover = ((int) $user->role_id === 4);
@@ -352,9 +352,9 @@ class AuthService
             ->map(function ($profile) {
                 return [
                     'pup_profile_id' => $profile->id,
-                    'lat'      => $profile->lat,
-                    'long'     => $profile->long,
-                    'city'     => $profile->city,
+                    'lat' => $profile->lat,
+                    'long' => $profile->long,
+                    'city' => $profile->city,
                     'district' => $profile->district,
                 ];
             });
@@ -362,29 +362,29 @@ class AuthService
 
         return [
             'user' => [
-                'id'                    => $user->id,
-                'role_id'               => $user->role_id,
-                'onesignal_player_id'   => $user->onesignal_player_id,
-                'biography'             => $user->biography,
-                'name'                  => $user->name,
-                'email'                 => $user->email,
-                'date_of_birth'         => $user->date_of_birth,
-                'gender'                => $user->gender,
-                'country'               => $user->country,
-                'status'                => $user->status,
-                'newlestter'            => $user->newlestter,
-                'privacy_policy'        => $user->privacy_policy,
-                'email_verified_at'     => $user->email_verified_at,
-                'notification_status'   => $user->notification_status,
-                'preferred_language'    => $user->preferred_language,
+                'id' => $user->id,
+                'role_id' => $user->role_id,
+                'onesignal_player_id' => $user->onesignal_player_id,
+                'biography' => $user->biography,
+                'name' => $user->name,
+                'email' => $user->email,
+                'date_of_birth' => $user->date_of_birth,
+                'gender' => $user->gender,
+                'country' => $user->country,
+                'status' => $user->status,
+                'newlestter' => $user->newlestter,
+                'privacy_policy' => $user->privacy_policy,
+                'email_verified_at' => $user->email_verified_at,
+                'notification_status' => $user->notification_status,
+                'preferred_language' => $user->preferred_language,
 
                 // computed alanlar
-                'dog_count'             => $isDogLover ? 0 : $user->pupProfiles->count(),
-                'match_count'           => $friendshipCount,
-                'favorite_count'        => Favorite::where('user_id', $user->id)->count(),
-                'date_count'            =>  $dateCount,
+                'dog_count' => $isDogLover ? 0 : $user->pupProfiles->count(),
+                'match_count' => $friendshipCount,
+                'favorite_count' => Favorite::where('user_id', $user->id)->count(),
+                'date_count' => $dateCount,
 
-                'photo_url'             => $user->photo_url,
+                'photo_url' => $user->photo_url,
                 'pup_profiles' => ($isDogLover || $user->role_id == 4) ? null : $user->pupProfiles,
                 'locations' => $locations,
             ]
@@ -401,9 +401,16 @@ class AuthService
             $user->update([
                 'name' => $data['fullname'] ?? $user->name,
                 'date_of_birth' => $data['date_of_birth'] ?? $user->date_of_birth,
-                'gender'        => $data['gender'] ?? $user->gender,
-                'country'       => $data['country'] ?? $user->country,
+                'gender' => $data['gender'] ?? $user->gender,
+                'country' => $data['country'] ?? $user->country,
             ]);
+            if ($user->role_id == 4) {
+                $user->pupProfiles()->update([
+                    'biography' => $data['biography'] ?? $user->pupProfiles->first()->biography,
+                    'travel_radius' => $data['travel_radius'] ?? $user->pupProfiles->first()->travel_radius,
+                ]);
+            }
+
 
             /* ----------------------------------
            PROFILE PHOTO UPDATE
