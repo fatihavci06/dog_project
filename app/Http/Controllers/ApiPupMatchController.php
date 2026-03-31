@@ -77,7 +77,7 @@ class ApiPupMatchController extends Controller
         $offset = ($page - 1) * $perPage;
 
         // Gizlenen profilleri getir
-        $query = DiscoverBlackList::with('pupProfile.images')
+        $query = DiscoverBlackList::with(['pupProfile.images', 'pupProfile.user'])
             ->where('user_id', $authUserId)
             ->latest();
 
@@ -91,8 +91,8 @@ class ApiPupMatchController extends Controller
             ->map(fn($item) => [
                 'blacklist_id'   => $item->id,
                 'pup_profile_id' => $item->pupProfile->id,
-                'name'           => $item->pupProfile->name,
-                'photo'          => $item->pupProfile->images[0]->path ?? null,
+                'name'           => ($item->pupProfile->user->role_id == 4 && !$item->pupProfile->name) ? $item->pupProfile->user->name : $item->pupProfile->name,
+                'photo'          => ($item->pupProfile->user->role_id == 4) ? ($item->pupProfile->user->photo ?? null) : ($item->pupProfile->images[0]->path ?? null),
                 'added_at'       => $item->created_at->format('Y-m-d H:i'),
             ]);
 
