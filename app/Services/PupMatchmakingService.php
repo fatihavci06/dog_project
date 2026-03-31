@@ -199,7 +199,9 @@ class PupMatchmakingService extends BaseService
             ],
 
             'breed' => $profile->breed?->translate('name'),
-            'age' => $profile->ageRange?->translate('name'),
+            'age' => ($profile->user->role_id == 4 && $profile->user->date_of_birth)
+                ? \Carbon\Carbon::parse($profile->user->date_of_birth)->age
+                : $profile->ageRange?->translate('name'),
             'travel_radius' => $profile->travelRadius?->translate('name'),
 
             'images' => ($profile->user->role_id == 4)
@@ -544,7 +546,9 @@ class PupMatchmakingService extends BaseService
 
                 'sex' => $profile->sex,
                 'breed' => $profile->breed?->translate('name'),
-                'age' => $profile->ageRange?->translate('name'),
+                'age' => ($profile->user->role_id == 4 && $profile->user->date_of_birth)
+                    ? \Carbon\Carbon::parse($profile->user->date_of_birth)->age
+                    : $profile->ageRange?->translate('name'),
                 'travel_radius' => $profile->travelRadius?->translate('name'),
 
                 'is_favorite' => in_array($profile->id, $favoriteProfileIds),
