@@ -405,7 +405,7 @@ class AuthService
                 'country' => $data['country'] ?? $user->country,
             ]);
             if ($user->role_id == 4) {
-                $user->pupProfiles()->update([
+                PupProfile::where('user_id', $user->id)->update([
                     'biography' => $data['biography'] ?? $user->pupProfiles->first()->biography,
                     'travel_radius' => $data['travel_radius'] ?? $user->pupProfiles->first()->travel_radius,
                 ]);
