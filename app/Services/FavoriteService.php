@@ -25,7 +25,7 @@ class FavoriteService extends BaseService
             throw new Exception("This user is already in your favorites.", 400);
         }
         Favorite::create([
-            'user_id'     => $userId,
+            'user_id' => $userId,
             'favorite_id' => $favoriteId
         ]);
     }
@@ -58,10 +58,10 @@ class FavoriteService extends BaseService
         if (empty($myProfileIds)) {
             return [
                 'current_page' => $page,
-                'per_page'     => $perPage,
-                'total'        => 0,
-                'last_page'    => 0,
-                'data'         => [],
+                'per_page' => $perPage,
+                'total' => 0,
+                'last_page' => 0,
+                'data' => [],
             ];
         }
 
@@ -110,11 +110,7 @@ class FavoriteService extends BaseService
         /* ----------------------------------
      5) MAP
     ---------------------------------- */
-        $mapped = $favorites->map(function ($fav) use (
-            $favoriteIds,
-            $matchedProfileIds,
-            $authProfile
-        ) {
+        $mapped = $favorites->map(function ($fav) use ($favoriteIds, $matchedProfileIds, $authProfile) {
 
             $pup = $fav->favoritePupProfile;
 
@@ -130,26 +126,26 @@ class FavoriteService extends BaseService
 
             return [
                 'pup_profile_id' => $pup->id,
-                'name'           => ($pup->user->role_id == 4 && !$pup->name) ? $pup->user->name : $pup->name,
-                'breed'          => $pup->breed?->translate('name'),
-                'vibe'           => $pup->vibe->map(fn($v) => [
-                    'id'   => $v->id,
+                'name' => ($pup->user->role_id == 4 && !$pup->name) ? $pup->user->name : $pup->name,
+                'breed' => $pup->breed?->translate('name'),
+                'vibe' => $pup->vibe->map(fn($v) => [
+                    'id' => $v->id,
                     'name' => $v->translate('name'),
                 ]),
                 'user' => [
-                    'id'   => $pup->user->id,
+                    'id' => $pup->user->id,
                     'name' => $pup->user->name,
                     'role_id' => $pup->user->role_id
                 ],
-                'age_range'     => $pup->ageRange?->translate('name'),
+                'age_range' => $pup->ageRange?->translate('name'),
                 'travel_radius' => $pup->travelRadius?->translate('name'),
-                'sex'           => $pup->sex,
-                'photo'          => ($pup->user->role_id == 4) ? ($pup->user->photo ?? null) : ($pup->images[0]->path ?? null),
-                'biography'     => $pup->biography,
+                'sex' => $pup->sex,
+                'photo' => ($pup->user->role_id == 4) ? ($pup->user->photo_url ?? null) : ($pup->images[0]->path ?? null),
+                'biography' => $pup->biography,
 
                 // 🔥 FLAG’LER
                 'is_favorite' => in_array($pup->id, $favoriteIds) ? 1 : 0,
-                'is_match'    => 0, // zaten match olanlar listeye hiç girmiyor
+                'is_match' => 0, // zaten match olanlar listeye hiç girmiyor
                 'distance_km' => $distanceKm,
 
                 'match_type' => MatchClass::getMatchType(
@@ -162,18 +158,18 @@ class FavoriteService extends BaseService
         /* ----------------------------------
      6) Custom Pagination
     ---------------------------------- */
-        $total    = $mapped->count();
+        $total = $mapped->count();
         $lastPage = (int) ceil($total / $perPage);
-        $offset   = ($page - 1) * $perPage;
+        $offset = ($page - 1) * $perPage;
 
         $paged = $mapped->slice($offset, $perPage)->values();
 
         return [
             'current_page' => $page,
-            'per_page'     => $perPage,
-            'total'        => $total,
-            'last_page'    => $lastPage,
-            'data'         => $paged,
+            'per_page' => $perPage,
+            'total' => $total,
+            'last_page' => $lastPage,
+            'data' => $paged,
         ];
     }
 }
