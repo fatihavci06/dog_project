@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Message;
 use Illuminate\Support\Facades\URL;
+use App\Models\Announcement;
+use App\Observers\AnnouncementObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-        //
+        // Observer kayıtları
+        Announcement::observe(AnnouncementObserver::class);
     }
 }
