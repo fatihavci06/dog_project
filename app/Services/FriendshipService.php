@@ -300,7 +300,7 @@ class FriendshipService extends BaseService
             return [
                 'id' => $req->id,
                 'pup_profile_id' => $friend->id,
-                'name' => $friend->name,
+                'name' => ($friend->user->role_id == 4 && !$friend->name) ? $friend->user->name : $friend->name,
                 'status' => $req->status,
                 'sent_at' => optional($req->created_at)->format('d-m-Y H:i'),
 
@@ -321,7 +321,9 @@ class FriendshipService extends BaseService
                 ],
 
                 'breed' => $friend->breed?->translate('name'),
-                'age_range' => $friend->ageRange?->translate('name'),
+                'age' => ($friend->user->role_id == 4 && $friend->user->date_of_birth)
+                    ? \Carbon\Carbon::parse($friend->user->date_of_birth)->age
+                    : $friend->ageRange?->translate('name'),
                 'travel_radius' => $friend->travelRadius?->translate('name'),
                 'sex'           => ($friend->user->role_id == 4) ? $friend->user->gender : $friend->sex,
                 'photo' => ($friend->user->role_id == 4) ? ($friend->user->photo_url ?? null) : ($friend->images->first()->path ?? null),
@@ -398,7 +400,7 @@ class FriendshipService extends BaseService
                 return [
                     'id' => $req->id,
                     'pup_profile_id' => $req->sender_id,
-                    'name' => $req->sender->name ?? null,
+                    'name' => ($req->sender->user->role_id == 4 && !$req->sender->name) ? $req->sender->user->name : $req->sender->name,
                     'status' => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
                     'vibe' => $req->sender->vibe->map(fn($v) => [
@@ -410,7 +412,9 @@ class FriendshipService extends BaseService
                         'name' => $req->sender->user->name,
                         'role_id' => $req->sender->user->role_id
                     ],
-                    'age_range' => $req->sender->ageRange?->translate('name'),
+                    'age' => ($req->sender->user->role_id == 4 && $req->sender->user->date_of_birth)
+                        ? \Carbon\Carbon::parse($req->sender->user->date_of_birth)->age
+                        : $req->sender->ageRange?->translate('name'),
                     'travel_radius' => $req->sender->travelRadius?->translate('name'),
                     'breed' => $req->sender->breed?->translate('name'),
                     'sex'            => ($req->sender->user->role_id == 4) ? $req->sender->user->gender : $req->sender->sex,
@@ -463,7 +467,7 @@ class FriendshipService extends BaseService
                 return [
                     'id' => $req->id,
                     'pup_profile_id' => $req->receiver_id,
-                    'name' => $req->receiver->name ?? null,
+                    'name' => ($req->receiver->user->role_id == 4 && !$req->receiver->name) ? $req->receiver->user->name : $req->receiver->name,
                     'status' => $req->status,
                     'sent_at' => $req->created_at ? $req->created_at->format('d-m-Y H:i') : null,
                     'vibe' => $req->receiver->vibe->map(fn($v) => [
@@ -475,7 +479,9 @@ class FriendshipService extends BaseService
                         'name' => $req->receiver->user->name,
                         'role_id' => $req->receiver->user->role_id
                     ],
-                    'age_range' => $req->receiver->ageRange?->translate('name'),
+                    'age' => ($req->receiver->user->role_id == 4 && $req->receiver->user->date_of_birth)
+                        ? \Carbon\Carbon::parse($req->receiver->user->date_of_birth)->age
+                        : $req->receiver->ageRange?->translate('name'),
                     'breed' => $req->receiver->breed?->translate('name'),
                     'travel_radius' => $req->receiver->travelRadius?->translate('name'),
                     'sex'            => ($req->receiver->user->role_id == 4) ? $req->receiver->user->gender : $req->receiver->sex,
