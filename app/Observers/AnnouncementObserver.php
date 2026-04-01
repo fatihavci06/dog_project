@@ -69,6 +69,7 @@ class AnnouncementObserver
                 [
                     'type'            => 'announcement',
                     'announcement_id' => $announcement->id,
+                    'url'             => 'pupcrawl://announcement/' . $announcement->id,
                 ]
             );
         }

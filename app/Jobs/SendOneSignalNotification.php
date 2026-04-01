@@ -45,7 +45,8 @@ class SendOneSignalNotification implements ShouldQueue
                 'include_player_ids' => $this->playerIds,
                 'headings' => ['en' => $this->title, 'tr' => $this->title],
                 'contents' => ['en' => $this->body, 'tr' => $this->body],
-                'data' => $this->data,
+                'url'      => $this->data['url'] ?? null,
+                'data'     => $this->data,
                 'android_channel_id' => null
             ],
             'timeout' => 10
