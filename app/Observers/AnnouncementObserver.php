@@ -29,31 +29,48 @@ class AnnouncementObserver
      */
     private function sendPushNotification(Announcement $announcement, string $action): void
     {
-        // role_id null ise → tüm kullanıcılara gönder
+        // OneSignal player ID'si olan kullanıcıları getir
         $query = User::whereNotNull('onesignal_player_id');
 
         if (!is_null($announcement->role_id)) {
             $query->where('role_id', $announcement->role_id);
         }
 
-        $playerIds = $query->pluck('onesignal_player_id')->filter()->values()->toArray();
+        // Kullanıcıları dil tercihlerine göre gruplayalım
+        $users = $query->get(['onesignal_player_id', 'preferred_language']);
 
-        if (empty($playerIds)) {
+        if ($users->isEmpty()) {
             return;
         }
 
-        $title = $action === 'created'
-            ? '📢 Yeni Duyuru'
-            : '🔄 Duyuru Güncellendi';
+        $groupedUsers = $users->groupBy(function ($user) {
+            return $user->preferred_language ?? 'tr';
+        });
 
-        SendOneSignalNotification::dispatch(
-            $playerIds,
-            $title,
-            $announcement->title,
-            [
-                'type'            => 'announcement',
-                'announcement_id' => $announcement->id,
-            ]
-        );
+        foreach ($groupedUsers as $lang => $langUsers) {
+            $playerIds = $langUsers->pluck('onesignal_player_id')->filter()->values()->toArray();
+
+            if (empty($playerIds)) {
+                continue;
+            }
+
+            // Dil bazlı başlıkları belirle
+            $titleKey = $action === 'created' 
+                ? 'notifications.announcement_created_title' 
+                : 'notifications.announcement_updated_title';
+            
+            // Laravel'in çeviri sistemini kullanarak başlığı al (belirtilen dilde)
+            $title = __($titleKey, [], $lang);
+
+            SendOneSignalNotification::dispatch(
+                $playerIds,
+                $title,
+                $announcement->title,
+                [
+                    'type'            => 'announcement',
+                    'announcement_id' => $announcement->id,
+                ]
+            );
+        }
     }
 }

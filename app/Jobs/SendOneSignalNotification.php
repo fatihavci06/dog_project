@@ -43,13 +43,14 @@ class SendOneSignalNotification implements ShouldQueue
             'json' => [
                 'app_id' => env('ONESIGNAL_APP_ID'),
                 'include_player_ids' => $this->playerIds,
-                'headings' => ['en' => $this->title],
-                'contents' => ['en' => $this->body],
+                'headings' => ['en' => $this->title, 'tr' => $this->title],
+                'contents' => ['en' => $this->body, 'tr' => $this->body],
                 'data' => $this->data,
                 'android_channel_id' => null
             ],
             'timeout' => 10
         ]);
+
         $type = $this->data['type'] ?? 'info';
 
         if ($type !== 'message') {
