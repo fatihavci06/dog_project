@@ -137,7 +137,9 @@ class FavoriteService extends BaseService
                     'name' => $pup->user->name,
                     'role_id' => $pup->user->role_id
                 ],
-                'age_range' => $pup->ageRange?->translate('name'),
+                'age' => ($pup->user->role_id == 4 && $pup->user->date_of_birth)
+                    ? \Carbon\Carbon::parse($pup->user->date_of_birth)->age
+                    : $pup->ageRange?->translate('name'),
                 'travel_radius' => $pup->travelRadius?->translate('name'),
                 'sex' => ($pup->user->role_id == 4) ? $pup->user->gender : $pup->sex,
                 'photo' => ($pup->user->role_id == 4) ? ($pup->user->photo_url ?? null) : ($pup->images[0]->path ?? null),
