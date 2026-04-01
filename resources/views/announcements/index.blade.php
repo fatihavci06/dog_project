@@ -37,8 +37,6 @@
     </button>
 </div>
 
----
-
 <div class="card shadow mb-4">
     <div class="card-body">
         <form method="GET" action="{{ route('announcements.index') }}">
@@ -71,10 +69,8 @@
                 @endif
             </div>
         </form>
-    </div>
+ card   </div>
 </div>
-
----
 
 <div class="card shadow mb-4">
     <div class="card-header py-3">
@@ -89,6 +85,8 @@
                         <th>Title</th>
                         <th>Content (Snippet)</th>
                         <th>Target Role</th>
+                        <th>Starts At</th>
+                        <th>Ends At</th>
                         <th>Created Date</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -100,9 +98,9 @@
                             <td class="fw-bold">{{ $a->title }}</td>
                             <td>{{ Str::limit($a->content, 50) }}</td> {{-- Content snippet --}}
                             <td><span class="badge bg-info text-dark">{{ $a->role->name ?? 'All Users' }}</span></td>
-                            <td>
-    {{ $a->created_at ? \Carbon\Carbon::parse($a->created_at)->format('M d, Y H:i') : '' }}
-</td>
+                            <td>{{ $a->starts_at ? \Carbon\Carbon::parse($a->starts_at)->format('d-m-Y H:i') : '-' }}</td>
+                            <td>{{ $a->ends_at ? \Carbon\Carbon::parse($a->ends_at)->format('d-m-Y H:i') : '-' }}</td>
+                            <td>{{ $a->created_at ? \Carbon\Carbon::parse($a->created_at)->format('M d, Y H:i') : '' }}</td>
 
                             <td class="text-center">
                                 <div class="btn-group" role="group">
@@ -112,10 +110,12 @@
                                             onclick="editAnnouncement({{ $a->id }})"
                                             data-title="{{ $a->title }}"
                                             data-content="{{ $a->content }}"
-                                            data-role-id="{{ $a->role_id }}">
+                                            data-role-id="{{ $a->role_id }}"
+                                            data-starts-at="{{ $a->starts_at ? \Carbon\Carbon::parse($a->starts_at)->format('Y-m-d\TH:i') : '' }}"
+                                            data-ends-at="{{ $a->ends_at ? \Carbon\Carbon::parse($a->ends_at)->format('Y-m-d\TH:i') : '' }}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-<form action="{{ route('announcements.destroy', ['announcement' => $a->id]) }}" method="POST" class="d-inline delete-form">
+                                    <form action="{{ route('announcements.destroy', ['announcement' => $a->id]) }}" method="POST" class="d-inline delete-form">
                                         @csrf @method('DELETE')
                                         <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete(this)">
                                             <i class="fas fa-trash-alt"></i>
@@ -126,7 +126,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="8" class="text-center py-4">
                                 <i class="fas fa-exclamation-triangle me-2"></i> No announcements found.
                             </td>
                         </tr>
@@ -135,7 +135,7 @@
             </table>
         </div>
     </div>
-       <div class="mt-3">
+    <div class="mt-3 px-3 pb-3">
         {{ $announcements->links() }}
     </div>
 </div>
@@ -169,6 +169,16 @@
                         </select>
                         <div class="form-text">Select the user role that will see this announcement.</div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="starts_at" class="form-label fw-bold">Starts At</label>
+                            <input type="datetime-local" name="starts_at" id="starts_at" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ends_at" class="form-label fw-bold">Ends At</label>
+                            <input type="datetime-local" name="ends_at" id="ends_at" class="form-control" required>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -188,36 +198,44 @@
         document.getElementById('announcementForm').action = '{{ route('announcements.store') }}';
         document.getElementById('formMethod').value = 'POST';
         document.getElementById('title').value = '';
-        document.getElementById('content2').value = ''; // Use content2 ID
+        document.getElementById('content2').value = '';
         document.getElementById('role_id').value = '';
+        document.getElementById('starts_at').value = '';
+        document.getElementById('ends_at').value = '';
         document.getElementById('modalSaveButton').innerText = 'Save';
+        document.getElementById('modalSaveButton').disabled = false;
     }
 
     function editAnnouncement(id) {
-    const button = event.currentTarget;
-    const title = button.getAttribute('data-title');
-    const content = button.getAttribute('data-content');
-    const roleId = button.getAttribute('data-role-id');
+        const button = event.currentTarget;
+        const title = button.getAttribute('data-title');
+        const content = button.getAttribute('data-content');
+        const roleId = button.getAttribute('data-role-id');
+        const startsAt = button.getAttribute('data-starts-at');
+        const endsAt = button.getAttribute('data-ends-at');
 
-    document.getElementById('announcementModalLabel').innerText = 'Edit Announcement';
+        document.getElementById('announcementModalLabel').innerText = 'Edit Announcement';
 
-    // **ÇÖZÜM:** Rota helper'ı ile dinamik URL oluşturma.
-    // '__ID__' yer tutucusu kullanarak rotayı çağırıyoruz.
-    // 'false' parametresi, mutlak URL yerine göreceli URL oluşturulmasını sağlar.
-    const urlTemplate = '{{ route('announcements.update', ['announcement' => '__ID__'], false) }}';
+        const urlTemplate = '{{ route('announcements.update', ['announcement' => '__ID__'], false) }}';
+        const finalUrl = urlTemplate.replace('__ID__', id);
 
-    // Yer tutucuyu gerçek ID ile değiştiriyoruz.
-    const finalUrl = urlTemplate.replace('__ID__', id);
+        document.getElementById('announcementForm').action = finalUrl;
+        document.getElementById('formMethod').value = 'PUT';
+        document.getElementById('title').value = title || '';
+        document.getElementById('content2').value = content || '';
+        document.getElementById('role_id').value = roleId || '';
+        document.getElementById('starts_at').value = startsAt || '';
+        document.getElementById('ends_at').value = endsAt || '';
+        document.getElementById('modalSaveButton').innerText = 'Update';
+        document.getElementById('modalSaveButton').disabled = false;
+    }
 
-    // Bu, /announcements/update/{id} şeklinde bir URL oluşturacaktır.
-    document.getElementById('announcementForm').action = finalUrl;
-
-    document.getElementById('formMethod').value = 'PUT';
-    document.getElementById('title').value = title || '';
-    document.getElementById('content2').value = content || '';
-    document.getElementById('role_id').value = roleId || '';
-    document.getElementById('modalSaveButton').innerText = 'Update';
-}
+    // Form gönderildiğinde butonu devre dışı bırak (Çift tıklama önlemi)
+    document.getElementById('announcementForm').addEventListener('submit', function() {
+        const btn = document.getElementById('modalSaveButton');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+    });
 
     function confirmDelete(button) {
         if (confirm('Are you sure you want to delete this announcement? This action cannot be undone.')) {

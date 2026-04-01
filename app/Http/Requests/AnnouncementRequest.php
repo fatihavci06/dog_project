@@ -17,6 +17,8 @@ class AnnouncementRequest extends FormRequest
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'role_id' => 'nullable|exists:roles,id',
+            'starts_at' => 'required|date',
+            'ends_at' => 'required|date|after_or_equal:starts_at',
         ];
 
         // Example: if you want different rules for update

@@ -110,6 +110,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     });
     Route::prefix('announcments')->group(function () {
         Route::get('list', [ApiAnnouncmentController::class, 'index']);
+        Route::get('upcoming-list', [ApiAnnouncmentController::class, 'upcoming']);
         Route::get('show/{id}', [ApiAnnouncmentController::class, 'show']);
     });
 

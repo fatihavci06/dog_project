@@ -19,9 +19,12 @@ class ApiAnnouncmentController extends ApiController
     }
     public function index(Request $request)
     {
-
-
         return['data'=> $this->announcementService->apiGetList($request->all())];
+    }
+
+    public function upcoming(Request $request)
+    {
+        return['data'=> $this->announcementService->upcomingList($request->all())];
     }
 
     /**

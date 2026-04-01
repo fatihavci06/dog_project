@@ -20,24 +20,52 @@ class AnnouncementService
 
         return $query->latest()->paginate(20);
     }
+    
     public function apiGetList(array $filters = []): LengthAwarePaginator
     {
-
         $query = Announcement::query();
-
 
         if (!empty($filters['role_id'])) {
             $roleId = $filters['role_id'];
             $query->where(function ($q) use ($roleId) {
                 $q->where('role_id', $roleId)
-                    ->orWhereNull('role_id'); // role_id null olanlar da gelsin
+                    ->orWhereNull('role_id'); 
             });
         }
 
         if (!empty($filters['search'])) {
             $query->where('title', 'like', '%' . $filters['search'] . '%');
         }
-            $query->select('id', 'title', 'content');
+
+        $query->select('id', 'title', 'content');
+
+        return $query->latest()->paginate(20);
+    }
+
+    /**
+     * Önümüzdeki 7 günlük duyuruları getirir.
+     */
+    public function upcomingList(array $filters = []): LengthAwarePaginator
+    {
+        $query = Announcement::query();
+
+        if (!empty($filters['role_id'])) {
+            $roleId = $filters['role_id'];
+            $query->where(function ($q) use ($roleId) {
+                $q->where('role_id', $roleId)
+                    ->orWhereNull('role_id');
+            });
+        }
+
+        $now = now();
+        $oneWeekLater = now()->addWeek();
+        
+        $query->where(function ($q) use ($now, $oneWeekLater) {
+            $q->where('starts_at', '<=', $oneWeekLater)
+              ->where('ends_at', '>=', $now);
+        });
+
+        $query->select('id', 'title', 'content', 'starts_at', 'ends_at');
 
         return $query->latest()->paginate(20);
     }
@@ -56,15 +84,19 @@ class AnnouncementService
     {
         return $announcement->delete();
     }
+
     public function findById(array $data,string $id): ?Announcement
     {
         $query = Announcement::query();
 
-        $roleId = $data['role_id'];
+        if (!empty($data['role_id'])) {
+            $roleId = $data['role_id'];
             $query->where(function ($q) use ($roleId) {
                 $q->where('role_id', $roleId)
-                    ->orWhereNull('role_id'); // role_id null olanlar da gelsin
+                    ->orWhereNull('role_id');
             });
+        }
+        
         return $query->find($id);
     }
 }
