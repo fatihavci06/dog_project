@@ -18,6 +18,11 @@ class ProfileFlagController extends ApiController
 
     public function store(StoreFlagRequest $request)
     {
-             $this->service->flagProfile($request->user_id, $request->flagged_profile_id);
+        $flag = $this->service->flagProfile($request->user_id, $request->flagged_profile_id, $request->flag_type);
+
+        return [
+            'message' => 'Profil başarıyla şikayet edildi.',
+            'data' => $flag
+        ];
     }
 }

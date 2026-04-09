@@ -12,6 +12,7 @@ class StoreFlagRequest extends BaseRequest
     {
         return [
             'flagged_profile_id' => 'required|exists:pup_profiles,id',
+            'flag_type' => 'required|integer|in:1,2,3,4',
         ];
     }
 }

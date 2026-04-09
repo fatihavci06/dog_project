@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Mail;
 
 class FlagService
 {
-    public function flagProfile(int $authUserId, int $profileId)
+    public function flagProfile(int $authUserId, int $profileId, int $flagType)
     {
         $alreadyFlagged = ProfileFlag::where('reporter_id', $authUserId)
             ->where('flagged_profile_id', $profileId)
@@ -21,6 +21,7 @@ class FlagService
         $flag = ProfileFlag::create([
             'reporter_id' => $authUserId,
             'flagged_profile_id' => $profileId,
+            'flag_type' => $flagType,
         ]);
 
         // 2. İlişkili verileri yükle (Kullanıcı ve Profil bilgileri)

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProfileFlag extends Model
 {
-    protected $fillable = ['reporter_id', 'flagged_profile_id'];
+    protected $fillable = ['reporter_id', 'flagged_profile_id', 'flag_type'];
 
     public function reporter() {
         return $this->belongsTo(User::class, 'reporter_id');
