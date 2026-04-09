@@ -23,6 +23,13 @@
 
     <hr class="sidebar-divider border-neon-glow">
 
+    <li class="nav-item {{ request()->routeIs('profile-flags.index') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('profile-flags.index') }}">
+            <i class="fas fa-flag text-danger"></i> <span>Reported Profiles</span></a>
+    </li>
+
+    <hr class="sidebar-divider border-neon-glow">
+
     <li class="nav-item">
         <a class="nav-link" href="{{ route('announcements.index') }}">
             <i class="fas fa-broadcast-tower text-neon-yellow"></i> <span>Announcment List</span></a>

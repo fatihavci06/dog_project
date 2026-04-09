@@ -60,6 +60,10 @@ Route::middleware([AdminMiddleware::class])->group(function () {
 
 
 
+    // Profile Flags (Reported Profiles)
+    Route::get('/profile-flags', [App\Http\Controllers\WebProfileFlagController::class, 'index'])->name('profile-flags.index');
+    Route::delete('/profile-flags/{id}', [App\Http\Controllers\WebProfileFlagController::class, 'destroy'])->name('profile-flags.destroy');
+
     // Single Pup Detail Page
     Route::get('/pups/{pup}', [PupProfileController::class, 'show'])
         ->name('pups.show');

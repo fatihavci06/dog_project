@@ -143,6 +143,10 @@ class AuthService
             throw new \Exception(__('validation.incorrect_credentials'));
         }
 
+        if ($user->status !== 'active') {
+            throw new \Exception(__('messages.account_inactive'), 403);
+        }
+
         // Access token üret
 
 
