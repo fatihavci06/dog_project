@@ -364,12 +364,15 @@ class AuthService
             });
 
 
+        $dogLoverProfile = $isDogLover ? $user->pupProfiles->first() : null;
+
         return [
             'user' => [
                 'id' => $user->id,
                 'role_id' => $user->role_id,
                 'onesignal_player_id' => $user->onesignal_player_id,
-                'biography' => $user->biography,
+                'biography' => ($isDogLover && $dogLoverProfile) ? $dogLoverProfile->biography : $user->biography,
+                'travel_radius_id' => ($isDogLover && $dogLoverProfile) ? $dogLoverProfile->travel_radius_id : null,
                 'name' => $user->name,
                 'email' => $user->email,
                 'date_of_birth' => $user->date_of_birth,
