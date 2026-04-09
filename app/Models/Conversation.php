@@ -16,6 +16,14 @@ class Conversation extends Model
         return $this->belongsToMany(User::class, null, 'id', 'id'); // kullanım farklı olabilir
     }
 
+    public function userOne() {
+        return $this->belongsTo(User::class, 'user_one_id');
+    }
+
+    public function userTwo() {
+        return $this->belongsTo(User::class, 'user_two_id');
+    }
+
     public function otherUser($userId) {
         return $this->user_one_id == $userId ? $this->user_two_id : $this->user_one_id;
     }
