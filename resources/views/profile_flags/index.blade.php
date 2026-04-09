@@ -66,12 +66,15 @@
                                 {{-- Toggle User Status --}}
                                 @if($flag->flaggedProfile && $flag->flaggedProfile->user)
                                 <button class="btn btn-sm toggle-status-btn 
-                                    @if($flag->flaggedProfile->user->status === 'active') btn-success 
-                                    @elseif($flag->flaggedProfile->user->status === 'inactive') btn-warning 
-                                    @else btn-danger 
+                                    @if($flag->flaggedProfile->user->status === 'active') btn-warning 
+                                    @else btn-success 
                                     @endif" 
                                     data-id="{{ $flag->flaggedProfile->user->id }}" title="Toggle User Status">
-                                    {{ ucfirst($flag->flaggedProfile->user->status) }}
+                                    @if($flag->flaggedProfile->user->status === 'active')
+                                        <i class="fas fa-ban"></i> Suspend
+                                    @else
+                                        <i class="fas fa-check"></i> Activate
+                                    @endif
                                 </button>
                                 @endif
 
@@ -148,16 +151,17 @@ $(document).ready(function() {
                 .then(data => {
                     if(data.success){
                         let newStatus = data.status;
-                        btn.text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
+                        
                         btn.removeClass('btn-success btn-warning btn-danger');
                         if(newStatus === 'active'){
-                            btn.addClass('btn-success');
-                        } else if(newStatus === 'inactive'){
                             btn.addClass('btn-warning');
-                        } else if(newStatus === 'banned'){
-                            btn.addClass('btn-danger');
+                            btn.html('<i class="fas fa-ban"></i> Suspend');
+                        } else {
+                            btn.addClass('btn-success');
+                            btn.html('<i class="fas fa-check"></i> Activate');
                         }
-                        Swal.fire('Updated!', `User status changed to ${newStatus}.`, 'success');
+                        
+                        Swal.fire('Updated!', `User has been successfully updated.`, 'success');
                     }
                 });
             }
