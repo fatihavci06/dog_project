@@ -29,13 +29,7 @@ use App\Http\Controllers\WebAuthController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Models\MobileAppInformation;
 use Illuminate\Support\Facades\Route;
-Route::any('/redis-test', function () {
-    \Illuminate\Support\Facades\Cache::put('chat_test_key_xyz', 'Merhaba_Redis_Test!', now()->addMinutes(10));
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Redis cache has been set! Go to DB1 and search for *chat_test_key_xyz*'
-    ]);
-});
+
 
 Route::get('/login', function () {
     return view('auth.login');

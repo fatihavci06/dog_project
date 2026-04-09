@@ -17,16 +17,16 @@ class ChatService
 {
     public function getMessages(int $conversationId, int $userId, int $page = 1, int $perPage = 15, bool $paginate = false)
     {
-        $user = User::findOrFail($userId);
-        $conversation = Conversation::findOrFail($conversationId);
+        $conversation = Conversation::select('user_one_id', 'user_two_id')->findOrFail($conversationId);
 
-        if (!in_array($user->id, [$conversation->user_one_id, $conversation->user_two_id])) {
+        if (!in_array($userId, [$conversation->user_one_id, $conversation->user_two_id])) {
             throw new \Exception('forbidden');
         }
 
-        $query = Message::with('sender')
-            ->where('conversation_id', $conversationId)
-            ->orderBy('created_at', 'desc');
+        $query = Message::join('users', 'messages.sender_id', '=', 'users.id')
+            ->where('messages.conversation_id', $conversationId)
+            ->select('messages.sender_id', 'messages.receiver_id', 'messages.created_at', 'messages.body', 'users.name as sender_name')
+            ->orderBy('messages.created_at', 'desc');
 
         if ($paginate) {
             $messages = $query->paginate($perPage, ['*'], 'page', $page);
@@ -34,7 +34,7 @@ class ChatService
                 return [
                     'sender_id' => $msg->sender_id,
                     'receiver_id' => $msg->receiver_id,
-                    'sender_name' => $msg->sender->name,
+                    'sender_name' => $msg->sender_name,
                     'created_at' => $msg->created_at,
                     'body' => $msg->body,
                 ];
@@ -43,13 +43,14 @@ class ChatService
             return $messages;
         }
 
-        $messages = $query->get();
+        // Güvenlik Duvarı: Sayfalama yoksa en fazla son 300 mesajı getir. Sunucuyu çökertmemek için.
+        $messages = $query->limit(300)->get();
 
         return $messages->map(function ($msg) {
             return [
                 'sender_id' => $msg->sender_id,
                 'receiver_id' => $msg->receiver_id,
-                'sender_name' => $msg->sender->name,
+                'sender_name' => $msg->sender_name,
                 'created_at' => $msg->created_at,
                 'body' => $msg->body,
             ];
