@@ -43,6 +43,7 @@ services:
             - "3307:3306"
         volumes:
             - mysql-data:/var/lib/mysql
+            - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
 
     redis:
         image: redis:alpine
