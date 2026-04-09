@@ -58,67 +58,85 @@ class ChatService
 
     public function sendMessage(int $fromUserId, int $toUserId, ?string $body)
     {
-        $user = User::findOrFail($fromUserId);
-        $to = User::findOrFail($toUserId);
-        $toUserPupProfileIds = \App\Models\PupProfile::where('user_id', $toUserId)->pluck('id')->toArray();
-        $fromUserPupProfileIds = \App\Models\PupProfile::where('user_id', $fromUserId)->pluck('id')->toArray();
+        $min = min($fromUserId, $toUserId);
+        $max = max($fromUserId, $toUserId);
+        
+        // Cache Anahtarları (Redis İçin)
+        $blockCacheKey = "chat:block_status_{$fromUserId}_{$toUserId}";
+        $convCacheKey = "chat:conversation_{$min}_{$max}";
 
-        // Herhangi bir engelleme var mı kontrolü
-        $isBlocked = \App\Models\DiscoverBlackList::where(function ($query) use ($fromUserId, $toUserPupProfileIds) {
-            // Ben, alıcının köpeklerinden herhangi birini engelledim mi?
-            $query->where('user_id', $fromUserId)
-                ->whereIn('pup_profile_id', $toUserPupProfileIds);
-        })->orWhere(function ($query) use ($toUserId, $fromUserPupProfileIds) {
-            // Alıcı, benim köpeklerimden herhangi birini engelledi mi?
-            $query->where('user_id', $toUserId)
-                ->whereIn('pup_profile_id', $fromUserPupProfileIds);
-        })->exists();
+        // 1. Engelleme Kontrolü (Redis Önbellekli)
+        // Her seferinde DB EXITS sorgusu yatırmaktansa, sonucu 1 saatliğine Redis'te tutuyoruz.
+        $isBlocked = \Illuminate\Support\Facades\Cache::remember($blockCacheKey, now()->addMinutes(60), function () use ($fromUserId, $toUserId) {
+            $senderBlockedReceiver = \App\Models\DiscoverBlackList::where('user_id', $fromUserId)
+                ->whereExists(function ($query) use ($toUserId) {
+                    $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('pup_profiles')
+                        ->whereColumn('pup_profiles.id', 'discover_blacklists.pup_profile_id')
+                        ->where('pup_profiles.user_id', $toUserId);
+                })->exists();
 
-        // Eğer bloklanma durumu varsa işlemi durdur ve hata dön
+            if ($senderBlockedReceiver) {
+                return true;
+            }
+
+            return \App\Models\DiscoverBlackList::where('user_id', $toUserId)
+                ->whereExists(function ($query) use ($fromUserId) {
+                    $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('pup_profiles')
+                        ->whereColumn('pup_profiles.id', 'discover_blacklists.pup_profile_id')
+                        ->where('pup_profiles.user_id', $fromUserId);
+                })->exists();
+        });
+
         if ($isBlocked) {
             throw new \Exception(__('errors.cannot_send_message_blocked'), 403);
         }
-        // conversation bul veya oluştur
-        [$a, $b] = [$user->id, $to->id];
-        if ($a > $b)
-            [$a, $b] = [$b, $a];
 
-        $conv = Conversation::firstOrCreate([
-            'user_one_id' => $a,
-            'user_two_id' => $b
-        ]);
+        // 2. Sohbet (Conversation) Bul/Oluştur (Redis Önbellekli)
+        // firstOrCreate içindeki SELECT sorgusundan dahi tasarruf edip, Sohbet ID'sini 7 gün Redis'te tutuyoruz.
+        $convId = \Illuminate\Support\Facades\Cache::remember($convCacheKey, now()->addDays(7), function () use ($min, $max) {
+            $conv = Conversation::firstOrCreate([
+                'user_one_id' => $min,
+                'user_two_id' => $max
+            ]);
+            return $conv->id;
+        });
 
+        // 3. Mesajı Kaydet (Veritabanındaki TEK I/O İşlemi!)
         $message = Message::create([
-            'conversation_id' => $conv->id,
-            'sender_id' => $user->id,
-            'receiver_id' => $to->id,
+            'conversation_id' => $convId,
+            'sender_id' => $fromUserId,
+            'receiver_id' => $toUserId,
             'body' => $body,
             'status' => 'sent'
         ]);
 
-        // Broadcast
+        // 4. Asenkron (Queued) Broadcast Tetikleme
         event(new MessageSent($message));
 
-        // OneSignal push
-        $player = !empty($to->onesignal_player_id) ? [$to->onesignal_player_id] : [];
-        if (!empty($player)) {
+        // 5. Alıcı Push Bildirim Verilerini Sadece Gerekli Sütunlarla Çekme
+        $to = User::select('id', 'onesignal_player_id', 'preferred_language')->find($toUserId);
+
+        if ($to && !empty($to->onesignal_player_id)) {
             $currentLocale = app()->getLocale();
 
-            // alıcı kullanıcının dili
             app()->setLocale($to->preferred_language ?? config('app.locale'));
+            
             dispatch(new SendOneSignalNotification(
-                $player,
+                [$to->onesignal_player_id],
                 __('notifications.new_message'),
-                mb_strimwidth($body, 0, 100),
-            [
-                'conversation_id' => $conv->id,
-                'type' => 'message',
-                'url' => "pupcrawl://chat/{$conv->id}" // Dinamik link
-            ]
-                ));
+                mb_strimwidth((string)$body, 0, 100),
+                [
+                    'conversation_id' => $convId,
+                    'type' => 'message',
+                    'url' => "pupcrawl://chat/{$convId}" // Dinamik link
+                ]
+            ));
+
+            app()->setLocale($currentLocale ?? config('app.locale'));
         }
 
-        app()->setLocale($currentLocale ?? config('app.locale'));
         return $message;
     }
 
