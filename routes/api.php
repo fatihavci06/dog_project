@@ -29,6 +29,13 @@ use App\Http\Middleware\JwtMiddleware;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/redis-test', function () {
+    \Illuminate\Support\Facades\Cache::put('chat_test_key_xyz', 'Merhaba_Redis_Test!', now()->addMinutes(10));
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Redis cache has been set! Go to DB1 and search for *chat_test_key_xyz*'
+    ]);
+});
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'loginApi']);
