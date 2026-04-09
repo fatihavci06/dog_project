@@ -61,7 +61,7 @@ class ChatService
     {
         $min = min($fromUserId, $toUserId);
         $max = max($fromUserId, $toUserId);
-        
+
         // Cache Anahtarları (Redis İçin)
         $blockCacheKey = "chat:block_status_{$fromUserId}_{$toUserId}";
         $convCacheKey = "chat:conversation_{$min}_{$max}";
@@ -123,11 +123,11 @@ class ChatService
             $currentLocale = app()->getLocale();
 
             app()->setLocale($to->preferred_language ?? config('app.locale'));
-            
+
             dispatch(new SendOneSignalNotification(
                 [$to->onesignal_player_id],
                 __('notifications.new_message'),
-                mb_strimwidth((string)$body, 0, 100),
+                mb_strimwidth((string) $body, 0, 100),
                 [
                     'conversation_id' => $convId,
                     'type' => 'message',
@@ -143,112 +143,154 @@ class ChatService
 
     public function getInbox(int $userId, bool $excludeBlacklisted = false)
     {
+        $user = User::findOrFail($userId);
+
         $myPupProfileIds = PupProfile::where('user_id', $userId)->pluck('id');
 
-        // Kara listeleri hesapla (Sadece id'ler üzerinden, son derece hafiftir)
-        $blockedByMeUserIds = DiscoverBlackList::where('user_id', $userId)
-            ->join('pup_profiles', 'pup_profiles.id', '=', 'discover_blacklists.pup_profile_id')
-            ->pluck('pup_profiles.user_id');
+        // Benim kara listeye aldığım pup profillerin sahipleri
+        $blockedByMeUserIds = PupProfile::whereIn(
+            'id',
+            DiscoverBlackList::where('user_id', $userId)->pluck('pup_profile_id')
+        )->pluck('user_id');
 
-        $blockedMeUserIds = DiscoverBlackList::whereIn('pup_profile_id', $myPupProfileIds)
-            ->pluck('user_id');
+        // Beni (pup profillerimi) kara listeye alan kullanıcılar
+        $blockedMeUserIds = DiscoverBlackList::whereIn('pup_profile_id', $myPupProfileIds)->pluck('user_id');
 
-        $blacklistedUserIds = $blockedByMeUserIds->merge($blockedMeUserIds)->unique()->values()->all();
+        // İki yönlü kara liste user seti
+        $blacklistedUserIds = $blockedByMeUserIds
+            ->merge($blockedMeUserIds)
+            ->unique()
+            ->values()
+            ->all();
 
-        // Eşleşme (Match) Kullanıcılarını Hızla Hesapla
-        $matchUserIds = [];
-        if ($myPupProfileIds->isNotEmpty()) {
-            $otherPupIds = Friendship::where('status', 'accepted')
-                ->where(function ($q) use ($myPupProfileIds) {
-                    $q->whereIn('sender_id', $myPupProfileIds)
-                        ->orWhereIn('receiver_id', $myPupProfileIds);
-                })
-                ->get(['sender_id', 'receiver_id'])
-                ->flatMap(function ($f) use ($myPupProfileIds) {
-                    return in_array($f->sender_id, $myPupProfileIds->toArray()) ? [$f->receiver_id] : [$f->sender_id];
-                })
-                ->unique()
-                ->toArray();
-                
-            if (!empty($otherPupIds)) {
-                $matchUserIds = PupProfile::whereIn('id', $otherPupIds)->pluck('user_id')->unique()->toArray();
-            }
-        }
-
-        // Asıl Optimizasyon: N+1 Sorunsuz, Eager Loading Destekli ve SQL Count'lu Ana Sorgu
-        $conversationsQuery = Conversation::where('user_one_id', $userId)
-            ->orWhere('user_two_id', $userId)
+        $conversations = Conversation::where('user_one_id', $user->id)
+            ->orWhere('user_two_id', $user->id)
             ->with([
-                'userOne.pupProfiles.images', 
-                'userTwo.pupProfiles.images',
                 'messages' => function ($q) {
                     $q->latest()->limit(1);
                 }
             ])
-            // SQL ile unread_count çekimini PHP döngüsü yerine direkt Query'e entegre ediyoruz:
-            ->addSelect(['*']) // Standart kolonlar
-            ->addSelect([
-                'unread_count' => Message::selectRaw('count(*)')
-                    ->whereColumn('conversation_id', 'conversations.id')
-                    ->where('receiver_id', $userId)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($conv) use ($user) {
+                $otherUserId = $conv->user_one_id === $user->id ? $conv->user_two_id : $conv->user_one_id;
+                $otherUser = User::find($otherUserId);
+                if (!$otherUser) {
+                    return null;
+                }
+
+                $unreadCount = Message::where('conversation_id', $conv->id)
+                    ->where('receiver_id', $user->id)
                     ->whereNull('read_at')
-            ])
-            ->orderByDesc('updated_at')
-            ->take(100); // Sistemin ram/bellek taşmasından çökmesini engelleyen Güvenlik Bariyeri
+                    ->count();
 
-        $conversations = $conversationsQuery->get();
+                $lastMessage = $conv->messages->first();
 
-        $result = $conversations->map(function ($conv) use ($userId, $blacklistedUserIds, $matchUserIds) {
-            $otherUser = $conv->user_one_id === $userId ? $conv->userTwo : $conv->userOne;
+                return [
+                    'conversation_id' => $conv->id,
+                    'is_black_list' => false,
+                    'is_match' => false,
+                    'user' => [
+                        'id' => $otherUser->id,
+                        'name' => $otherUser->name,
+                        'avatar' => $otherUser->photo_url ?? null,
+                    ],
+                    'pup_profiles' => $otherUser->pupProfiles->take(1)->map(
+                        function ($pup) {
+                            return [
+                                'id' => $pup->id,
+                                'name' => $pup->name,
+                                'images' => $pup->images->take(1)->map(fn($img) => $img->path)->toArray(),
+                            ];
+                        }
+                    )->toArray(),
+                    'last_message' => $lastMessage ? [
+                        'id' => $lastMessage->id,
+                        'conversation_id' => $lastMessage->conversation_id,
+                        'sender_id' => $lastMessage->sender_id,
+                        'receiver_id' => $lastMessage->receiver_id,
+                        'body' => $lastMessage->body,
+                        'status' => $lastMessage->status,
+                        'created_at' => $lastMessage->created_at,
+                        'updated_at' => $lastMessage->updated_at,
+                    ] : null,
+                    'unread_count' => $unreadCount,
+                    'updated_at' => $conv->updated_at,
+                ];
+            })
+            ->filter()
+            ->sortByDesc('updated_at')
+            ->values();
 
-            if (!$otherUser) {
-                return null;
+        // Inbox'taki diğer user'lar için "match" hesapla (friendships.status = accepted)
+        $otherUserIds = $conversations
+            ->pluck('user.id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $matchUserIds = [];
+        if ($otherUserIds->isNotEmpty() && $myPupProfileIds->isNotEmpty()) {
+            $otherPupProfiles = PupProfile::whereIn('user_id', $otherUserIds)->get(['id', 'user_id']);
+            $otherPupProfileIds = $otherPupProfiles->pluck('id')->values();
+
+            if ($otherPupProfileIds->isNotEmpty()) {
+                $pupIdToUserId = PupProfile::whereIn(
+                    'id',
+                    $myPupProfileIds->merge($otherPupProfileIds)
+                )->pluck('user_id', 'id');
+
+                $friendships = Friendship::query()
+                    ->where('status', 'accepted')
+                    ->where(function ($q) use ($myPupProfileIds, $otherPupProfileIds) {
+                        $q->where(
+                            function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
+                                $q2->whereIn('sender_id', $myPupProfileIds)
+                                    ->whereIn('receiver_id', $otherPupProfileIds);
+                            }
+                        )->orWhere(
+                                function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
+                                    $q2->whereIn('sender_id', $otherPupProfileIds)
+                                        ->whereIn('receiver_id', $myPupProfileIds);
+                                }
+                            );
+                    })
+                    ->get(['sender_id', 'receiver_id']);
+
+                $matchUserIds = $friendships
+                    ->map(function ($f) use ($pupIdToUserId, $userId) {
+                        $senderUserId = $pupIdToUserId[$f->sender_id] ?? null;
+                        $receiverUserId = $pupIdToUserId[$f->receiver_id] ?? null;
+                        if ($senderUserId === null || $receiverUserId === null) {
+                            return null;
+                        }
+                        return $senderUserId === $userId ? $receiverUserId : $senderUserId;
+                    })
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
             }
-
-            $isBlackList = in_array($otherUser->id, $blacklistedUserIds);
-            $isMatch = in_array($otherUser->id, $matchUserIds);
-
-            $unreadCount = $conv->unread_count ?? 0;
-            $lastMessage = $conv->messages->first();
-
-            return [
-                'conversation_id' => $conv->id,
-                'is_black_list' => $isBlackList,
-                'is_match' => $isMatch,
-                'user' => [
-                    'id' => $otherUser->id,
-                    'name' => $otherUser->name,
-                    'avatar' => $otherUser->photo_url ?? null,
-                ],
-                'pup_profiles' => $otherUser->pupProfiles->take(1)->map(function ($pup) {
-                    return [
-                        'id' => $pup->id,
-                        'name' => $pup->name,
-                        'images' => $pup->images->take(1)->map(fn($img) => $img->path)->toArray(),
-                    ];
-                })->toArray(),
-                'last_message' => $lastMessage ? [
-                    'id' => $lastMessage->id,
-                    'conversation_id' => $lastMessage->conversation_id,
-                    'sender_id' => $lastMessage->sender_id,
-                    'receiver_id' => $lastMessage->receiver_id,
-                    'body' => $lastMessage->body,
-                    'status' => $lastMessage->status,
-                    'created_at' => $lastMessage->created_at,
-                    'updated_at' => $lastMessage->updated_at,
-                ] : null,
-                'unread_count' => $unreadCount,
-                'updated_at' => $conv->updated_at,
-            ];
-        })->filter()->values();
-
-        if ($excludeBlacklisted && !empty($blacklistedUserIds)) {
-            $result = $result->reject(function ($item) {
-                return $item['is_black_list'] === true;
-            })->values();
         }
 
-        return $result;
+        $conversations = $conversations
+            ->map(function (array $item) use ($blacklistedUserIds, $matchUserIds) {
+                $otherUserId = $item['user']['id'] ?? null;
+                $item['is_black_list'] = $otherUserId !== null
+                    && in_array($otherUserId, $blacklistedUserIds, true);
+                $item['is_match'] = $otherUserId !== null
+                    && in_array($otherUserId, $matchUserIds, true);
+                return $item;
+            })
+            ->values();
+
+        if ($excludeBlacklisted && !empty($blacklistedUserIds)) {
+            $conversations = $conversations
+                ->reject(fn($item) => (bool) ($item['is_black_list'] ?? false))
+                ->values();
+        }
+
+        return $conversations;
     }
 
     public function markRead(int $conversationId, int $userId)
@@ -298,17 +340,17 @@ class ChatService
             ->take(5)
             ->get()
             ->map(function ($msg) {
-            return [
-            'id' => $msg->id,
-            'body' => $msg->body,
-            'conversation_id' => $msg->conversation_id,
-            'sender' => [
-            'name' => $msg->sender->name ?? 'Unknown',
-            'profile_photo_url' => $msg->sender->profile_photo_url ?? asset('storage/profile.jpg'),
-            ],
-            'created_at' => $msg->created_at->toDateTimeString(),
-            ];
-        });
+                return [
+                    'id' => $msg->id,
+                    'body' => $msg->body,
+                    'conversation_id' => $msg->conversation_id,
+                    'sender' => [
+                        'name' => $msg->sender->name ?? 'Unknown',
+                        'profile_photo_url' => $msg->sender->profile_photo_url ?? asset('storage/profile.jpg'),
+                    ],
+                    'created_at' => $msg->created_at->toDateTimeString(),
+                ];
+            });
 
         $unreadCount = Message::where('receiver_id', $userId)
             ->whereNull('read_at')
@@ -418,10 +460,10 @@ class ChatService
         })
             ->get()
             ->map(function ($message) use ($userId) {
-            return $message->sender_id == $userId
-            ? $message->receiver_id
-            : $message->sender_id;
-        })
+                return $message->sender_id == $userId
+                    ? $message->receiver_id
+                    : $message->sender_id;
+            })
             ->unique()
             ->values();
 
@@ -472,32 +514,34 @@ class ChatService
                 $friendships = Friendship::query()
                     ->where('status', 'accepted')
                     ->where(function ($q) use ($myPupProfileIds, $otherPupProfileIds) {
-                    $q->where(function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
-                            $q2->whereIn('sender_id', $myPupProfileIds)
-                                ->whereIn('receiver_id', $otherPupProfileIds);
-                        }
-                        )->orWhere(function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
-                            $q2->whereIn('sender_id', $otherPupProfileIds)
-                                ->whereIn('receiver_id', $myPupProfileIds);
-                        }
-                        );
+                        $q->where(
+                            function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
+                                $q2->whereIn('sender_id', $myPupProfileIds)
+                                    ->whereIn('receiver_id', $otherPupProfileIds);
+                            }
+                        )->orWhere(
+                                function ($q2) use ($myPupProfileIds, $otherPupProfileIds) {
+                                    $q2->whereIn('sender_id', $otherPupProfileIds)
+                                        ->whereIn('receiver_id', $myPupProfileIds);
+                                }
+                            );
                     })
                     ->get(['sender_id', 'receiver_id']);
 
                 $matchUserIds = $friendships
                     ->map(function ($f) use ($pupIdToUserId, $userId) {
 
-                    $senderUserId = $pupIdToUserId[$f->sender_id] ?? null;
-                    $receiverUserId = $pupIdToUserId[$f->receiver_id] ?? null;
+                        $senderUserId = $pupIdToUserId[$f->sender_id] ?? null;
+                        $receiverUserId = $pupIdToUserId[$f->receiver_id] ?? null;
 
-                    if (!$senderUserId || !$receiverUserId) {
-                        return null;
-                    }
+                        if (!$senderUserId || !$receiverUserId) {
+                            return null;
+                        }
 
-                    return $senderUserId === $userId
-                    ? $receiverUserId
-                    : $senderUserId;
-                })
+                        return $senderUserId === $userId
+                            ? $receiverUserId
+                            : $senderUserId;
+                    })
                     ->filter()
                     ->unique()
                     ->values()
@@ -512,14 +556,14 @@ class ChatService
          */
         $mapped = User::with([
             'pupProfiles' => function ($q) use ($userId) {
-            $q->select('id', 'user_id', 'name')
-                ->where('user_id', '!=', $userId)
-                ->with([
-                    'images' => function ($q) {
-                $q->select('id', 'pup_profile_id', 'path');
+                $q->select('id', 'user_id', 'name')
+                    ->where('user_id', '!=', $userId)
+                    ->with([
+                        'images' => function ($q) {
+                            $q->select('id', 'pup_profile_id', 'path');
+                        }
+                    ]);
             }
-                ]);
-        }
         ])
             ->whereIn('id', $chatUserIds)
             ->select('id', 'name', 'photo')
@@ -527,25 +571,27 @@ class ChatService
             ->filter(fn($user) => $user->pupProfiles->isNotEmpty())
             ->map(function ($user) use ($blacklistedUserIds, $matchUserIds) {
 
-            $user->user_id = $user->id;
-            $user->makeHidden('photo');
+                $user->user_id = $user->id;
+                $user->makeHidden('photo');
 
-            // ✅ EKLENEN ALANLAR
-            $user->is_black_list = in_array($user->id, $blacklistedUserIds, true);
-            $user->is_match = in_array($user->id, $matchUserIds, true);
+                // ✅ EKLENEN ALANLAR
+                $user->is_black_list = in_array($user->id, $blacklistedUserIds, true);
+                $user->is_match = in_array($user->id, $matchUserIds, true);
 
-            $user->pupProfiles->each(function ($pup) {
-                    $pup->makeHidden('user_id');
+                $user->pupProfiles->each(
+                    function ($pup) {
+                        $pup->makeHidden('user_id');
 
-                    $pup->images->each(function ($image) {
-                            $image->makeHidden(['id', 'pup_profile_id']);
-                        }
+                        $pup->images->each(
+                            function ($image) {
+                                $image->makeHidden(['id', 'pup_profile_id']);
+                            }
                         );
                     }
-                    );
+                );
 
-                    return $user;
-                })
+                return $user;
+            })
             ->values();
 
         /*
@@ -554,7 +600,7 @@ class ChatService
          |--------------------------------------------------------------------------
          */
         $total = $mapped->count();
-        $lastPage = (int)ceil($total / $perPage);
+        $lastPage = (int) ceil($total / $perPage);
         $offset = ($page - 1) * $perPage;
 
         $paged = $mapped->slice($offset, $perPage)->values();
