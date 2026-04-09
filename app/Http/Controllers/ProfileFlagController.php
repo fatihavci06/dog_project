@@ -12,17 +12,15 @@ class ProfileFlagController extends ApiController
 {
     protected $service;
 
-    public function __construct(FlagService $service) {
+    public function __construct(FlagService $service)
+    {
         $this->service = $service;
     }
 
     public function store(StoreFlagRequest $request)
     {
-        $flag = $this->service->flagProfile($request->user_id, $request->flagged_profile_id, $request->flag_type);
+        return $this->service->flagProfile($request->user_id, $request->flagged_profile_id, $request->flag_type);
 
-        return [
-            'message' => 'Profil başarıyla şikayet edildi.',
-            'data' => $flag
-        ];
+
     }
 }
