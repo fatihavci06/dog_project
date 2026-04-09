@@ -14,7 +14,7 @@ class FlagService
             ->exists();
 
         if ($alreadyFlagged) {
-            throw new \Exception('Bu profili zaten bildirdiniz.', 422);
+            throw new \Exception(__('messages.profile_already_flagged'), 422);
         }
 
         // 1. Veritabanına kaydet
