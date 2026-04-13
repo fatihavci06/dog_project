@@ -10,20 +10,31 @@ class PlanService
     /**
      * Tüm planları listele
      */
-    public function getAllPlans(int $userId)
+    public function getAllPlans(int $userId, $pupProfileId = null)
     {
-        // Sadece giriş yapan kullanıcının planlarını getir
-        return Plan::where('user_id', $userId)->orderBy('start_date', 'asc')->get();
+        // Sadece giriş yapan kullanıcının planlarını getir, varsa pup profiline göre filtrele
+        $query = Plan::where('user_id', $userId);
+        
+        if ($pupProfileId) {
+            $query->where('pup_profile_id', $pupProfileId);
+        }
+        
+        return $query->orderBy('start_date', 'asc')->get();
     }
-    public function getUpcomingPlans(int $userId)
+    public function getUpcomingPlans(int $userId, $pupProfileId = null)
     {
-        return Plan::where('user_id', $userId)
+        $query = Plan::where('user_id', $userId)
             ->where('cancelled', false)
             ->whereBetween('start_date', [
                 now()->startOfDay(),          // Bugünün başlangıcı (00:00:00)
                 now()->addMonth()->endOfDay() // 1 ay sonrasının bitişi (23:59:59)
-            ])
-            ->orderBy('start_date', 'asc')
+            ]);
+
+        if ($pupProfileId) {
+            $query->where('pup_profile_id', $pupProfileId);
+        }
+
+        return $query->orderBy('start_date', 'asc')
             ->take(7)
             ->get();
     }

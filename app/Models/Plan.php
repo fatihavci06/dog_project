@@ -11,6 +11,7 @@ class Plan extends Model
 
     protected $fillable = [
         'user_id',
+        'pup_profile_id',
         'title',
         'start_date',
         'end_date',
@@ -45,5 +46,10 @@ class Plan extends Model
 {
     return $this->belongsTo(Date::class);
 }
+
+    public function pupProfile()
+    {
+        return $this->belongsTo(PupProfile::class);
+    }
 
 }

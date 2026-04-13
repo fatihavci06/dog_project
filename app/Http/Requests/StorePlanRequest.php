@@ -40,6 +40,7 @@ protected function prepareForValidation()
             'cancelled' => 'nullable|boolean',
             'participant_id' => 'nullable|integer',
             'user_id' => 'required|integer|exists:users,id',
+            'pup_profile_id' => 'nullable|integer|exists:pup_profiles,id',
         ];
     }
 }

@@ -25,9 +25,8 @@ class ApiPlanController extends ApiController
      */
     public function index(Request $request)
     {
-       return $this->planService->getAllPlans($request->user_id);
-
-
+       $pupProfileId = $request->get('pup_profile_id');
+       return $this->planService->getAllPlans($request->user_id, $pupProfileId);
     }
 
     /**
@@ -77,8 +76,7 @@ class ApiPlanController extends ApiController
     public function upcoming(Request $request)
     {
         // Policy kontrolü: $this->authorize('delete', $plan);
-
-       return $this->planService->getUpcomingPlans($request->user_id);
-
+        $pupProfileId = $request->get('pup_profile_id');
+        return $this->planService->getUpcomingPlans($request->user_id, $pupProfileId);
     }
 }
