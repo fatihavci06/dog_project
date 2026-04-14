@@ -123,15 +123,19 @@ class NotificationService
                 $join->on('nu.notification_id', '=', 'notifications.id')
                     ->where('nu.user_id', $userId);
             })
+
+            // 🔥 ASIL FİLTRE BURASI
             ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
-                // User’a atanmışsa
+
+                // User’a atanmışsa → her zaman göster
                 $q->whereExists(function ($sub) use ($userId) {
                     $sub->selectRaw(1)
                         ->from('notification_user')
                         ->whereColumn('notification_user.notification_id', 'notifications.id')
                         ->where('notification_user.user_id', $userId);
                 })
-                    // Role atanmışsa
+
+                    // Role atanmışsa → kayıt tarihinden sonra
                     ->orWhere(function ($sub) use ($roleId, $userCreatedAt) {
                     $sub->whereExists(function ($r) use ($roleId) {
                         $r->selectRaw(1)
@@ -141,7 +145,8 @@ class NotificationService
                     })
                         ->where('notifications.created_at', '>=', $userCreatedAt);
                 })
-                    // Genel bildirimler
+
+                    // Genel → kayıt tarihinden sonra
                     ->orWhere(function ($sub) use ($userCreatedAt) {
                     $sub->whereNotExists(function ($n) {
                         $n->selectRaw(1)
@@ -157,7 +162,7 @@ class NotificationService
                 });
             });
 
-        // Okunma filtresi
+        // 🔹 Okunma filtresi
         if ($onlyUnread || $isRead === false) {
             $query->where(function ($q) {
                 $q->whereNull('nu.is_read')
@@ -180,20 +185,7 @@ class NotificationService
             ->distinct()
             ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
             ->paginate($perPage, ['*'], 'page', $page);
-
-        // 🔥 Mobili bozmayan gruplama işlemi:
-        // data: [ { "type": "sistem", "items": [...] }, { "type": "siparis", "items": [...] } ]
-        $groupedData = $paginator->getCollection()
-            ->groupBy('type')
-            ->map(function ($items, $type) {
-                return [
-                    'type' => $type,
-                    'items' => $items->values()->all()
-                ];
-            })
-            ->values() // Anahtarları (0, 1, 2...) diye resetler, böylece JSON'da [] (Array) olur.
-            ->all();
-
+        $groupedData = $paginator->getCollection()->groupBy('type')->toArray();
         return [
             'current_page' => $paginator->currentPage(),
             'per_page' => $paginator->perPage(),
@@ -202,6 +194,7 @@ class NotificationService
             'data' => $groupedData,
         ];
     }
+
     public function markAsRead(int $userId, int $notificationId): bool
     {
         // 1. Önce bildirimin gerçekten var olup olmadığını kontrol edelim
