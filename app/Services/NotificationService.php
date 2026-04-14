@@ -185,13 +185,13 @@ class NotificationService
             ->distinct()
             ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
             ->paginate($perPage, ['*'], 'page', $page);
-
+        $groupedData = $paginator->getCollection()->groupBy('type')->toArray();
         return [
             'current_page' => $paginator->currentPage(),
             'per_page' => $paginator->perPage(),
             'total' => $paginator->total(),
             'last_page' => $paginator->lastPage(),
-            'data' => $paginator->items(),
+            'data' => $groupedData,
         ];
     }
 
