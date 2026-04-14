@@ -186,12 +186,20 @@ class NotificationService
             ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
             ->paginate($perPage, ['*'], 'page', $page);
 
+        // 🔹 En garanti gruplama yöntemi: Standart PHP ile
+        $groupedData = [];
+        foreach ($paginator->items() as $item) {
+            // Verinin obje veya dizi olarak gelme ihtimaline karşı güvenli okuma
+            $type = is_object($item) ? $item->type : $item['type'];
+            $groupedData[$type][] = $item;
+        }
+
         return [
             'current_page' => $paginator->currentPage(),
             'per_page' => $paginator->perPage(),
             'total' => $paginator->total(),
             'last_page' => $paginator->lastPage(),
-            'data' => $paginator->items(),
+            'data' => $groupedData, // 🔹 Gruplanmış veriyi buraya veriyoruz
         ];
     }
 
