@@ -39,14 +39,19 @@ class ApiNotificationController extends ApiController
     }
     public function notificationsList(Request $request)
     {
+        $request->validate([
+            'type' => 'nullable|string|in:announcement,date_request,date_response,friend_accepted,friend_request,info,message',
+        ]);
+
         return $this->notificationService
             ->getUserNotifications(
                 $request->user_id,
                 $request->role_id,
                 $request->is_read,
                 $request->page ?? 1,
-                $request->per_page ?? 15
-
+                $request->per_page ?? 15,
+                false,
+                $request->type
             );
     }
 }
