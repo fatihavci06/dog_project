@@ -22,7 +22,7 @@ class MatchClass
     {
         $perfect = true;
         $strongCount = 0;
-        $goodCount   = 0;
+        $goodCount = 0;
 
         foreach ($a as $qId => $aAns) {
 
@@ -98,6 +98,6 @@ class MatchClass
         /**
          * 🤔 No Match
          */
-         return __('app.no_match');
+        return __('app.no_match');
     }
 }

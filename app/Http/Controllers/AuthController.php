@@ -100,11 +100,17 @@ class AuthController extends ApiController
     }
     public function register(RegisterRequest $request)
     {
+        $result = $this->authService->register($request->all());
 
-        $this->authService->register($request->all());
-        return [
-            'message' => 'auth.register_success'
-        ];
+        return response()->json([
+            'message'  => __('auth.register_success'),
+            'user'     => [
+                'id'        => $result['user']->id,
+                'name'      => $result['user']->name,
+                'email'     => $result['user']->email,
+                'photo_url' => $result['user']->photo_url,
+            ],
+        ], 201);
     }
     // public function register2(RegisterRequest $request)
     // {

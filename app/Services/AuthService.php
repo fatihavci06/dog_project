@@ -83,6 +83,19 @@ class AuthService
             // User'ın pivot rolu (RBAC için)
             $user->roles()->attach($data['role']);
 
+            /* ---------------- PROFILE PHOTO (BASE64) ---------------- */
+
+            if (!empty($data['photo'])) {
+                $imageData = preg_replace('#^data:image/\w+;base64,#i', '', $data['photo']);
+                $imageData = str_replace(' ', '+', $imageData);
+
+                $fileName = 'users/' . Str::uuid() . '.jpg';
+                Storage::disk('public')->put($fileName, base64_decode($imageData));
+
+                $user->photo = $fileName;
+                $user->save();
+            }
+
             /* ---------------- VERIFY EMAIL ---------------- */
 
             $verificationUrl = URL::temporarySignedRoute(
@@ -97,6 +110,7 @@ class AuthService
             Mail::to($user->email)->send(new VerifyEmailMail($user));
 
             /* ---------------- PUP PROFILE CREATE ---------------- */
+
             if (isset($data['answers'])) {
                 $data['pup_profile']['answers'] = $data['answers'];
             }
@@ -106,7 +120,7 @@ class AuthService
             }
 
             return [
-                'user' => $user,
+                'user' => $user->fresh(),
                 'verification_url' => $verificationUrl,
             ];
         });

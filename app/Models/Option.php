@@ -10,7 +10,7 @@ class Option extends Model
 {
     use \App\Traits\HasTranslations;
 
-    protected $fillable = ['order_index', 'is_active'];
+    protected $fillable = ['question_id', 'order_index', 'is_active'];
 
     public function question()
     {
