@@ -51,16 +51,16 @@ class RegisterRequest extends BaseRequest
 
             /* ------------------------------ MULTI SELECT ------------------------------ */
 
-            'pup_profile.looking_for_id' => 'nullable|array|min:1',
+            'pup_profile.looking_for_id' => 'nullable|array',
             'pup_profile.looking_for_id.*' => 'integer|distinct|exists:looking_fors,id',
 
-            'pup_profile.vibe_id' => 'nullable|array|min:1',
+            'pup_profile.vibe_id' => 'nullable|array',
             'pup_profile.vibe_id.*' => 'integer|distinct|exists:vibes,id',
 
-            'pup_profile.health_info_id' => 'nullable|array|min:1',
+            'pup_profile.health_info_id' => 'nullable|array',
             'pup_profile.health_info_id.*' => 'integer|distinct|exists:health_infos,id',
 
-            'pup_profile.availability_for_meetup_id' => 'nullable|array|min:1',
+            'pup_profile.availability_for_meetup_id' => 'nullable|array',
             'pup_profile.availability_for_meetup_id.*' => 'integer|distinct|exists:availability_for_meetups,id',
 
             /* --------------------------- LOCATION OPTIONAL --------------------------- */
