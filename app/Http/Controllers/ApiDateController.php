@@ -17,7 +17,11 @@ class ApiDateController extends ApiController
     public function store(StoreDateRequest $request, DateService $service)
     {
         // Request'ten gelen user_id (Sender) ve form verileri
-        return $service->createDate($request->user_id, $request->validated());
+        $result = $service->createDate($request->user_id, $request->validated());
+        return [
+            'message' => __('messages.date_request_sent'),
+            'data' => $result
+        ];
     }
 
     /**
@@ -25,7 +29,7 @@ class ApiDateController extends ApiController
      */
     public function outgoing(Request $request, DateService $service)
     {
-        $page    = (int) $request->get('page', 1);
+        $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
         $pupProfileId = (int) $request->get('pup_profile_id');
 
@@ -37,7 +41,7 @@ class ApiDateController extends ApiController
      */
     public function incoming(Request $request, DateService $service)
     {
-        $page    = (int) $request->get('page', 1);
+        $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
         $pupProfileId = (int) $request->get('pup_profile_id');
 
@@ -63,7 +67,7 @@ class ApiDateController extends ApiController
     }
     public function list(Request $request, DateService $service)
     {
-        $page    = (int) $request->get('page', 1);
+        $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
         $pupProfileId = (int) $request->get('pup_profile_id');
 

@@ -10,7 +10,13 @@ class ApiFavoriteController extends ApiController
 {
     public function add(FavoriteRequest $request, FavoriteService $service)
     {
-        return $service->add($request->user_id, $request->pup_profile_id);
+
+        $result = $service->add($request->user_id, $request->pup_profile_id);
+
+        return [
+            'message' => __('messages.favorite_added'),
+            'data' => $result
+        ];
     }
 
     public function remove(FavoriteRequest $request, FavoriteService $service)
@@ -20,7 +26,7 @@ class ApiFavoriteController extends ApiController
 
     public function list(Request $request, FavoriteService $service)
     {
-        $page    = (int) $request->get('page', 1);
+        $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
 
         return $service->list($request->user_id, $page, $perPage);
