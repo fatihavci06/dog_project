@@ -12,7 +12,12 @@ class ApiFriendshipController extends ApiController
 {
     public function send(FriendSendRequest $request, FriendshipService $service)
     {
-        return $service->send($request->my_pup_profile_id, $request->target_pup_profile_id);
+        $result = $service->send($request->my_pup_profile_id, $request->target_pup_profile_id);
+
+        return [
+            'message' => 'messages.friend_request_sent',
+            'data' => $result
+        ];
     }
 
     public function accept(FriendActionRequest $request, FriendshipService $service)
@@ -27,20 +32,20 @@ class ApiFriendshipController extends ApiController
 
     public function friends(Request $request, FriendshipService $service)
     {
-        $page     = (int) $request->get('page', 1);
-        $perPage  = (int) $request->get('per_page', 10);
+        $page = (int) $request->get('page', 1);
+        $perPage = (int) $request->get('per_page', 10);
         $pupProfileId = $request->get('pup_profile_id');
 
         return $service->listFriends($request->user_id, $page, $perPage, $pupProfileId);
     }
 
-    public function incoming(FriendshipService $service,Request $request)
+    public function incoming(FriendshipService $service, Request $request)
     {
         $pupProfileId = $request->get('pup_profile_id');
         return $service->incomingRequests(request()->user_id, $pupProfileId);
     }
 
-    public function outgoing(FriendshipService $service,Request $request)
+    public function outgoing(FriendshipService $service, Request $request)
     {
         return $service->outgoingRequests(request()->user_id, $request->get('pup_profile_id'));
     }
