@@ -106,6 +106,7 @@ class NotificationService
             $user->save();
         }
     }
+
     public function getUserNotifications(
         int $userId,
         int $roleId,
@@ -127,7 +128,7 @@ class NotificationService
             // 🔥 ASIL FİLTRE BURASI
             ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
 
-                // User’a atanmışsa → her zaman göster
+                // User'a atanmışsa → her zaman göster
                 $q->whereExists(function ($sub) use ($userId) {
                     $sub->selectRaw(1)
                         ->from('notification_user')
@@ -186,12 +187,18 @@ class NotificationService
             ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
             ->paginate($perPage, ['*'], 'page', $page);
 
+        // 🔹 Type'a göre gruplama
+        $data = collect($paginator->items())
+            ->groupBy(fn($item) => $item->type ?? 'general')
+            ->map(fn($items) => $items->values())
+            ->toArray();
+
         return [
             'current_page' => $paginator->currentPage(),
             'per_page'     => $paginator->perPage(),
             'total'        => $paginator->total(),
             'last_page'    => $paginator->lastPage(),
-            'data'         => $paginator->items(),
+            'data'         => $data,
         ];
     }
 
