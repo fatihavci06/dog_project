@@ -191,7 +191,7 @@ class NotificationService
             'per_page' => $paginator->perPage(),
             'total' => $paginator->total(),
             'last_page' => $paginator->lastPage(),
-            'data' => $paginator->items(),
+            'data' => collect($paginator->items())->groupBy('type')->toArray(),
         ];
     }
 
