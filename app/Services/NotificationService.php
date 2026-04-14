@@ -123,11 +123,9 @@ class NotificationService
                 $join->on('nu.notification_id', '=', 'notifications.id')
                     ->where('nu.user_id', $userId);
             })
-
-            // 🔥 ASIL FİLTRE BURASI
             ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
 
-                // User’a atanmışsa → her zaman göster
+                // User'a atanmışsa → her zaman göster
                 $q->whereExists(function ($sub) use ($userId) {
                     $sub->selectRaw(1)
                         ->from('notification_user')
@@ -172,18 +170,20 @@ class NotificationService
             $query->where('nu.is_read', true);
         }
 
+        // 🔹 Type bazında gruplama
         $paginator = $query->select([
-            'notifications.id',
-            'notifications.title',
             'notifications.type',
-            'notifications.message',
-            'notifications.url',
-            'notifications.created_at',
-            'nu.sent_at',
-            'nu.is_read',
+            DB::raw('MAX(notifications.id) as id'),
+            DB::raw('MAX(notifications.title) as title'),
+            DB::raw('MAX(notifications.message) as message'),
+            DB::raw('MAX(notifications.url) as url'),
+            DB::raw('MAX(notifications.created_at) as created_at'),
+            DB::raw('MAX(nu.sent_at) as sent_at'),
+            DB::raw('MIN(nu.is_read) as is_read'),  // Birinde okunmamışsa false döner
+            DB::raw('COUNT(notifications.id) as total_count'),
         ])
-            ->distinct()
-            ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
+            ->groupBy('notifications.type')
+            ->orderByDesc(DB::raw('COALESCE(MAX(nu.sent_at), MAX(notifications.created_at))'))
             ->paginate($perPage, ['*'], 'page', $page);
 
         return [
@@ -191,10 +191,9 @@ class NotificationService
             'per_page' => $paginator->perPage(),
             'total' => $paginator->total(),
             'last_page' => $paginator->lastPage(),
-            'data' => collect($paginator->items())->groupBy('type')->toArray(),
+            'data' => $paginator->items(),
         ];
     }
-
     public function markAsRead(int $userId, int $notificationId): bool
     {
         // 1. Önce bildirimin gerçekten var olup olmadığını kontrol edelim
