@@ -25,9 +25,9 @@ class NotificationService
     {
         // 1️⃣ Notification kaydı
         $notification = Notification::create([
-            'title'   => $data['title'],
+            'title' => $data['title'],
             'message' => $data['message'],
-            'url'     => $data['url'] ?? null,
+            'url' => $data['url'] ?? null,
         ]);
 
         $userIds = $data['user_ids'] ?? [];
@@ -76,9 +76,9 @@ class NotificationService
         if (!empty($players)) {
             $this->oneSignal->sendNotificationCustom([
                 'include_player_ids' => $players,
-                'headings'           => ['en' => $data['title']],
-                'contents'           => ['en' => $data['message']],
-                'url'                => $data['url'] ?? null,
+                'headings' => ['en' => $data['title']],
+                'contents' => ['en' => $data['message']],
+                'url' => $data['url'] ?? null,
             ]);
         }
 
@@ -127,44 +127,50 @@ class NotificationService
         $userCreatedAt = User::where('id', $userId)->value('created_at');
 
         $query = Notification::query()
+            ->where('notifications.created_at', '>=', $userCreatedAt)
             ->leftJoin('notification_user as nu', function ($join) use ($userId) {
                 $join->on('nu.notification_id', '=', 'notifications.id')
                     ->where('nu.user_id', $userId);
             })
+
+            // 🔥 ASIL FİLTRE BURASI
             ->where(function ($q) use ($userId, $roleId, $userCreatedAt) {
-                // 1. Direkt Kullanıcıya atanmışsa (Kayıt tarihinden bağımsız her zaman göster)
+
+                // User'a atanmışsa → her zaman göster
                 $q->whereExists(function ($sub) use ($userId) {
                     $sub->selectRaw(1)
                         ->from('notification_user')
                         ->whereColumn('notification_user.notification_id', 'notifications.id')
                         ->where('notification_user.user_id', $userId);
                 })
-                // 2. Role atanmışsa (Sadece kayıt tarihinden sonra)
-                ->orWhere(function ($sub) use ($roleId, $userCreatedAt) {
+
+                    // Role atanmışsa → kayıt tarihinden sonra
+                    ->orWhere(function ($sub) use ($roleId, $userCreatedAt) {
                     $sub->whereExists(function ($r) use ($roleId) {
                         $r->selectRaw(1)
                             ->from('notification_role')
                             ->whereColumn('notification_role.notification_id', 'notifications.id')
                             ->where('notification_role.role_id', $roleId);
                     })
-                    ->where('notifications.created_at', '>=', $userCreatedAt);
+                        ->where('notifications.created_at', '>=', $userCreatedAt);
                 })
-                // 3. Genel Bildirimler (Sadece kayıt tarihinden sonra)
-                ->orWhere(function ($sub) use ($userCreatedAt) {
+
+                    // Genel → kayıt tarihinden sonra
+                    ->orWhere(function ($sub) use ($userCreatedAt) {
                     $sub->whereNotExists(function ($n) {
                         $n->selectRaw(1)
                             ->from('notification_user')
                             ->whereColumn('notification_user.notification_id', 'notifications.id');
                     })
-                    ->whereNotExists(function ($n) {
-                        $n->selectRaw(1)
-                            ->from('notification_role')
-                            ->whereColumn('notification_role.notification_id', 'notifications.id');
-                    })
-                    ->where('notifications.created_at', '>=', $userCreatedAt);
+                        ->whereNotExists(function ($n) {
+                            $n->selectRaw(1)
+                                ->from('notification_role')
+                                ->whereColumn('notification_role.notification_id', 'notifications.id');
+                        })
+                        ->where('notifications.created_at', '>=', $userCreatedAt);
                 });
             });
-
+        dd($type);
         // 🔹 Type filtresi
         if ($type && in_array($type, $validTypes)) {
             $query->where('notifications.type', $type);
@@ -192,15 +198,14 @@ class NotificationService
         ])
             ->distinct()
             ->orderByDesc(DB::raw('COALESCE(nu.sent_at, notifications.created_at)'))
-            ->orderByDesc('notifications.id')
             ->paginate($perPage, ['*'], 'page', $page);
 
         return [
             'current_page' => $paginator->currentPage(),
-            'per_page'     => $paginator->perPage(),
-            'total'        => $paginator->total(),
-            'last_page'    => $paginator->lastPage(),
-            'data'         => $paginator->items(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
+            'data' => $paginator->items(),
         ];
     }
 
@@ -215,7 +220,7 @@ class NotificationService
         // 2. Pivot tabloyu güncelle veya yeni kayıt oluştur (Upsert)
         DB::table('notification_user')->updateOrInsert(
             [
-                'user_id'         => $userId,
+                'user_id' => $userId,
                 'notification_id' => $notificationId,
             ],
             [
