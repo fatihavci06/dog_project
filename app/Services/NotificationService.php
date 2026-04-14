@@ -170,9 +170,10 @@ class NotificationService
                         ->where('notifications.created_at', '>=', $userCreatedAt);
                 });
             });
-        dd($type);
+
         // 🔹 Type filtresi
         if ($type && in_array($type, $validTypes)) {
+            dd($type);
             $query->where('notifications.type', $type);
         }
 
