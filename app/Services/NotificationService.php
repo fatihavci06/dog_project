@@ -173,7 +173,7 @@ class NotificationService
 
         // 🔹 Type filtresi
         if ($type && in_array($type, $validTypes)) {
-            dd($type);
+
             $query->where('notifications.type', $type);
         }
 
