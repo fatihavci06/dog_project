@@ -65,7 +65,7 @@ class ApiPupMatchController extends Controller
 
         // 4. Sonucu çok dilli (multi-language) olarak döndür
         return response()->json([
-            'message' => __('messages.success'),
+            'message' => __('messages.black_list_add'),
             'data' => $blackList
         ]);
     }
@@ -121,7 +121,7 @@ class ApiPupMatchController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('messages.success'),
+            'message' => __('messages.black_list_remove'),
         ], 200);
     }
 }

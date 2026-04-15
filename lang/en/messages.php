@@ -7,6 +7,8 @@ return [
     'friend_request_sent' => 'Friend request sent successfully.',
     'favorite_added' => 'Saved For Later',
     'date_request_sent' => 'Paws Meet',
+    'black_list_add' => "Sometimes paws just go different ways. That’s okay.",
+    'black_list_remove' => "Sometimes paws just go different ways. That’s okay."
 
 
 ];

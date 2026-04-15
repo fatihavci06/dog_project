@@ -10,14 +10,14 @@ use Exception;
 
 class FavoriteService extends BaseService
 {
-    public function add(int $userId, int $favoriteId)
+    public function add(int $userId, int $myProfileId, int $favoriteId)
     {
-        if ($userId == $favoriteId) {
+        if ($myProfileId == $favoriteId) {
             throw new Exception("You cannot add yourself as a favorite.", 400);
         }
 
         // Zaten favori mi?
-        $exists = Favorite::where('user_id', $userId)
+        $exists = Favorite::where('user_id', $myProfileId)
             ->where('favorite_id', $favoriteId)
             ->first();
 
@@ -25,15 +25,15 @@ class FavoriteService extends BaseService
             throw new Exception("This user is already in your favorites.", 400);
         }
         Favorite::create([
-            'user_id' => $userId,
+            'user_id' => $myProfileId,
             'favorite_id' => $favoriteId
         ]);
     }
 
 
-    public function remove(int $userId, int $favoriteId)
+    public function remove(int $myProfileId, int $favoriteId)
     {
-        $fav = Favorite::where('user_id', $userId)
+        $fav = Favorite::where('user_id', $myProfileId)
             ->where('favorite_id', $favoriteId)
             ->first();
 
@@ -78,7 +78,7 @@ class FavoriteService extends BaseService
             'favoritePupProfile.user',
             'favoritePupProfile.answers',
         ])
-            ->where('user_id', $userId)
+            ->where('user_id', $myProfileId)
             ->whereNotIn('favorite_id', $matchedProfileIds) // 🔥 KRİTİK KURAL
             ->get();
 

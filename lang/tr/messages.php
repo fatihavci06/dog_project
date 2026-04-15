@@ -7,6 +7,8 @@ return [
     'friend_request_sent' => 'Arkadaşlık isteği başarıyla gönderildi.',
     'favorite_added' => 'Favoriye eklendi.',
     'date_request_sent' => 'Patiler Buluşuyor',
+    'black_list_add' => "Bazen patiler farklı yollara gider. Sorun değil.",
+    'black_list_remove' => "Bazen patiler farklı yollara gider. Sorun değil."
 
 
 ];

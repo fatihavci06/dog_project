@@ -15,6 +15,7 @@ class FavoriteRequest extends BaseRequest
     public function rules(): array
     {
         return [
+            'my_pup_profile_id' => 'required|integer|exists:pup_profiles,id',
             'pup_profile_id' => 'required|integer|exists:pup_profiles,id'
         ];
     }
