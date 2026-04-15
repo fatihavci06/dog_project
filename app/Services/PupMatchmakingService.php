@@ -431,7 +431,7 @@ class PupMatchmakingService extends BaseService
 
 
         // Favoriler
-        $favoriteProfileIds = Favorite::where('user_id', $authUserId)
+        $favoriteProfileIds = Favorite::where('user_id', $pupProfileId)
             ->pluck('favorite_id')
             ->toArray();
 
