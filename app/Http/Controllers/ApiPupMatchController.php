@@ -23,12 +23,10 @@ class ApiPupMatchController extends Controller
     }
     public function showProfile(Request $request, $pupProfileId, PupMatchmakingService $service)
     {
-
-
         $data = $service->getMatchDetail(
             $pupProfileId,
             $request->user_id,
-            $request->my_pup_profile_id
+            (int) ($request->my_pup_profile_id ?? 0)
         );
 
         return response()->json([
