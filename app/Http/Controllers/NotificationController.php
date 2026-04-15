@@ -31,7 +31,7 @@ class NotificationController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|string',
-            'url' => 'nullable|url',
+            'url' => 'nullable',
             'user_ids' => 'nullable|array',
             'role_ids' => 'nullable|array'
         ]);
@@ -47,5 +47,5 @@ class NotificationController extends Controller
         $notifications = Notification::with(['users'])->latest()->paginate(20);
         return view('notifications.index', compact('notifications'));
     }
-    
+
 }
