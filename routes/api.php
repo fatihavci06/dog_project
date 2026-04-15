@@ -142,7 +142,7 @@ Route::middleware([JwtMiddleware::class])->group(function () {
     Route::get('notification/list', [ApiNotificationController::class, 'notificationsList']);
     Route::post('notification-status/change', [ApiNotificationController::class, 'changeNotificationStatus']);
     Route::get('notification/settings', [ApiNotificationController::class, 'getSettings']);
-    Route::post('notification/settings/update', [ApiNotificationController::class, 'updateSettings']);
+    Route::put('notification/settings/update', [ApiNotificationController::class, 'updateSettings']);
     Route::put('/notifications/{id}/read', [ApiNotificationController::class, 'markAsRead']);
     Route::post('language/change', [ApiLanguageController::class, 'changeLanguageStatus']);
 });
