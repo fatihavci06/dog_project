@@ -50,7 +50,7 @@ class PupMatchmakingService extends BaseService
     | 2️⃣ Auth kullanıcının pup profile’ı
     |--------------------------------------------------------------------------
     */
-        $authProfile = PupProfile::where('user_id', $authUserId)->first();
+        $authProfile = PupProfile::find($myPupProfileId);
         $pupProfileIds = PupProfile::where('user_id', $authUserId)
             ->pluck('id')
             ->toArray();
