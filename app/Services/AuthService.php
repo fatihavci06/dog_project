@@ -398,6 +398,7 @@ class AuthService
                 'privacy_policy' => $user->privacy_policy,
                 'email_verified_at' => $user->email_verified_at,
                 'notification_status' => $user->notification_status,
+                'notification_settings' => app(\App\Services\NotificationService::class)->getNotificationSettings($user->id),
                 'preferred_language' => $user->preferred_language,
 
                 // computed alanlar
