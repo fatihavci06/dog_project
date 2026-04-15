@@ -61,6 +61,7 @@ class PupMatchmakingService extends BaseService
     */
         $distanceKm = null;
         if ($authProfile) {
+
             $distanceKm = $this->calculateDistance(
                 $authProfile->lat,
                 $authProfile->long,
@@ -411,6 +412,7 @@ class PupMatchmakingService extends BaseService
         $currentProfile = PupProfile::with('travelRadius.translations')->where('id', $pupProfileId)
             ->where('user_id', $authUserId)
             ->first();
+
 
         // Önce profil var mı kontrol et (Sıralamayı yukarı çekmelisin)
         if (!$currentProfile) {

@@ -46,28 +46,11 @@ class FavoriteService extends BaseService
     }
 
 
-    public function list(int $userId, int $page = 1, int $perPage = 10)
+    public function list(int $userId, int $myProfileId, int $page = 1, int $perPage = 10)
     {
-        /* ----------------------------------
-     1) Kullanıcının sahip olduğu pup_profile_id’ler
-    ---------------------------------- */
-        $myProfileIds = PupProfile::where('user_id', $userId)
-            ->pluck('id')
-            ->toArray();
+        $authProfile = PupProfile::find($myProfileId);
+        $myProfileIds = [$myProfileId]; // array'e çevir
 
-        if (empty($myProfileIds)) {
-            return [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => 0,
-                'last_page' => 0,
-                'data' => [],
-            ];
-        }
-
-        /* ----------------------------------
-     2) Match (accepted friendship) → KARŞI TARAF pup_profile_id’ler
-    ---------------------------------- */
         $matchedProfileIds = Friendship::where('status', 'accepted')
             ->where(function ($q) use ($myProfileIds) {
                 $q->whereIn('sender_id', $myProfileIds)
@@ -105,16 +88,18 @@ class FavoriteService extends BaseService
      4) Mesafe için referans profil
      (ilk profil yeterli)
     ---------------------------------- */
-        $authProfile = PupProfile::whereIn('id', $myProfileIds)->first();
+
 
         /* ----------------------------------
      5) MAP
     ---------------------------------- */
+
         $mapped = $favorites->map(function ($fav) use ($favoriteIds, $matchedProfileIds, $authProfile) {
 
             $pup = $fav->favoritePupProfile;
 
             $distanceKm = null;
+
             if ($authProfile && $pup?->lat && $pup?->long) {
                 $distanceKm = $this->calculateDistance(
                     $authProfile->lat,

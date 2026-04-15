@@ -29,6 +29,6 @@ class ApiFavoriteController extends ApiController
         $page = (int) $request->get('page', 1);
         $perPage = (int) $request->get('per_page', 10);
 
-        return $service->list($request->user_id, $page, $perPage);
+        return $service->list($request->user_id, $request->pup_profile_id, $page, $perPage);
     }
 }
