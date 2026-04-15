@@ -8,7 +8,9 @@ return [
     'favorite_added' => 'Saved For Later',
     'date_request_sent' => 'Paws Meet',
     'black_list_add' => "Sometimes paws just go different ways. That’s okay.",
-    'black_list_remove' => "Sometimes paths cross again"
+    'black_list_remove' => "Sometimes paths cross again",
+    'notification_settings_updated' => "Notification settings updated successfully",
+
 
 
 ];

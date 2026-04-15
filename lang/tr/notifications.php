@@ -16,4 +16,9 @@ return [
     'new_message' => 'Yeni mesaj alındı',
     'announcement_created_title' => '📢 Yeni Duyuru',
     'announcement_updated_title' => '🔄 Duyuru Güncellendi',
+    'category_message' => 'Mesajlar',
+    'category_friendship' => 'Arkadaşlık İstekleri',
+    'category_date' => 'Buluşma İstekleri',
+    'category_announcement' => 'Duyurular',
+    'category_info' => 'Bilgilendirmeler',
 ];

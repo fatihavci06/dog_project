@@ -181,6 +181,7 @@ class AuthService
             'refresh_token' => $rawRefresh,
             'user_id' => $user->id,
             'notification_status' => $user->notification_status,
+            'notification_settings' => app(\App\Services\NotificationService::class)->getNotificationSettings($user->id),
             'language' => $user->preferred_language,
             'pup_profiles' => $user->pupProfiles->map(fn($p) => [
                 'id' => $p->id,

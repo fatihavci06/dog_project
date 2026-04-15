@@ -231,4 +231,51 @@ class NotificationService
 
         return true;
     }
+
+    public function updateNotificationSettings(int $userId, array $settings)
+    {
+        foreach ($settings as $category => $isEnabled) {
+            \App\Models\NotificationSetting::updateOrCreate(
+                ['user_id' => $userId, 'category' => $category],
+                ['is_enabled' => (bool) $isEnabled]
+            );
+        }
+        return true;
+
+    }
+
+    public function getNotificationSettings(int $userId)
+    {
+        $settings = \App\Models\NotificationSetting::where('user_id', $userId)->pluck('is_enabled', 'category');
+
+        $categories = [
+            'message' => __('notifications.category_message'),
+            'friendship' => __('notifications.category_friendship'),
+            'date' => __('notifications.category_date'),
+            'announcement' => __('notifications.category_announcement'),
+            'info' => __('notifications.category_info'),
+        ];
+
+        $result = [];
+        foreach ($categories as $key => $name) {
+            $result[] = [
+                'key' => $key,
+                'name' => $name,
+                'is_enabled' => (bool) ($settings[$key] ?? true)
+            ];
+        }
+
+        return $result;
+    }
+
+    public static function getCategoryFromType(string $type): string
+    {
+        return match ($type) {
+            'message' => 'message',
+            'friend_request', 'friend_accepted' => 'friendship',
+            'date_request', 'date_response', 'date_accepted', 'date_rejected' => 'date',
+            'announcement' => 'announcement',
+            default => 'info',
+        };
+    }
 }

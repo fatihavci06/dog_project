@@ -17,4 +17,9 @@ return [
     'new_message' => 'New message received',
     'announcement_created_title' => '📢 New Announcement',
     'announcement_updated_title' => '🔄 Announcement Updated',
+    'category_message' => 'Bark messages',
+    'category_friendship' => 'Match requests',
+    'category_date' => 'Date requests',
+    'category_announcement' => 'Announcements',
+    'category_info' => 'Information',
 ];

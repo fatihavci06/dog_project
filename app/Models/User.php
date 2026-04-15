@@ -119,4 +119,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(PupProfile::class);
     }
 
+    public function notificationSettings()
+    {
+        return $this->hasMany(NotificationSetting::class);
+    }
 }

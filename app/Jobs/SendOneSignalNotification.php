@@ -34,6 +34,34 @@ class SendOneSignalNotification implements ShouldQueue
     {
         if (empty($this->playerIds)) return;
 
+        $type = $this->data['type'] ?? 'info';
+        $category = \App\Services\NotificationService::getCategoryFromType($type);
+
+        // 1. Alıcı kullanıcıları ve tercihlerini çek
+        $users = User::whereIn('onesignal_player_id', $this->playerIds)
+            ->with(['notificationSettings' => function($q) use ($category) {
+                $q->where('category', $category);
+            }])
+            ->get(['id', 'onesignal_player_id', 'notification_status']);
+
+        $allowedPlayerIds = [];
+
+        foreach ($users as $user) {
+            // Genel bildirim durumu kontrolü
+            if ($user->notification_status === false) continue;
+
+            // Kategori bazlı kontrol
+            $setting = $user->notificationSettings->first();
+            if ($setting && $setting->is_enabled === false) {
+                continue;
+            }
+
+            $allowedPlayerIds[] = $user->onesignal_player_id;
+        }
+
+        // Eğer gönderilecek kimse kalmadıysa çık
+        if (empty($allowedPlayerIds)) return;
+
         $client = new Client();
         $res = $client->post('https://onesignal.com/api/v1/notifications', [
             'headers' => [
@@ -42,7 +70,7 @@ class SendOneSignalNotification implements ShouldQueue
             ],
             'json' => [
                 'app_id' => env('ONESIGNAL_APP_ID'),
-                'include_player_ids' => $this->playerIds,
+                'include_player_ids' => $allowedPlayerIds,
                 'headings' => ['en' => $this->title, 'tr' => $this->title],
                 'contents' => ['en' => $this->body, 'tr' => $this->body],
                 'url'      => $this->data['url'] ?? null,
