@@ -33,8 +33,7 @@ class DateService
             }
 
             $pupProfileIds = [$pupProfileId];
-        }
-        else {
+        } else {
             // Aksi halde kullanıcının tüm pup profilleri
             $pupProfileIds = PupProfile::where('user_id', $userId)
                 ->pluck('id')
@@ -46,9 +45,9 @@ class DateService
             ->whereIn('receiver_id', $pupProfileIds)
             ->where('status', 'pending')
             ->with([
-            'sender.user',
-            'sender.images',
-        ])
+                'sender.user',
+                'sender.images',
+            ])
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -56,33 +55,35 @@ class DateService
         $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
 
             $conversationId = Conversation::query()
-                ->where(function ($q) use ($userId, $date) {
-                $q->where('user_one_id', $userId)
-                    ->where('user_two_id', $date->sender->user->id);
-            }
-            )
-                ->orWhere(function ($q) use ($userId, $date) {
-                $q->where('user_one_id', $date->sender->user->id)
-                    ->where('user_two_id', $userId);
-            }
-            )
+                ->where(
+                    function ($q) use ($userId, $date) {
+                        $q->where('user_one_id', $userId)
+                            ->where('user_two_id', $date->sender->user->id);
+                    }
+                )
+                ->orWhere(
+                    function ($q) use ($userId, $date) {
+                        $q->where('user_one_id', $date->sender->user->id)
+                            ->where('user_two_id', $userId);
+                    }
+                )
                 ->value('id');
 
             return [
-            'id' => $date->id,
-            'meeting_date' => $date->meeting_date,
-            'status' => $date->status,
-            'is_flexible' => $date->is_flexible,
-            'address' => $date->address,
-            'description' => $date->description,
+                'id' => $date->id,
+                'meeting_date' => $date->meeting_date,
+                'status' => $date->status,
+                'is_flexible' => $date->is_flexible,
+                'address' => $date->address,
+                'description' => $date->description,
 
-            // 🔥 Incoming olduğu için sender dönüyoruz
-            'sender' => $date->sender,
-            'pup_profile_photo' => $date->sender
-            ->images()
-            ->select('path')
-            ->value('path'),
-            'conversation_id' => $conversationId,
+                // 🔥 Incoming olduğu için sender dönüyoruz
+                'sender' => $date->sender,
+                'pup_profile_photo' => $date->sender
+                    ->images()
+                    ->select('path')
+                    ->value('path'),
+                'conversation_id' => $conversationId,
             ];
         })->values();
 
@@ -102,9 +103,9 @@ class DateService
             ->where('id', $dateId)
             ->where('status', 'accepted')
             ->where(function ($query) use ($userId) {
-            $query->where('sender_id', $userId)
-                ->orWhere('receiver_id', $userId);
-        })
+                $query->where('sender_id', $userId)
+                    ->orWhere('receiver_id', $userId);
+            })
             ->first();
         if (empty($date)) {
 
@@ -135,8 +136,7 @@ class DateService
             }
 
             $pupProfileIds = [$pupProfileId];
-        }
-        else {
+        } else {
             // Aksi halde kullanıcının tüm pup profilleri
             $pupProfileIds = PupProfile::where('user_id', $userId)
                 ->pluck('id')
@@ -147,13 +147,13 @@ class DateService
         $paginator = Date::query()
             ->where('status', 'accepted')
             ->where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)
-                ->orWhereIn('receiver_id', $pupProfileIds);
-        })
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
             ->with([
-            'sender.user',
-            'receiver.user',
-        ])
+                'sender.user',
+                'receiver.user',
+            ])
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -172,35 +172,37 @@ class DateService
             $conversationId = null;
             if ($otherUserId) {
                 $conversationId = Conversation::query()
-                    ->where(function ($q) use ($userId, $otherUserId) {
-                    $q->where('user_one_id', $userId)
-                        ->where('user_two_id', $otherUserId);
-                }
-                )
-                    ->orWhere(function ($q) use ($userId, $otherUserId) {
-                    $q->where('user_one_id', $otherUserId)
-                        ->where('user_two_id', $userId);
-                }
-                )
+                    ->where(
+                        function ($q) use ($userId, $otherUserId) {
+                            $q->where('user_one_id', $userId)
+                                ->where('user_two_id', $otherUserId);
+                        }
+                    )
+                    ->orWhere(
+                        function ($q) use ($userId, $otherUserId) {
+                            $q->where('user_one_id', $otherUserId)
+                                ->where('user_two_id', $userId);
+                        }
+                    )
                     ->value('id');
             }
 
             return [
-            'id' => $date->id,
-            'meeting_date' => $date->meeting_date,
-            'status' => $date->status,
-            'is_flexible' => $date->is_flexible,
-            'address' => $date->address,
-            'description' => $date->description,
+                'id' => $date->id,
+                'meeting_date' => $date->meeting_date,
+                'status' => $date->status,
+                'is_flexible' => $date->is_flexible,
+                'address' => $date->address,
+                'description' => $date->description,
 
-            // 🔥 Benim dışımdaki taraf
-            'other' => $otherProfile,
-            'pup_profile_photo' => $otherProfile
-            ->images()
-            ->select('path')
-            ->value('path'),
+                // 🔥 Benim dışımdaki taraf
+                'other' => $otherProfile,
+                'pup_profile_photo' => $otherProfile
+                    ->images()
+                    ->select('path')
+                    ->value('path'),
 
-            'conversation_id' => $conversationId,
+                'conversation_id' => $conversationId,
             ];
         })->values();
 
@@ -235,8 +237,7 @@ class DateService
             }
 
             $pupProfileIds = [$pupProfileId];
-        }
-        else {
+        } else {
             // Aksi halde kullanıcının tüm pup profilleri
             $pupProfileIds = PupProfile::where('user_id', $userId)
                 ->pluck('id')
@@ -245,44 +246,46 @@ class DateService
 
         $paginator = Date::query()
             ->where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)->where('status', 'pending');
-        })
+                $q->whereIn('sender_id', $pupProfileIds)->where('status', 'pending');
+            })
 
             ->with([
-            'receiver.user'
-        ])
+                'receiver.user'
+            ])
             ->orderBy('meeting_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $data = collect($paginator->items())->map(function (Date $date) use ($userId) {
 
             $conversationId = Conversation::query()
-                ->where(function ($q) use ($userId, $date) {
-                $q->where('user_one_id', $userId)
-                    ->where('user_two_id', $date->receiver->user->id);
-            }
-            )
-                ->orWhere(function ($q) use ($userId, $date) {
-                $q->where('user_one_id', $date->receiver->user->id)
-                    ->where('user_two_id', $userId);
-            }
-            )
+                ->where(
+                    function ($q) use ($userId, $date) {
+                        $q->where('user_one_id', $userId)
+                            ->where('user_two_id', $date->receiver->user->id);
+                    }
+                )
+                ->orWhere(
+                    function ($q) use ($userId, $date) {
+                        $q->where('user_one_id', $date->receiver->user->id)
+                            ->where('user_two_id', $userId);
+                    }
+                )
                 ->value('id'); // 🔥 sadece id
 
             return [
-            'id' => $date->id,
-            'meeting_date' => $date->meeting_date,
-            'status' => $date->status,
-            'is_flexible' => $date->is_flexible,
-            'address' => $date->address,
-            'description' => $date->description,
+                'id' => $date->id,
+                'meeting_date' => $date->meeting_date,
+                'status' => $date->status,
+                'is_flexible' => $date->is_flexible,
+                'address' => $date->address,
+                'description' => $date->description,
 
-            'receiver' => $date->receiver,
-            'pup_profile_photo' => $date->receiver
-            ->images()
-            ->select('path')
-            ->value('path'),
-            'conversation_id' => $conversationId,
+                'receiver' => $date->receiver,
+                'pup_profile_photo' => $date->receiver
+                    ->images()
+                    ->select('path')
+                    ->value('path'),
+                'conversation_id' => $conversationId,
             ];
         })->values();
 
@@ -309,7 +312,7 @@ class DateService
             throw new HttpException(
                 403,
                 __('errors.cannot_date_own_profile')
-                );
+            );
         }
 
         $myUserId = $myProfile->user_id;
@@ -328,7 +331,7 @@ class DateService
             throw new Exception(
                 __('errors.no_conversation'),
                 403
-                );
+            );
         }
 
         try {
@@ -336,8 +339,7 @@ class DateService
                 'Y-m-d H:i',
                 $data['date'] . ' ' . $data['time']
             );
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             throw new HttpException(400, 'Invalid date or time format.');
         }
 
@@ -372,17 +374,17 @@ class DateService
 
 
             dispatch(new \App\Jobs\SendOneSignalNotification(
-            [$targetUser->onesignal_player_id],
+                [$targetUser->onesignal_player_id],
                 __('notifications.date_request_title'),
                 __('notifications.date_request_body', [
-                'name' => $myProfile->name
-            ]),
-            [
-                'date_id' => $newDate->id,
-                'type' => 'date_request',
-                'url' => "pupcrawl://dates/{$newDate->id}"
-            ]
-                ));
+                    'name' => $myProfile->name
+                ]),
+                [
+                    'date_id' => $newDate->id,
+                    'type' => 'date_request',
+                    'url' => "pupcrawl://dates/{$newDate->id}"
+                ]
+            ));
         }
 
         app()->setLocale($currentLocale);
@@ -440,8 +442,8 @@ class DateService
             $senderProfile = \App\Models\PupProfile::find($date->sender_id);
             $receiverProfile = \App\Models\PupProfile::find($date->receiver_id);
 
-            $senderUserId = $senderProfile->user_id;
-            $receiverUserId = $receiverProfile->user_id;
+            $senderUserId = $date->sender_id;
+            $receiverUserId = $date->receiver_id;
 
             $basePlanData = [
                 'date_id' => $date->id, // ✅ artık bağlı
@@ -507,18 +509,18 @@ class DateService
                 : 'notifications.date_rejected_body';
 
             dispatch(new \App\Jobs\SendOneSignalNotification(
-            [$targetUser->onesignal_player_id],
+                [$targetUser->onesignal_player_id],
                 __($titleKey),
                 __($bodyKey, [
-                'name' => $responderName
-            ]),
-            [
-                'date_id' => $date->id,
-                'type' => 'date_response',
-                'status' => $status,
-                'url' => "pupcrawl://date/{$date->id}"
-            ]
-                ));
+                    'name' => $responderName
+                ]),
+                [
+                    'date_id' => $date->id,
+                    'type' => 'date_response',
+                    'status' => $status,
+                    'url' => "pupcrawl://date/{$date->id}"
+                ]
+            ));
         }
         app()->setLocale($currentLocale);
 
@@ -548,13 +550,13 @@ class DateService
         $date = Date::query()
             ->where('id', $dateId)
             ->where(function ($q) use ($pupProfileIds) {
-            $q->whereIn('sender_id', $pupProfileIds)
-                ->orWhereIn('receiver_id', $pupProfileIds);
-        })
+                $q->whereIn('sender_id', $pupProfileIds)
+                    ->orWhereIn('receiver_id', $pupProfileIds);
+            })
             ->with([
-            'sender.user',
-            'receiver.user',
-        ])
+                'sender.user',
+                'receiver.user',
+            ])
             ->first();
 
         if (!$date) {
@@ -575,8 +577,7 @@ class DateService
         int $userId,
         int $dateId,
         array $data
-        ): Date
-    {
+    ): Date {
         // 1️⃣ Kullanıcının pup profile id’leri
         $pupProfileIds = PupProfile::where('user_id', $userId)
             ->pluck('id')
@@ -596,7 +597,7 @@ class DateService
         // 3️⃣ Update
         $date->update([
             'meeting_date' => Carbon::parse($data['meeting_date']),
-            'is_flexible' => (bool)$data['is_flexible'],
+            'is_flexible' => (bool) $data['is_flexible'],
             'address' => $data['address'] ?? null,
             'latitude' => $data['latitude'] ?? null,
             'longitude' => $data['longitude'] ?? null,
