@@ -18,7 +18,8 @@ class PupMatchmakingService extends BaseService
 {
     public function getMatchDetail(
         int $pupProfileId,
-        int $authUserId
+        int $authUserId,
+        int $myPupProfileId
     ): array {
 
         /*
@@ -112,7 +113,7 @@ class PupMatchmakingService extends BaseService
     | 5️⃣ FAVORİ
     |--------------------------------------------------------------------------
     */
-        $isFavorite = Favorite::where('user_id', $authUserId)
+        $isFavorite = Favorite::where('user_id', $myPupProfileId)
             ->where('favorite_id', $profile->id)
             ->exists();
 

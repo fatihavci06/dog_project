@@ -27,7 +27,8 @@ class ApiPupMatchController extends Controller
 
         $data = $service->getMatchDetail(
             $pupProfileId,
-            $request->user_id
+            $request->user_id,
+            $request->my_pup_profile_id
         );
 
         return response()->json([
