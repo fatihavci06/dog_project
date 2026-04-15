@@ -447,7 +447,7 @@ class DateService
 
             $basePlanData = [
                 'date_id' => $date->id, // ✅ artık bağlı
-                'pup_profile_id' => $date->sender_id,
+                'pup_profile_id' => $date->receiver_id,
                 'start_date' => $meetingDateTime->format('Y-m-d'),
                 'end_date' => $meetingDateTime->format('Y-m-d'),
                 'start_time' => $meetingDateTime->format('H:i'),
@@ -466,7 +466,7 @@ class DateService
             \App\Models\Plan::create(array_merge($basePlanData, [
                 'user_id' => $senderUserId,
                 'participant_id' => $receiverUserId,
-                'pup_profile_id' => $date->receiver_id,
+                'pup_profile_id' => $date->sender_id,
                 'title' => __('calendar.date_accepted_sender', [
                     'name' => $receiverProfile->name
                 ]),
