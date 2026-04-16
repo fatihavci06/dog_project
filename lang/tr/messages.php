@@ -6,6 +6,7 @@ return [
     'account_inactive' => 'Hesabınız inaktif durumdadır. Lütfen yöneticiyle iletişime geçin.',
     'friend_request_sent' => 'Arkadaşlık isteği başarıyla gönderildi.',
     'favorite_added' => 'Favoriye eklendi.',
+    'favorite_removed' => 'Favoriden çıkarıldı.',
     'date_request_sent' => 'Patiler Buluşuyor',
     'black_list_add' => "Bazen patiler farklı yollara gider. Sorun değil.",
     'black_list_remove' => "Bazen yollar tekrar kesişir",

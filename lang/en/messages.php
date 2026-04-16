@@ -6,6 +6,7 @@ return [
     'account_inactive' => 'Your account is currently inactive. Please contact support.',
     'friend_request_sent' => 'Friend request sent successfully.',
     'favorite_added' => 'Saved For Later',
+    'favorite_removed' => 'Unsaved',
     'date_request_sent' => 'Meet Invite Sent',
     'black_list_add' => "Sometimes paws just go different ways. That’s okay.",
     'black_list_remove' => "Sometimes paths cross again",

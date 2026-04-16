@@ -21,7 +21,11 @@ class ApiFavoriteController extends ApiController
 
     public function remove(FavoriteRequest $request, FavoriteService $service)
     {
-        return $service->remove($request->my_pup_profile_id, $request->pup_profile_id);
+        $result = $service->remove($request->my_pup_profile_id, $request->pup_profile_id);
+        return [
+            'message' => __('messages.favorite_removed'),
+            'data' => $result
+        ];
     }
 
     public function list(Request $request, FavoriteService $service)
