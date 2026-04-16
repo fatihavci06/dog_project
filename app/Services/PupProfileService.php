@@ -379,9 +379,15 @@ class PupProfileService
 
 
             /* ---------------- SAVE NEW IMAGES (BASE64) ---------------- */
-            if (array_key_exists('images', $data)) {
+            if (!empty($data['images'])) {
 
                 // 1️⃣ Eski fotoğrafları sil
+                foreach ($profile->images as $img) {
+                    if ($img->path) {
+                        $relativePath = str_replace(url('storage') . '/', '', $img->path);
+                        Storage::disk('public')->delete($relativePath);
+                    }
+                }
                 $profile->images()->delete();
 
                 // 2️⃣ Yenilerini ekle
