@@ -7,6 +7,34 @@ use Illuminate\Validation\Rule;
 class PupProfileCreateRequest extends BaseRequest
 {
 
+    protected function prepareForValidation()
+    {
+        parent::prepareForValidation();
+
+        if ($this->has('images')) {
+            $images = $this->images;
+
+            if (!is_array($images)) {
+                $trimmed = trim((string)$images);
+                if ($trimmed === '' || $trimmed === 'null' || $trimmed === 'undefined') {
+                    $this->merge(['images' => null]);
+                    return;
+                }
+                $images = [$images];
+            }
+
+            $filtered = array_filter((array)$images, function($img) {
+                if (is_null($img)) return false;
+                $s = trim((string)$img);
+                return $s !== '' && $s !== 'null' && $s !== 'undefined';
+            });
+
+            $this->merge([
+                'images' => !empty($filtered) ? array_values($filtered) : null
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

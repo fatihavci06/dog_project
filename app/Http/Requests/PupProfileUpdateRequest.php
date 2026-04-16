@@ -13,19 +13,36 @@ class PupProfileUpdateRequest extends BaseRequest
         if ($this->has('images')) {
             $images = $this->images;
 
-            if (is_array($images)) {
-                // Filter out empty/null values
-                $this->merge([
-                    'images' => array_values(array_filter($images, fn($img) => !empty($img)))
-                ]);
-            } elseif (empty($images)) {
-                // If it's an empty string, set it to null so it passes 'nullable|array'
-                $this->merge(['images' => null]);
+            // Handle string "null" or "undefined" or actual null/empty string
+            if (!is_array($images)) {
+                $trimmed = trim((string)$images);
+                if ($trimmed === '' || $trimmed === 'null' || $trimmed === 'undefined') {
+                    $this->merge(['images' => null]);
+                    return;
+                }
+                // If it's a single string (not array), wrap it in array for validation
+                $images = [$images];
             }
+
+            // Filter out empty/null/invalid strings from array
+            $filtered = array_filter((array)$images, function($img) {
+                if (is_null($img)) return false;
+                $s = trim((string)$img);
+                return $s !== '' && $s !== 'null' && $s !== 'undefined';
+            });
+
+            $this->merge([
+                'images' => !empty($filtered) ? array_values($filtered) : null
+            ]);
         }
     }
 
-    public function rules(): array
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules():array
     {
         return [
 
