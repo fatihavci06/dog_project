@@ -6,6 +6,25 @@ use Illuminate\Validation\Rule;
 
 class PupProfileUpdateRequest extends BaseRequest
 {
+    protected function prepareForValidation()
+    {
+        parent::prepareForValidation();
+
+        if ($this->has('images')) {
+            $images = $this->images;
+
+            if (is_array($images)) {
+                // Filter out empty/null values
+                $this->merge([
+                    'images' => array_values(array_filter($images, fn($img) => !empty($img)))
+                ]);
+            } elseif (empty($images)) {
+                // If it's an empty string, set it to null so it passes 'nullable|array'
+                $this->merge(['images' => null]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [
