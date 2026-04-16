@@ -23,12 +23,12 @@ class PupProfileService
         foreach ($answers as $answerBlock) {
 
             $questionId = $answerBlock['question_id'];
-            $selected   = $answerBlock['selected']; // option_id + order
+            $selected = $answerBlock['selected']; // option_id + order
 
             foreach ($selected as $item) {
 
                 $optionId = $item['option_id'];
-                $order    = $item['order'];
+                $order = $item['order'];
 
                 // 3) Option o soruya ait mi? (güvenlik)
                 $valid = DB::table('options')
@@ -43,7 +43,7 @@ class PupProfileService
                 // 4) Cevabı kaydet
                 $pup->answers()->create([
                     'question_id' => $questionId,
-                    'option_id'   => $optionId,
+                    'option_id' => $optionId,
                     'order_index' => $order
                 ]);
             }
@@ -68,14 +68,14 @@ class PupProfileService
                 $q = $group->first()->question;
 
                 return [
-                    'question_id'   => $q->id,
+                    'question_id' => $q->id,
                     'question_text' => $q->question_text,
-                    'selected'      => $group
+                    'selected' => $group
                         ->sortBy('order_index')
                         ->map(fn($ans) => [
-                            'option_id'   => $ans->option->id,
+                            'option_id' => $ans->option->id,
                             'option_text' => $ans->option->option_text,
-                            'order'       => $ans->order_index,
+                            'order' => $ans->order_index,
                         ])
                         ->values()
                 ];
@@ -97,55 +97,55 @@ class PupProfileService
             'answers.question'
         ])
             ->where('user_id', $userId)
-              ->orderByDesc('created_at')
+            ->orderByDesc('created_at')
             ->get();
 
         return $pups->map(function ($p) {
 
             return [
-                'id'          => $p->id,
-                'user_id'     => $p->user_id,
-                'name'        => $p->name,
-                'sex'         => $p->sex,
+                'id' => $p->id,
+                'user_id' => $p->user_id,
+                'name' => $p->name,
+                'sex' => $p->sex,
 
                 // Tekli FK'ler
-                'breed'       => $p->breed ? ['id' => $p->breed->id, 'name' => $p->breed->name] : null,
-                'age_range'   => $p->ageRange ? ['id' => $p->ageRange->id, 'name' => $p->ageRange->name] : null,
+                'breed' => $p->breed ? ['id' => $p->breed->id, 'name' => $p->breed->name] : null,
+                'age_range' => $p->ageRange ? ['id' => $p->ageRange->id, 'name' => $p->ageRange->name] : null,
                 'travel_radius' => $p->travelRadius
                     ? ['id' => $p->travelRadius->id, 'name' => $p->travelRadius->name]
                     : null,
 
                 // Çoklu pivot alanlar
                 'looking_for' => $p->lookingFor->map(fn($i) => [
-                    'id'   => $i->id,
+                    'id' => $i->id,
                     'name' => $i->name
                 ]),
 
                 'vibe' => $p->vibe->map(fn($i) => [
-                    'id'   => $i->id,
+                    'id' => $i->id,
                     'name' => $i->name
                 ]),
 
                 'health_info' => $p->healthInfo->map(fn($i) => [
-                    'id'   => $i->id,
+                    'id' => $i->id,
                     'name' => $i->name
                 ]),
 
                 'availability_for_meetup' => $p->availabilityForMeetup->map(fn($i) => [
-                    'id'   => $i->id,
+                    'id' => $i->id,
                     'name' => $i->name
                 ]),
 
                 // Konum
-                'lat'       => $p->lat,
-                'long'      => $p->long,
-                'city'      => $p->city,
-                'district'  => $p->district,
+                'lat' => $p->lat,
+                'long' => $p->long,
+                'city' => $p->city,
+                'district' => $p->district,
                 'biography' => $p->biography,
 
                 // Resimler
                 'images' => $p->images->map(fn($img) => [
-                    'id'   => $img->id,
+                    'id' => $img->id,
                     'path' => $img->path
                 ]),
             ];
@@ -166,16 +166,16 @@ class PupProfileService
                 $question = $group->first()->question;
 
                 return [
-                    'question_id'   => $question->id,
+                    'question_id' => $question->id,
                     'question_text' => $question->question_text,
 
                     'selected' => $group
                         ->sortBy('order_index')
                         ->map(function ($ans) {
                             return [
-                                'option_id'   => $ans->option->id,
+                                'option_id' => $ans->option->id,
                                 'option_text' => $ans->option->option_text,
-                                'order'       => $ans->order_index
+                                'order' => $ans->order_index
                             ];
                         })
                         ->values()
@@ -202,17 +202,17 @@ class PupProfileService
             ->firstOrFail();
 
         return [
-            'id'          => $p->id,
-            'user_id'     => $p->user_id,
-            'name'        => $p->name,
-            'sex'         => $p->sex,
+            'id' => $p->id,
+            'user_id' => $p->user_id,
+            'name' => $p->name,
+            'sex' => $p->sex,
 
             // Tekli FK'ler
-            'breed'       => $p->breed
+            'breed' => $p->breed
                 ? ['id' => $p->breed->id, 'name' => $p->breed->name]
                 : null,
 
-            'age_range'   => $p->ageRange
+            'age_range' => $p->ageRange
                 ? ['id' => $p->ageRange->id, 'name' => $p->ageRange->name]
                 : null,
 
@@ -222,35 +222,35 @@ class PupProfileService
 
             // Çoklu pivot alanlar
             'looking_for' => $p->lookingFor->map(fn($i) => [
-                'id'   => $i->id,
+                'id' => $i->id,
                 'name' => $i->name
             ]),
 
             'vibe' => $p->vibe->map(fn($i) => [
-                'id'   => $i->id,
+                'id' => $i->id,
                 'name' => $i->name
             ]),
 
             'health_info' => $p->healthInfo->map(fn($i) => [
-                'id'   => $i->id,
+                'id' => $i->id,
                 'name' => $i->name
             ]),
 
             'availability_for_meetup' => $p->availabilityForMeetup->map(fn($i) => [
-                'id'   => $i->id,
+                'id' => $i->id,
                 'name' => $i->name
             ]),
 
             // Konum
-            'lat'       => $p->lat,
-            'long'      => $p->long,
-            'city'      => $p->city,
-            'district'  => $p->district,
+            'lat' => $p->lat,
+            'long' => $p->long,
+            'city' => $p->city,
+            'district' => $p->district,
             'biography' => $p->biography,
 
             // Resimler
             'images' => $p->images->map(fn($img) => [
-                'id'   => $img->id,
+                'id' => $img->id,
                 'path' => $img->path
             ]),
         ];
@@ -262,16 +262,16 @@ class PupProfileService
             /* ---------------- CREATE MAIN PROFILE ---------------- */
 
             $profile = PupProfile::create([
-                'user_id'          => $user->id,
-                'name'             => $data['name'] ?? null,
-                'sex'              => $data['sex'] ?? null,
-                'breed_id'         => $data['breed_id'] ?? null,
-                'age_range_id'     => $data['age_range_id'] ?? null,
+                'user_id' => $user->id,
+                'name' => $data['name'] ?? null,
+                'sex' => $data['sex'] ?? null,
+                'breed_id' => $data['breed_id'] ?? null,
+                'age_range_id' => $data['age_range_id'] ?? null,
                 'travel_radius_id' => $data['travel_radius_id'] ?? null,
 
-                'lat'      => $data['location']['lat'] ?? null,
-                'long'     => $data['location']['long'] ?? null,
-                'city'     => $data['location']['city'] ?? null,
+                'lat' => $data['location']['lat'] ?? null,
+                'long' => $data['location']['long'] ?? null,
+                'city' => $data['location']['city'] ?? null,
                 'district' => $data['location']['district'] ?? null,
 
                 'biography' => $data['biografy'] ?? null,
@@ -316,9 +316,9 @@ class PupProfileService
                     foreach ($orderedOptions as $index => $optionId) {
                         PupProfileAnswer::create([
                             'pup_profile_id' => $profile->id,
-                            'question_id'    => $questionId,
-                            'option_id'      => $optionId,
-                            'order_index'    => $index + 1,
+                            'question_id' => $questionId,
+                            'option_id' => $optionId,
+                            'order_index' => $index + 1,
                         ]);
                     }
                 }
@@ -343,16 +343,16 @@ class PupProfileService
 
             /* ---------------- UPDATE MAIN PROFILE ---------------- */
             $profile->update([
-                'name'            => $data['name'] ?? $profile->name,
-                'sex'             => $data['sex'] ?? $profile->sex,
-                'breed_id'        => $data['breed_id'] ?? $profile->breed_id,
-                'age_range_id'    => $data['age_range_id'] ?? $profile->age_range_id,
+                'name' => $data['name'] ?? $profile->name,
+                'sex' => $data['sex'] ?? $profile->sex,
+                'breed_id' => $data['breed_id'] ?? $profile->breed_id,
+                'age_range_id' => $data['age_range_id'] ?? $profile->age_range_id,
                 'travel_radius_id' => $data['travel_radius_id'] ?? $profile->travel_radius_id,
 
                 // location
-                'lat'      => $data['location']['lat'] ?? $profile->lat,
-                'long'     => $data['location']['long'] ?? $profile->long,
-                'city'     => $data['location']['city'] ?? $profile->city,
+                'lat' => $data['location']['lat'] ?? $profile->lat,
+                'long' => $data['location']['long'] ?? $profile->long,
+                'city' => $data['location']['city'] ?? $profile->city,
                 'district' => $data['location']['district'] ?? $profile->district,
 
                 // biography
@@ -379,15 +379,9 @@ class PupProfileService
 
 
             /* ---------------- SAVE NEW IMAGES (BASE64) ---------------- */
-            if (!empty($data['images'])) {
+            if (array_key_exists('images', $data)) {
 
                 // 1️⃣ Eski fotoğrafları sil
-                foreach ($profile->images as $img) {
-                    if ($img->path) {
-                        $relativePath = str_replace(url('storage') . '/', '', $img->path);
-                        Storage::disk('public')->delete($relativePath);
-                    }
-                }
                 $profile->images()->delete();
 
                 // 2️⃣ Yenilerini ekle
@@ -417,7 +411,7 @@ class PupProfileService
 
         PupProfileImage::create([
             'pup_profile_id' => $profile->id,
-            'path'           => $filename,
+            'path' => $filename,
         ]);
     }
 
@@ -445,9 +439,9 @@ class PupProfileService
 
             PupProfileAnswer::create([
                 'pup_profile_id' => $profile->id,
-                'question_id'    => $questionId,
-                'option_id'      => $optionId,
-                'order_index'    => $index + 1, // 1,2,3,4,...
+                'question_id' => $questionId,
+                'option_id' => $optionId,
+                'order_index' => $index + 1, // 1,2,3,4,...
             ]);
         }
     }
@@ -504,7 +498,7 @@ class PupProfileService
         }
 
         foreach ($oldAnswers as $index => $ans) {
-            if ((int)$ans->option_id !== (int)$newIds[$index]) {
+            if ((int) $ans->option_id !== (int) $newIds[$index]) {
                 return false;
             }
         }
