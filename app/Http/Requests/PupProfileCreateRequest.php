@@ -58,7 +58,7 @@ class PupProfileCreateRequest extends BaseRequest
                IMAGES (base64)
             ------------------------------------------- */
             'images' => 'nullable|array',
-            'images.*' => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png);base64,/'],
+            'images.*' => ['nullable', 'string', 'regex:/^(data:image\/(jpeg|jpg|png);base64,|http).*/'],
             /* ------------------------------- ANSWERS --------------------------------- */
 
             'answers' => 'nullable|array',

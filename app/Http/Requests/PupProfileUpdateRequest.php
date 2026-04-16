@@ -11,30 +11,6 @@ class PupProfileUpdateRequest extends BaseRequest
     {
         parent::prepareForValidation();
         Log::info('PupProfileUpdateRequest payload:', $this->all());
-
-        if ($this->has('images')) {
-            $images = $this->images;
-
-            if (is_array($images)) {
-                // URL'leri (http ile başlayanlar) ve geçersiz stringleri filtrele
-                $filtered = array_filter($images, function($img) {
-                    if (is_null($img)) return false;
-                    $s = trim((string)$img);
-                    if (str_starts_with($s, 'http')) return false; // Mevcut resim URL'si ise geç
-                    return $s !== '' && $s !== 'null' && $s !== 'undefined';
-                });
-
-                // Eğer hiç yeni (base64) resim yoksa null yap ki validation'ı geçsin ve service dokunmasın
-                $this->merge([
-                    'images' => !empty($filtered) ? array_values($filtered) : null
-                ]);
-            } else {
-                $s = trim((string)$images);
-                if ($s === '' || $s === 'null' || $s === 'undefined') {
-                    $this->merge(['images' => null]);
-                }
-            }
-        }
     }
 
     public function rules(): array
@@ -78,7 +54,7 @@ class PupProfileUpdateRequest extends BaseRequest
             'images.*' => [
                 'nullable',
                 'string',
-                'regex:/^data:image\/(jpeg|jpg|png);base64,/'
+                'regex:/^(data:image\/(jpeg|jpg|png);base64,|http).*/'
             ],
         ];
     }
